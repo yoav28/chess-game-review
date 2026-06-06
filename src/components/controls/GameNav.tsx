@@ -20,22 +20,28 @@ export default function GameNav() {
     toNextMove,
     toFinalMove,
     reset,
-  } = useBoardStore(useShallow(state => ({
-    currentGame: state.currentGame,
-    currentMoveNum: state.currentMoveNum,
-    isFlipped: state.isFlipped,
-    flipBoard: state.flipBoard,
-    toFirstMove: state.toFirstMove,
-    toPrevMove: state.toPrevMove,
-    toNextMove: state.toNextMove,
-    toFinalMove: state.toFinalMove,
-    reset: state.reset,
-  })));
+  } = useBoardStore(
+    useShallow(state => ({
+      currentGame: state.currentGame,
+      currentMoveNum: state.currentMoveNum,
+      isFlipped: state.isFlipped,
+      flipBoard: state.flipBoard,
+      toFirstMove: state.toFirstMove,
+      toPrevMove: state.toPrevMove,
+      toNextMove: state.toNextMove,
+      toFinalMove: state.toFinalMove,
+      reset: state.reset,
+    })),
+  );
 
   const resetSelectGameStore = useSelectGameStore(state => state.reset);
   const stage = useStageStore(state => state.stage);
   const setStage = useStageStore(state => state.setStage);
-  const reviewFinished = useStageStore(state => state.computed.reviewFinished);
+
+  const reviewFinished = useStageStore(
+    state => state.computed.reviewFinished,
+  );
+
   const history = currentGame.history({ verbose: true });
 
   const isLg = useMediaQuery({
@@ -43,8 +49,14 @@ export default function GameNav() {
   });
 
   useHotkeys('right', () => {
-    if (history.length === 0 || currentMoveNum === history.length || !reviewFinished)
+    if (
+      history.length === 0
+      || currentMoveNum === history.length
+      || !reviewFinished
+    ) {
       return;
+    }
+
     toNextMove();
 
     if (stage === 'review-overview' && currentMoveNum === 0) {
@@ -65,8 +77,14 @@ export default function GameNav() {
   });
 
   useHotkeys('down', () => {
-    if (history.length === 0 || currentMoveNum === history.length || !reviewFinished)
+    if (
+      history.length === 0
+      || currentMoveNum === history.length
+      || !reviewFinished
+    ) {
       return;
+    }
+
     toFinalMove();
 
     if (stage === 'review-overview' && currentMoveNum === 0) {
@@ -92,7 +110,9 @@ export default function GameNav() {
         <Button
           aria-label="First move"
           className="grow text-3xl"
-          isDisabled={history.length === 0 || currentMoveNum === 0 || !reviewFinished}
+          isDisabled={
+            history.length === 0 || currentMoveNum === 0 || !reviewFinished
+          }
           isIconOnly
           onPress={toFirstMove}
           radius="sm"
@@ -103,7 +123,9 @@ export default function GameNav() {
         <Button
           aria-label="Previous move"
           className="grow text-3xl"
-          isDisabled={history.length === 0 || currentMoveNum === 0 || !reviewFinished}
+          isDisabled={
+            history.length === 0 || currentMoveNum === 0 || !reviewFinished
+          }
           isIconOnly
           onPress={toPrevMove}
           radius="sm"
@@ -114,7 +136,11 @@ export default function GameNav() {
         <Button
           aria-label="Next move"
           className="grow text-3xl"
-          isDisabled={history.length === 0 || currentMoveNum === history.length || !reviewFinished}
+          isDisabled={
+            history.length === 0
+            || currentMoveNum === history.length
+            || !reviewFinished
+          }
           isIconOnly
           onPress={() => {
             toNextMove();
@@ -131,7 +157,11 @@ export default function GameNav() {
         <Button
           aria-label="Final move"
           className="grow text-3xl"
-          isDisabled={history.length === 0 || currentMoveNum === history.length || !reviewFinished}
+          isDisabled={
+            history.length === 0
+            || currentMoveNum === history.length
+            || !reviewFinished
+          }
           isIconOnly
           onPress={() => {
             toFinalMove();

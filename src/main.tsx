@@ -29,11 +29,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             >
               <img
                 alt="background gradient"
-                className={`
-                  absolute top-[400px] left-[450px] h-[150vh]
-                  transform-[rotate(-10deg)]
-                  lg:top-0 lg:left-[850px]
-                `}
+                className="absolute top-1/5 left-1/2 w-screen"
                 src="/gradient.png"
               />
             </div>
