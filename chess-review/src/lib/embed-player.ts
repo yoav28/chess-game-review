@@ -1,3 +1,5 @@
+import { embedPuzzlePlayerScript } from './embed-puzzle-player'
+
 export const embedPlayerScript = String.raw`
 const data = JSON.parse(document.getElementById('review-data').textContent);
 let ply = data.selected, orientation = data.orientation, timer = null;
@@ -15,7 +17,7 @@ function pause() {
   el('play').textContent = 'Play';
 }
 function draw() {
-  const frame = data.frames[ply], ranks = frame.fen.split(' ')[0].split('/'), cells = [];
+  const frame = puzzleFrame(), ranks = frame.fen.split(' ')[0].split('/'), cells = [];
   for (const rank of ranks) {
     for (const character of rank) {
       if (/[1-8]/.test(character)) cells.push(...Array(Number(character)).fill(''));
@@ -26,7 +28,7 @@ function draw() {
   for (let index = 0; index < 64; index++) {
     const original = orientation === 'w' ? index : 63 - index;
     const file = original % 8, rank = 8 - Math.floor(original / 8), square = 'abcdefgh'[file] + rank;
-    const cell = document.createElement('div'), piece = cells[original];
+    const cell = document.createElement(puzzleActive() ? 'button' : 'div'), piece = cells[original];
     if ((file + rank) % 2 === 0) cell.classList.add('dark');
     if (frame.lastMove && (frame.lastMove.from === square || frame.lastMove.to === square)) cell.classList.add('last');
     if (piece) {
@@ -42,6 +44,7 @@ function draw() {
       label.textContent = (index % 8 === 0 ? rank : '') + (index >= 56 ? 'abcdefgh'[file] : '');
       cell.append(label);
     }
+    puzzleCell(cell, square, piece, index);
     el('board').append(cell);
   }
   el('board').setAttribute('aria-label', frame.outcome || frame.label + '; ' + (frame.fen.split(' ')[1] === 'w' ? 'White' : 'Black') + ' to move');
@@ -53,6 +56,7 @@ function draw() {
   el('timeline').value = ply;
   el('previous').disabled = ply === 0;
   el('next').disabled = ply === data.frames.length - 1;
+  drawPuzzle();
 }
 el('previous').onclick = () => { pause(); ply = Math.max(0, ply - 1); draw(); };
 el('next').onclick = () => { pause(); ply = Math.min(data.frames.length - 1, ply + 1); draw(); };
@@ -70,5 +74,7 @@ el('play').onclick = () => {
     if (ply === data.frames.length - 1) pause();
   }, 800);
 };
+${embedPuzzlePlayerScript}
+setupPuzzle();
 draw();
 `
