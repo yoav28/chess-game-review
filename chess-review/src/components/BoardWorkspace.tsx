@@ -40,6 +40,7 @@ type BoardWorkspaceProps = {
   bestMove?: string;
   showBestMove: boolean;
   coachArrows: { from: string; to: string }[];
+  threatArrow?: { from: string; to: string };
   classification?: { square: string; kind: Classification };
   showTimeSpent: boolean;
   disabled: boolean;
@@ -71,6 +72,7 @@ export function BoardWorkspace({
   bestMove,
   showBestMove,
   coachArrows,
+  threatArrow,
   classification,
   showTimeSpent,
   disabled,
@@ -184,6 +186,7 @@ export function BoardWorkspace({
                 bestMove={bestMove}
                 showBestMove={showBestMove}
                 coachArrows={coachArrows}
+                threatArrow={threatArrow}
                 classification={classification}
                 onMove={onMove}
                 disabled={disabled}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { GameRecord } from '../lib/game'
+import { engineRules, type GameRecord } from '../lib/game'
 import { reviewGame, type GameReview } from '../lib/review'
 import type { ReviewProgress } from '../engine/types'
 import { loadReview, saveReview } from '../lib/storage'
@@ -43,8 +43,9 @@ export function useReview(game: GameRecord, depth: number, timeMs: number, resto
     setRunning(true)
     setProgress({ completed: 0, total: 0, percent: 0 })
     try {
-      if (!['chess', 'chess960'].includes(game.rules)) throw new Error(`Review does not support the ${game.rules} variant.`)
-      const report = await reviewGame(pgn, { variant: game.rules as 'chess' | 'chess960', depth, timeMs, signal: request.signal, onProgress: value => { if (isCurrent()) setProgress(value) } })
+      const variant = engineRules(game.rules)
+      if (!variant) throw new Error(`Review does not support the ${game.rules} variant.`)
+      const report = await reviewGame(pgn, { variant, depth, timeMs, signal: request.signal, onProgress: value => { if (isCurrent()) setProgress(value) } })
       if (!isCurrent()) return
       setReview(report)
       await saveReview(id, report).catch(() => { if (isCurrent()) setCacheNotice('Review is ready. Browser storage is unavailable, so it will not be saved after you close this tab.') })

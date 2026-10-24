@@ -8,7 +8,7 @@ import {
   Square,
   Target,
 } from "lucide-react";
-import type { GameRecord } from "../lib/game";
+import { engineRules, type GameRecord } from "../lib/game";
 import {
   classificationLabels,
   type GameReview,
@@ -22,7 +22,7 @@ import { SkillBreakdown } from "./SkillBreakdown";
 import { ReviewStats } from "./ReviewStats";
 import { TrainingPlan } from "./TrainingPlan";
 import { ReviewOverview } from "./ReviewOverview";
-import { ReviewShare } from "./ReviewShare";
+import { ReviewExports } from "./ReviewExports";
 import { coachText, type CoachDetail } from "../lib/coach";
 import { plainTextReport, reviewedPgn } from "../lib/report";
 import { downloadText } from "../lib/storage";
@@ -48,6 +48,7 @@ type Props = {
   onBestLine: () => void;
   onMethod: () => void;
   onImportReport: (review: GameReview) => void;
+  orientation: 'w' | 'b';
 };
 
 export function ReviewPanel({
@@ -69,6 +70,7 @@ export function ReviewPanel({
   onBestLine,
   onMethod,
   onImportReport,
+  orientation,
 }: Props) {
   const [shareNotice, setShareNotice] = useState("");
   const defaultFocus = settings.highlight === 'all' || !preferredColor ? 'all' : settings.highlight === 'self' ? preferredColor : preferredColor === 'w' ? 'b' : 'w';
@@ -127,7 +129,7 @@ export function ReviewPanel({
           <button
             className="primary full-width"
             onClick={onStart}
-            disabled={running || !['chess', 'chess960'].includes(game.rules)}
+            disabled={running || !engineRules(game.rules)}
           >
             {running ? "Analyzing…" : "Review this game"}{" "}
             <ArrowRight size={17} />
@@ -275,7 +277,7 @@ export function ReviewPanel({
               {shareNotice}
             </p>
           )}
-          <ReviewShare review={review} onImport={onImportReport} />
+          <ReviewExports review={review} ply={move?.ply ?? 0} orientation={orientation} onImport={onImportReport} />
           <div className="review-footer">
             <span>{review.engine}</span>
             <button
@@ -288,10 +290,10 @@ export function ReviewPanel({
           </div>
         </>
       )}
-      {!['chess', 'chess960'].includes(game.rules) && (
+      {!engineRules(game.rules) && (
         <p className="error-message">
           This is a {game.rules} game. Its PGN is available for export; this
-          engine reviews standard chess and Chess960.
+          engine reviews standard chess, material odds, and Chess960.
         </p>
       )}
       {!review && (

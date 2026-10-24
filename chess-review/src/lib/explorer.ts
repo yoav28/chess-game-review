@@ -1,5 +1,5 @@
 import { createPosition, positionMoveUci, pgnVariant, resolveVariant, type ChessVariant } from './position'
-import type { GameRecord } from './game'
+import { engineRules, type GameRecord } from './game'
 
 export interface ExplorerMove {
   uci: string
@@ -91,7 +91,7 @@ export async function exploreImportedGames(games: readonly GameRecord[], fen: st
     if (seen.has(id)) progress.duplicateGames += 1
     else {
       seen.add(id)
-      if (game.rules !== variant) progress.skippedGames += 1
+      if (engineRules(game.rules) !== variant) progress.skippedGames += 1
       else {
         const candidates = new Map<string, string>()
         let matches = false

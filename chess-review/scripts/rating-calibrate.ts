@@ -11,6 +11,8 @@ const directory = resolve(process.argv[2] ?? '/tmp/open-file-rating-pilot')
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex')
 const playerId = (username: string) => digest(username.toLowerCase())
 const games = JSON.parse(await readFile(`${directory}/games.json`, 'utf8')) as { url: string; pgn: string; time_class: string; white: { username: string; rating: number }; black: { username: string; rating: number } }[]
+const inputManifest = JSON.parse(await readFile(`${directory}/manifest.json`, 'utf8'))
+if (inputManifest.schema === 2 && inputManifest.metadataGate?.passed !== true) throw new Error('The stratified cohort has not passed its frozen metadata gate.')
 await mkdir(`${directory}/analysis`, { recursive: true })
 installRatingEngine()
 const observations: RatingObservation[] = []
@@ -53,7 +55,7 @@ const report = {
   featureNames: ratingFeatureNames, validation,
   interpretation: 'Predicts recorded Chess.com blitz rating from move-quality similarity. Player rating is not ground-truth single-game performance. No Chess.com proprietary formula is inferred.',
   split: 'Player-hash folds 60/20/20. Train rows require both players in the train fold; calibration rows require a calibration player and no test opponent; test rows require a test player. No game can occur in two partitions.',
-  limits: ['Pilot selection is one country inventory and one month', 'Blitz standard chess only', 'Features require 12 non-book unforced post-opening decisions and eight contested decisions', 'Engine profile is fixed; production reports with other budgets are unsupported', 'Repeated player observations are correlated; empirical interval coverage is not a formal population guarantee', 'Validation gates are prespecified engineering acceptance criteria, not a source-product calibration'],
+  limits: [inputManifest.schema === 2 ? 'Stratified streamer/leaderboard/opponent convenience sample from September 2026' : 'Pilot selection is one country inventory and one month', 'Blitz standard chess only', 'Features require 12 non-book unforced post-opening decisions and eight contested decisions', 'Engine profile is fixed; production reports with other budgets are unsupported', 'Repeated player observations are correlated; empirical interval coverage is not a formal population guarantee', 'Validation gates are prespecified engineering acceptance criteria, not a source-product calibration'],
 }
 await writeFile(`${directory}/validation.json`, JSON.stringify(report, null, 2))
 if (process.argv[3]) {

@@ -1,6 +1,6 @@
 # Open File
 
-An independent chess review application built with React, TypeScript, Vite, chess.js, a Chess960 rules adapter using chessops, and local Stockfish 19 Lite. Choose a Chess.com username, import every available public archive, and review standard or Chess960 games in your browser. An Opera Game sample is included.
+An independent chess review application built with React, TypeScript, Vite, chess.js, a Chess960 rules adapter using chessops, and local Stockfish 19 Lite. Choose a Chess.com username, import every available public archive, and review standard, material-odds, or Chess960 games in your browser. An Opera Game sample is included.
 
 The latest work is local. The [previous private deployment](https://open-file-chess-review.woolly-rice-1868.chatgpt.site) is an older release and has not been updated with the features below. No current changes have been pushed or redeployed. See [verification.md](docs/verification.md) for recorded checks and their limits.
 
@@ -31,7 +31,7 @@ Enter a Chess.com username in the library and choose **Import all games**. Searc
 The application provides:
 
 - Full-game Stockfish review with progress, cancellation, adjustable depth/time, per-player accuracy, classifications, key moments, and opening/middlegame/endgame reports.
-- Standard chess and Chess960 replay, review, variations, engine continuation, and reviewed PGN export. Chess960 uses king-to-rook engine UCI for castling while showing the physical king/rook destinations correctly.
+- Standard chess, material-odds games with their recorded custom starts, and Chess960 replay, review, variations, engine continuation, and reviewed PGN export. Chess960 uses king-to-rook engine UCI for castling while showing the physical king/rook destinations correctly.
 - Board clocks, estimated time spent where sufficient PGN clock/control data exists, promotion choices, orientation and keyboard controls, right-click arrows/circles, and classification highlights.
 - Evaluation bar/graph, one to five configurable candidate lines, playable variations, and return to the recorded game.
 - Guided review and independent animated explanations showing the played move, alternative, and legal engine continuation, with pause/step/replay and reduced-motion behavior. Clear, Supportive, and Analyst presentation profiles change the original explanation/narration style; Analyst includes recorded search details. Optional speech uses local browser voices.
@@ -44,6 +44,8 @@ The application provides:
 - Optional seven-piece standard-chess Syzygy lookup through Lichess, with legal moves, outcome categories, and fifty-move-rule-aware DTZ information.
 - Settings for engine budget, one to five analysis lines, arrow mode, classification display, player highlights, time spent, sound, explanation pace/autoplay/detail/profile, coach avatar, skill breakdown, and recommendations.
 - Original PGN, annotated PGN, and text-report exports, plus complete-review JSON download/import that preserves the existing scores and engine lines without reanalysis. Imported reports remain labeled as file-provided. Libraries, reports, and settings are browser-local.
+- PNG reports with original board artwork, scores, graph, classifications, and provenance; complete-game animated GIFs with progress/cancellation; and offline HTML or sandboxed iframe replays with navigation, autoplay, orientation, coordinates, and recorded explanations.
+- Optional opponent-threat analysis runs a separate hypothetical opponent-to-move search, shows a red arrow, and keeps the actual position unchanged. Checks and terminal positions disable it; changing position clears the result.
 
 ## Public archives and local data
 
@@ -75,6 +77,10 @@ Tablebase lookup follows the [Lichess HTTP API](https://github.com/lichess-org/l
 Complete-review files use a versioned Open File JSON envelope and validate PGN/history, legal standard/Chess960 best/PV moves, metadata, numeric bounds, and summary consistency. Files are limited to 12 MB, 2,000 game plies, and 20,000 recorded continuation moves; importing does not authenticate the author or engine scores, and the imported-report notice survives saving/reopening. The app does not upload these files or create a public hosted share link.
 
 Full Chess.com parity has not been established. Proprietary scoring and Game Rating, coach personalities/media, complete explanation-theme coverage, cloud accounts/synchronization, shared analysis rooms, alternate proprietary engines and thread/unlimited-time controls, Chess.com training integration, and every account/experiment branch remain gaps. The [empirical rating pilot](docs/rating-pilot.md) analyzed 230 games but failed its release gates (held-out error 349.48 rating points); it remains research, with no user-facing rating estimate. The [REA feature/evidence ledger](docs/chess-com-review-research.md) separates observed source behavior from the independent implementation.
+
+A separate [stratified rating study](docs/rating-validation-v2.md) reviewed 800 September games. Its 495.80-point held-out error and ±906.35-point empirical interval failed the unchanged release gates; no rating estimate is enabled. Offline embeds do not reproduce Chess.com forum codes, cloud diagram storage, selectable proprietary piece sets, or its embed puzzle option.
+
+The imported MagnusCarlsen library contains 9,648 standard games, 317 Chess960 games, six material-odds games, and two three-check games. The current engine supports the first three groups. Three-check review remains an explicit gap; those originals stay available for PGN export.
 
 ## Architecture
 
@@ -108,3 +114,5 @@ Version-specific upstream source: [v19.0.1 release](https://github.com/nmrugg/st
 ## Chessops distribution and source
 
 The Chess960 adapter uses [`chessops@0.15.1`](https://github.com/niklasf/chessops), licensed under GPL-3.0-or-later. The unmodified license is included at `chess-review/public/licenses/CHESSOPS-COPYING.txt`; [CHESSOPS-SOURCE.txt](chess-review/public/licenses/CHESSOPS-SOURCE.txt) identifies the upstream source and exact release. The installed artifact is the [0.15.1 npm tarball](https://registry.npmjs.org/chessops/-/chessops-0.15.1.tgz), with its exact package bytes pinned by `package-lock.json` integrity. The license/source files are included in the static production output.
+
+GIF encoding uses [`gifenc@1.0.3`](https://github.com/mattdesl/gifenc), pinned in `package-lock.json`. Its MIT license and source information are included in `chess-review/public/licenses/GIFENC-LICENSE.txt` and `GIFENC-SOURCE.txt`. The encoder and SVG serialization runtime load when exporting; game analysis does not require them.

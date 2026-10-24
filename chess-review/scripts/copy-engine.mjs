@@ -14,3 +14,4 @@ await copyFile(join(packageDirectory, 'Copying.txt'), join(publicDirectory, 'COP
 const licenseDirectory = fileURLToPath(new URL('../public/licenses/', import.meta.url))
 await mkdir(licenseDirectory, { recursive: true })
 await copyFile(join(dirname(require.resolve('chessops/chess')), '..', '..', 'LICENSE.txt'), join(licenseDirectory, 'CHESSOPS-COPYING.txt'))
+await copyFile(join(dirname(require.resolve('gifenc/package.json')), 'LICENSE.md'), join(licenseDirectory, 'GIFENC-LICENSE.txt'))

@@ -4,7 +4,9 @@ import { createPosition, type ChessVariant } from '../lib/position'
 import type { PieceSymbol, Square } from 'chess.js'
 import { classificationGlyph } from '../lib/classification'
 import { classificationLabels, type Classification } from '../lib/review'
+import { Piece } from './ChessPiece'
 import './Board.css'
+export { Piece } from './ChessPiece'
 
 type BoardProps = {
   variant?: ChessVariant
@@ -14,6 +16,7 @@ type BoardProps = {
   bestMove?: string
   showBestMove?: boolean
   coachArrows?: { from: string; to: string }[]
+  threatArrow?: { from: string; to: string }
   classification?: { square: string; kind: Classification }
   onMove?: (uci: string) => void
   disabled?: boolean
@@ -24,22 +27,7 @@ type Annotation = { from: string; to: string }
 const pieceNames: Record<PieceSymbol, string> = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' }
 const files = 'abcdefgh'
 
-function Piece({ type, color }: { type: PieceSymbol; color: 'w' | 'b' }) {
-  return (
-    <svg className={`chess-piece chess-piece-${color}`} viewBox="0 0 80 80" aria-hidden="true">
-      <g strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round">
-        {type === 'p' && <><circle cx="40" cy="24" r="9" /><path d="M32 34h16l-3 9 6 15H29l6-15z" /><path d="M26 59h28l3 9H23z" /></>}
-        {type === 'r' && <><path d="M23 15h9v9h8v-9h8v9h8v-9h6v20l-8 7 2 16H28l2-16-7-7z" /><path d="M25 58h32l3 10H22z" /><path d="M30 36h24M30 52h24" /></>}
-        {type === 'n' && <><path d="m24 57 5-14 13-11-10 1-9 7-7-7 12-18 13 1 4-7 5 12c12 9 13 24 8 36z" /><path d="m25 57-4 11h41l-4-11z" /><path d="m31 24 3-3m15 9c7 7 7 15 5 21" fill="none" /><circle cx="38" cy="22" r="1.6" className="chess-piece-detail" stroke="none" /></>}
-        {type === 'b' && <><circle cx="40" cy="12" r="4" /><path d="M40 17c-8 8-15 15-12 22 2 5 7 6 8 9l-7 10h22l-7-10c1-3 6-4 8-9 3-7-4-14-12-22z" /><path d="m44 24-9 14" fill="none" /><path d="M26 58h28l6 10H20z" /><path d="M32 47h16" fill="none" /></>}
-        {type === 'q' && <><path d="m20 26 12 10 8-14 8 14 12-10-8 27H28z" /><circle cx="19" cy="22" r="4" /><circle cx="40" cy="18" r="4" /><circle cx="61" cy="22" r="4" /><path d="M28 53h24l3 7H25zM25 60h30l5 8H20z" /><path d="M29 46h22" fill="none" /></>}
-        {type === 'k' && <><path d="M40 9v16m-7-10h14" fill="none" strokeWidth="4" /><path d="M40 30c-12-15-27-3-19 9l10 14h18l10-14c8-12-7-24-19-9z" /><path d="M31 53h18l5 7H26zM26 60h28l5 8H21z" /><path d="M40 31v16" fill="none" /></>}
-      </g>
-    </svg>
-  )
-}
-
-export default function Board({ fen, variant, orientation, lastMove, bestMove, showBestMove = false, coachArrows = [], classification, onMove, disabled = false, arrows = true }: BoardProps) {
+export default function Board({ fen, variant, orientation, lastMove, bestMove, showBestMove = false, coachArrows = [], threatArrow, classification, onMove, disabled = false, arrows = true }: BoardProps) {
   const chess = useMemo(() => createPosition(fen, variant), [fen, variant])
   const [selected, setSelected] = useState<Square | null>(null)
   const [promotion, setPromotion] = useState<Annotation | null>(null)
@@ -114,9 +102,10 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
     return { x: (index % 8) * 100 + 50, y: Math.floor(index / 8) * 100 + 50 }
   }
 
-  const visibleArrows: (Annotation & { kind: 'annotation' | 'best' | 'coach' })[] = annotations.filter(item => item.from !== item.to).map(item => ({ ...item, kind: 'annotation' }))
+  const visibleArrows: (Annotation & { kind: 'annotation' | 'best' | 'coach' | 'threat' })[] = annotations.filter(item => item.from !== item.to).map(item => ({ ...item, kind: 'annotation' }))
   if (showBestMove && bestMove && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(bestMove)) visibleArrows.push({ from: bestMove.slice(0, 2), to: bestMove.slice(2, 4), kind: 'best' })
   visibleArrows.push(...coachArrows.filter(item => /^[a-h][1-8]$/.test(item.from) && /^[a-h][1-8]$/.test(item.to) && item.from !== item.to).map(item => ({ ...item, kind: 'coach' as const })))
+  if (threatArrow && /^[a-h][1-8]$/.test(threatArrow.from) && /^[a-h][1-8]$/.test(threatArrow.to) && threatArrow.from !== threatArrow.to) visibleArrows.push({ ...threatArrow, kind: 'threat' })
 
   return (
     <div className="review-board" onContextMenu={event => event.preventDefault()}>
@@ -168,7 +157,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
       </div>
       {visibleArrows.length > 0 && (
         <svg className="board-arrows" viewBox="0 0 800 800" aria-hidden="true">
-          <defs>{(['annotation', 'best', 'coach'] as const).map(kind => <marker key={kind} id={`${markerId}-${kind}`} className={`board-arrow-${kind}`} markerWidth="2.5" markerHeight="2.5" refX="1.2" refY="1.25" orient="auto"><path d="M0 0 2.5 1.25 0 2.5z" fill="currentColor" /></marker>)}</defs>
+          <defs>{(['annotation', 'best', 'coach', 'threat'] as const).map(kind => <marker key={kind} id={`${markerId}-${kind}`} className={`board-arrow-${kind}`} markerWidth="2.5" markerHeight="2.5" refX="1.2" refY="1.25" orient="auto"><path d="M0 0 2.5 1.25 0 2.5z" fill="currentColor" /></marker>)}</defs>
           {visibleArrows.map((arrow, index) => {
             const start = center(arrow.from)
             const end = center(arrow.to)

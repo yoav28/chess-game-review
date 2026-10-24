@@ -121,3 +121,4 @@
 .board-promotion-options button:hover,
 .board-promotion-options button:focus-visible { background: #bbc69f; border-color: #46533f; outline: none; }
 .board-promotion-cancel { margin-top: 12px; padding: 4px 12px; background: transparent; border: 0; color: #4e5549; font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; }
+.board-arrow-threat { color: #e17a6b; }

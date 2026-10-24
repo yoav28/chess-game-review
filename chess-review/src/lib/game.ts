@@ -114,9 +114,14 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
   return { variant: 'chess', headers, moves, positions: [initialFen, ...moves.map((move) => move.after)], clocks, initialFen, result: headers.Result ?? '*' }
 }
 
+export function engineRules(rules: string): ChessVariant | null {
+  return rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
+}
+
 export function parseGame(game: GameRecord): ParsedGame {
-  if (game.rules !== 'chess' && game.rules !== 'chess960') throw new Error(`This game uses ${game.rules}. Engine review supports standard chess and Chess960.`)
-  return parsePgn(game.pgn, game.rules)
+  const variant = engineRules(game.rules)
+  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, and Chess960.`)
+  return parsePgn(game.pgn, variant)
 }
 
 function pgnResult(result: string, color: Color): string {

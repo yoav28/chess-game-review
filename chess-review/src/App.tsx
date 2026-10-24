@@ -33,7 +33,7 @@ function App() {
     play, startPlay, stopPlay,
     explanation, explainCurrent, practicePosition,
     openSaved, importReport,
-    practice, variant, boardBestMove, showBestArrow, boardCoachArrows, classificationMark,
+    practice, variant, boardBestMove, showBestArrow, boardCoachArrows, classificationMark, threat,
   } = useWorkspace();
 
   return (
@@ -68,6 +68,7 @@ function App() {
           bestMove={boardBestMove}
           showBestMove={showBestArrow}
           coachArrows={boardCoachArrows}
+          threatArrow={threat.result?.arrow ?? undefined}
           classification={classificationMark}
           showTimeSpent={settings.showTimeSpent}
           disabled={
@@ -129,6 +130,7 @@ function App() {
                 onBestLine={bestLine}
                 onMethod={() => setDialog("method")}
                 onImportReport={importReport}
+                orientation={orientation}
                 settings={settings}
                 onSettings={setSettings}
               />
@@ -154,6 +156,7 @@ function App() {
                 onExploreMove={boardMove}
                 onPlay={startPlay}
                 variant={variant}
+                threat={threat}
               />
             ) : (
               <>

@@ -12,6 +12,7 @@ import { usePositionAnalysis } from "./usePositionAnalysis";
 import { usePlayPosition } from "./usePlayPosition";
 import { useExplanation } from "./useExplanation";
 import { usePracticeReview } from "./usePracticeReview";
+import { useThreatAnalysis } from "./useThreatAnalysis";
 import type { PracticeColor } from "../lib/practice";
 import { bestMoveArrow, continuationArrows, physicalMove } from "../lib/board-visuals";
 
@@ -83,6 +84,7 @@ export function useWorkspace() {
   const { positionAnalysis, engineBusy, engineError } = usePositionAnalysis({
     tab, engineEnabled: engineEnabled && !play.active && !explanation.active, running, fen, settings, parseError: parsed.error, analysisHistory, variant,
   });
+  const threat = useThreatAnalysis({ fen, variant, enabled: tab === 'analysis' && engineEnabled && !play.active && !explanation.active && !running && !parsed.error, depth: settings.depth, timeMs: settings.timeMs });
   const displayEvaluation =
     tab === "practice" || play.active || explanation.active
       ? undefined
@@ -327,5 +329,6 @@ export function useWorkspace() {
     openSaved, importReport,
     practice, variant,
     boardBestMove, showBestArrow, boardCoachArrows, classificationMark,
+    threat,
   };
 }

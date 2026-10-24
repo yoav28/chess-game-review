@@ -2,7 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Chess } from 'chess.js'
 import { demoGame } from './demo'
-import { formatClock, gameFromPgn, parseGame, parsePgn } from './game'
+import { engineRules, formatClock, gameFromPgn, parseGame, parsePgn } from './game'
+import { readFileSync } from 'node:fs'
 
 test('the demo is a complete legal mating game with castling and a queen sacrifice', () => {
   const parsed = parseGame(demoGame)
@@ -49,7 +50,7 @@ test('en passant moves include the actual capture information', () => {
 test('invalid PGNs and unsupported variants return actionable errors', () => {
   assert.throws(() => parsePgn(''), /empty/)
   assert.throws(() => parsePgn('1. e4 e5 2. Qxe8 *'), /Cannot read this PGN/)
-  assert.throws(() => parseGame({ ...demoGame, rules: 'atomic' }), /standard chess and Chess960/)
+  assert.throws(() => parseGame({ ...demoGame, rules: 'atomic' }), /standard chess, material odds, and Chess960/)
 })
 
 test('Chess960 PGN import preserves variant, clocks, headers and physical castle destinations', () => {
@@ -78,4 +79,18 @@ test('imported PGN keeps player names, ratings, result, and stable IDs', () => {
   assert.equal(formatClock(62.9), '1:02')
   assert.equal(formatClock(3662), '1:01:02')
   assert.equal(formatClock(undefined), '—')
+})
+test('public queen-odds PGN uses its actual custom start and standard move rules', () => {
+  const source = readFileSync(new URL('../test/fixtures/material-odds.pgn', import.meta.url), 'utf8')
+  const game = { ...gameFromPgn(source), rules: 'oddschess' }
+  const parsed = parseGame(game)
+  assert.equal(engineRules(game.rules), 'chess')
+  assert.equal(parsed.moves.length, 108)
+  assert.equal(parsed.clocks.filter(clock => clock !== null).length, 108)
+  assert.equal(parsed.result, '1/2-1/2')
+  assert.equal(new Chess(parsed.initialFen).get('d1'), undefined)
+  const castled = new Chess(parsed.positions[9])
+  assert.equal(castled.get('c1')?.type, 'k')
+  assert.equal(castled.get('d1')?.type, 'r')
+  assert.equal(game.rules, 'oddschess')
 })

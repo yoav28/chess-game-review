@@ -2,6 +2,8 @@ import { ChevronRight, LoaderCircle } from "lucide-react";
 import { OpeningExplorer } from "./OpeningExplorer";
 import { TablebasePanel } from "./TablebasePanel";
 import { MasterExplorer } from "./MasterExplorer";
+import { ThreatPanel } from "./ThreatPanel";
+import type { ThreatAnalysis } from "../hooks/useThreatAnalysis";
 import type { GameRecord } from "../lib/game";
 import type { ChessVariant } from "../lib/position";
 import type { PositionAnalysis } from "../engine/types";
@@ -21,6 +23,7 @@ type Props = {
   variation: string[];
   onBack: () => void;
   fen: string;
+  threat: ThreatAnalysis;
 };
 
 export function AnalysisPanel({
@@ -37,6 +40,7 @@ export function AnalysisPanel({
   variation,
   onBack,
   fen,
+  threat,
 }: Props) {
   return (
     <div className="analysis-content">
@@ -100,6 +104,7 @@ export function AnalysisPanel({
           Turn on the engine to explore candidate lines.
         </p>
       )}
+      <ThreatPanel threat={threat} />
       <div className="analysis-tip">
         <button className="secondary full-width" onClick={onPlay}>Play this position against Stockfish</button>
         <h3>Try a different move</h3>

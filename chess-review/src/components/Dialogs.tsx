@@ -128,7 +128,7 @@ export function Dialogs({
               </button>
             </div>
             <p className="fine-print">
-              Standard chess and Chess960. For multiple games, paste one game at a time.
+              Standard chess, material-odds positions, and Chess960. For multiple games, paste one game at a time.
             </p>
           </>
         ) : dialog === "settings" ? (
@@ -181,7 +181,7 @@ export function Dialogs({
               engine results. Deeper analysis may find a different continuation.
             </p>
             <p>
-              This engine reviews standard chess and Chess960; other imported
+              This engine reviews standard chess, material odds, and Chess960; other imported
               variants remain available for PGN export. Public archives contain completed games and may update with
               a delay. Browser storage retains games and reviews on this device;
               clearing site data removes them.

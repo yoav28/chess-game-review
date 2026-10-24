@@ -1,0 +1,27 @@
+.threat-panel {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+  padding-top: 24px;
+}
+.threat-panel-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.threat-panel-result {
+  margin-top: 20px;
+}
+.threat-panel-result h3 {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.threat-panel-result > p:not(.fine-print) {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.threat-panel-line {
+  font-family: ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}

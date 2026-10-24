@@ -17,6 +17,8 @@ type Props = {
   onClose: () => void;
 };
 
+const rulesLabel = (rules: string) => rules === 'chess' ? 'Standard' : rules === 'chess960' ? 'Chess960' : rules === 'oddschess' ? 'Odds chess' : rules === 'threecheck' ? 'Three-check' : rules;
+
 export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
   const [input, setInput] = useState(library.username);
   const [search, setSearch] = useState("");
@@ -25,6 +27,12 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState("newest");
   const [month, setMonth] = useState("");
+  const [rules, setRules] = useState('all');
+  const ruleCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const game of library.games) counts.set(game.rules, (counts.get(game.rules) ?? 0) + 1);
+    return [...counts].sort(([left], [right]) => left.localeCompare(right));
+  }, [library.games]);
   const filtered = useMemo(
     () =>
       library.games
@@ -49,6 +57,7 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
           return (
             (timeClass === "all" || game.timeClass === timeClass) &&
             (result === "all" || result === outcome) &&
+            (rules === 'all' || game.rules === rules) &&
             (!month ||
               new Date(game.endTime * 1000).toISOString().slice(0, 7) ===
                 month) &&
@@ -60,7 +69,7 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
         .sort((a, b) =>
           sort === "oldest" ? a.endTime - b.endTime : b.endTime - a.endTime,
         ),
-    [library.games, library.username, search, timeClass, result, sort, month],
+    [library.games, library.username, search, timeClass, result, sort, month, rules],
   );
   const pages = Math.ceil(filtered.length / 30);
   const currentPage = Math.min(page, Math.max(0, pages - 1));
@@ -143,6 +152,10 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
       {library.games.length > 0 ? (
         <>
           <div className="library-filters">
+            <div className="filter-row"><select aria-label="Game rules filter" value={rules} onChange={event => { setRules(event.target.value); setPage(0); }}>
+              <option value="all">All rules · {library.games.length.toLocaleString()}</option>
+              {ruleCounts.map(([value, count]) => <option key={value} value={value}>{rulesLabel(value)} · {count.toLocaleString()}</option>)}
+            </select></div>
             <div className="search-input">
               <Search size={15} />
               <input
@@ -248,7 +261,7 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
                       </strong>
                       <span>
                         {isWhite ? "White" : "Black"} ·{" "}
-                        {game.rules === "chess" ? game.timeClass : game.rules} ·{" "}
+                        {game.rules === "chess" ? game.timeClass : rulesLabel(game.rules)} ·{" "}
                         {formatTimeControl(game.timeControl)}
                       </span>
                     </span>

@@ -1,0 +1,5 @@
+GIF exports use gifenc 1.0.3, distributed under the MIT license.
+The unmodified license is included as GIFENC-LICENSE.txt.
+Primary source and documentation: https://github.com/mattdesl/gifenc
+Exact npm artifact: https://registry.npmjs.org/gifenc/-/gifenc-1.0.3.tgz
+Package bytes are pinned by package-lock.json integrity.
