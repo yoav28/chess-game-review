@@ -23,6 +23,9 @@ export type PositionAnalysis = {
 }
 
 export type AnalysisOptions = {
+  limit?: 'depth-and-time' | 'time' | 'continuous'
+  threads?: number
+  onUpdate?: (analysis: PositionAnalysis) => void
   variant?: ChessVariant
   depth?: number
   timeMs?: number
@@ -37,6 +40,6 @@ export type ReviewProgress = {
   percent: number
 }
 
-export type ReviewOptions = AnalysisOptions & {
+export type ReviewOptions = Omit<AnalysisOptions, 'limit' | 'threads' | 'onUpdate'> & {
   onProgress?: (progress: ReviewProgress) => void
 }

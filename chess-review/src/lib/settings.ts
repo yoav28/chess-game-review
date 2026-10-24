@@ -1,10 +1,13 @@
 import type { CoachProfile } from './coach'
 import { defaultBoardAppearance, normalizeBoardAppearance, type BoardAppearance } from './board-appearance'
+import { analysisTimeLimit, engineThreads } from '../engine/search-options'
 
 export type Settings = BoardAppearance & {
   depth: number
   timeMs: number
   analysisLines: number
+  analysisTimeMs: number
+  analysisThreads: number
   sound: boolean
   arrowMode: 'best' | 'coach' | 'both' | 'none'
   showClassifications: boolean
@@ -22,6 +25,7 @@ export type Settings = BoardAppearance & {
 export const defaultSettings: Settings = {
   ...defaultBoardAppearance,
   depth: 16, timeMs: 500, analysisLines: 3, sound: false, arrowMode: 'best',
+  analysisTimeMs: 5000, analysisThreads: 1,
   showClassifications: true, autoplayExplanation: true, explanationDelayMs: 1300,
   showCoachAvatar: true, showRecommendations: true, showSkills: true,
   showTimeSpent: true, highlight: 'all', coachDetail: 'detailed', coachProfile: 'clear',
@@ -45,6 +49,8 @@ export function normalizeSettings(value: unknown): Settings {
     depth: bounded(source.depth, defaultSettings.depth, 10, 22),
     timeMs: bounded(source.timeMs, defaultSettings.timeMs, 150, 5000),
     analysisLines: bounded(source.analysisLines, defaultSettings.analysisLines, 1, 5),
+    analysisTimeMs: analysisTimeLimit(source.analysisTimeMs),
+    analysisThreads: engineThreads(source.analysisThreads),
     sound: boolean('sound'),
     arrowMode: choice(source.arrowMode, ['best', 'coach', 'both', 'none'], legacyArrows),
     showClassifications: boolean('showClassifications'),

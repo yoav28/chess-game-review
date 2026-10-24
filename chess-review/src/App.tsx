@@ -24,7 +24,7 @@ function App() {
     dialog, setDialog, libraryOpen, setLibraryOpen,
     settings, setSettings, playing, setPlaying,
     variationState, setVariation, positionAnalysis, engineBusy,
-    engineError, engineEnabled, setEngineEnabled, practiceIndex,
+    engineError, engineEnabled, setEngineEnabled, engineStopped, analysisThreads, stopAnalysis, restartAnalysis, practiceIndex,
     practiceColor, practiceStatus, hint, practiceBusy, practiceFeedback,
     toast, setToast, parsed, review,
     progress, running, error, cacheNotice,
@@ -148,6 +148,12 @@ function App() {
                 error={engineError}
                 enabled={engineEnabled}
                 onToggle={() => setEngineEnabled((value) => !value)}
+                settings={settings}
+                onSettings={setSettings}
+                stopped={engineStopped}
+                threads={analysisThreads}
+                onStop={() => { stopAnalysis(); threat.stop(); }}
+                onRun={() => { setEngineEnabled(true); restartAnalysis(); }}
                 onLine={(moves) => {
                   setVariation((value) => [...value, ...moves]);
                   setPlaying(false);

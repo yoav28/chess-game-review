@@ -1,0 +1,8 @@
+.analysis-search-controls { padding: 12px 0; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.analysis-search-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.analysis-search-actions > span { font-size: 11px; color: var(--muted); }
+.analysis-search-controls details { margin-top: 12px; }
+.analysis-search-controls summary { cursor: pointer; font-size: 12px; }
+.analysis-settings-fields > label { display: block; margin: 14px 0 7px; font-size: 12px; }
+.analysis-settings-fields select { width: 100%; }
+.analysis-settings-fields .fine-print { font-size: 11px; line-height: 1.6; color: var(--muted); margin-top: 12px; }

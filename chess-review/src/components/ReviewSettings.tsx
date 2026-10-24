@@ -2,6 +2,7 @@ import { useId } from 'react'
 import { normalizeSettings, type Settings } from '../lib/settings'
 import { coachProfiles } from '../lib/coach'
 import { BoardAppearanceControls } from './BoardAppearanceControls'
+import { AnalysisSettingsFields } from './AnalysisSettingsFields'
 import './ReviewSettings.css'
 
 type ToggleKey = 'sound' | 'showClassifications' | 'autoplayExplanation' | 'showCoachAvatar' | 'showRecommendations' | 'showSkills' | 'showTimeSpent'
@@ -14,7 +15,7 @@ export function ReviewSettings({ settings, onChange, onDone }: { settings: Setti
 
   return <div className="review-settings">
     <fieldset>
-      <legend>Engine</legend>
+      <legend>Game review</legend>
       <label htmlFor={`${id}-depth`}>Maximum depth<strong>{settings.depth}</strong></label>
       <input id={`${id}-depth`} type="range" min="10" max="22" value={settings.depth} onChange={event => update({ depth: Number(event.target.value) })} />
       <label htmlFor={`${id}-time`}>Time per position</label>
@@ -25,12 +26,9 @@ export function ReviewSettings({ settings, onChange, onDone }: { settings: Setti
         <option value="1500">Deep · 1.5 seconds</option>
         <option value="5000">Thorough · 5 seconds</option>
       </select>
-      <label htmlFor={`${id}-lines`}>Analysis lines</label>
-      <select id={`${id}-lines`} value={settings.analysisLines} onChange={event => update({ analysisLines: Number(event.target.value) })}>
-        {[1, 2, 3, 4, 5].map(count => <option key={count} value={count}>{count} {count === 1 ? 'line' : 'lines'}</option>)}
-      </select>
       <p className="fine-print">Analysis stops at the depth or time limit. These limits apply to the next review; saved reviews stay available.</p>
     </fieldset>
+    <fieldset><legend>Position analysis</legend><AnalysisSettingsFields settings={settings} onChange={update} /></fieldset>
     <fieldset>
       <legend>Board and moves</legend>
       <BoardAppearanceControls value={settings} onChange={update} />

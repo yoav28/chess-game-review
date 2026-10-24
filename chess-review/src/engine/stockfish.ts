@@ -1,6 +1,8 @@
-import { boardWithHistory, completedLines, engineFen, parseInfo, terminalEvaluation } from './protocol'
+import { boardWithHistory, engineFen, parseInfo, terminalEvaluation } from './protocol'
 import type { AnalysisOptions, EngineLine, PositionAnalysis } from './types'
 import { resolveVariant, type ChessVariant } from '../lib/position'
+import { engineThreads, searchCommand } from './search-options'
+import { searchResult } from './search-results'
 
 type Pending = { reject: (reason: Error) => void }
 
@@ -10,12 +12,17 @@ export class StockfishEngine {
   private disposed = false
   private ready: Promise<void>
   private signal?: AbortSignal
+  private searching = false
+  private stopRequested = false
+  private searchStarted = false
+  readonly threads: number
   private abort = () => this.dispose(new DOMException('Analysis cancelled', 'AbortError'))
 
-  constructor(signal?: AbortSignal, private readonly rules: ChessVariant = 'chess') {
+  constructor(signal?: AbortSignal, private readonly rules: ChessVariant = 'chess', threads = 1) {
     this.signal = signal
-    if (rules === 'threecheck' && globalThis.crossOriginIsolated === false) throw new Error('Three-check analysis needs a browser session with WebAssembly threads enabled. Serve this app with cross-origin isolation headers.')
-    this.worker = new Worker(new URL(rules === 'threecheck' ? 'engine/fairy/bridge.js' : 'engine/stockfish-19-lite-single.js', document.baseURI))
+    this.threads = engineThreads(threads)
+    if ((rules === 'threecheck' || this.threads > 1) && globalThis.crossOriginIsolated === false) throw new Error('This engine configuration needs WebAssembly threads and cross-origin isolation headers.')
+    this.worker = new Worker(new URL(rules === 'threecheck' ? 'engine/fairy/bridge.js' : this.threads > 1 ? 'engine/stockfish-19-lite.js' : 'engine/stockfish-19-lite-single.js', document.baseURI))
     this.worker.addEventListener('error', () => this.dispose(new Error('Stockfish could not load. Check that the engine files are available.')))
     this.worker.addEventListener('messageerror', () => this.dispose(new Error('Stockfish returned an unreadable response.')))
     signal?.addEventListener('abort', this.abort, { once: true })
@@ -27,14 +34,14 @@ export class StockfishEngine {
     await this.waitFor(line => line === 'uciok', 'uci', 30000)
     if (this.rules === 'threecheck') {
       this.worker.postMessage('setoption name UCI_Variant value 3check')
-      this.worker.postMessage('setoption name Threads value 1')
       this.worker.postMessage('setoption name Use NNUE value false')
     }
+    if (this.rules === 'threecheck' || this.threads > 1) this.worker.postMessage(`setoption name Threads value ${this.threads}`)
     this.worker.postMessage('setoption name Hash value 32')
     await this.waitFor(line => line === 'readyok', 'isready', 30000)
   }
 
-  private waitFor(predicate: (line: string) => boolean, command: string, timeout: number): Promise<string> {
+  private waitFor(predicate: (line: string) => boolean, command: string, timeout: number | null): Promise<string> {
     if (this.disposed) return Promise.reject(new DOMException('Analysis cancelled', 'AbortError'))
     return new Promise((resolve, reject) => {
       const cleanup = () => {
@@ -44,16 +51,20 @@ export class StockfishEngine {
       }
       const request = { reject: (reason: Error) => { cleanup(); reject(reason) } }
       const listener = (event: MessageEvent) => {
+        if (this.disposed) return
         for (const line of String(event.data).split('\n')) {
           if (line.startsWith('engineerror ')) { this.dispose(new Error(line.slice(12))); return }
-          if (predicate(line.trim())) {
+          let matched: boolean
+          try { matched = predicate(line.trim()) }
+          catch (error) { this.dispose(error instanceof Error ? error : new Error('Engine response processing failed.')); return }
+          if (matched) {
             cleanup()
             resolve(line.trim())
             break
           }
         }
       }
-      const timer = setTimeout(() => this.dispose(new Error('Stockfish timed out. Try a lower analysis depth.')), timeout)
+      const timer = timeout === null ? undefined : setTimeout(() => this.dispose(new Error('Stockfish timed out. Try a lower analysis depth.')), timeout)
       this.pending.add(request)
       this.worker.addEventListener('message', listener)
       this.worker.postMessage(command)
@@ -61,47 +72,55 @@ export class StockfishEngine {
   }
 
   async analyze(fen: string, options: AnalysisOptions = {}): Promise<PositionAnalysis> {
+    if (this.searching) throw new Error('This engine is already analyzing a position.')
+    this.searching = true
+    this.stopRequested = false
+    this.searchStarted = false
+    try { return await this.search(fen, options) }
+    finally { this.searching = false }
+  }
+
+  private async search(fen: string, options: AnalysisOptions): Promise<PositionAnalysis> {
     await this.ready
-    if (this.disposed) throw new DOMException('Analysis cancelled', 'AbortError')
+    if (this.disposed || this.stopRequested) throw new DOMException('Analysis cancelled', 'AbortError')
     const variant = resolveVariant(fen, options.variant)
     if ((variant === 'threecheck') !== (this.rules === 'threecheck')) throw new Error('The selected engine does not match this game variant.')
     const board = boardWithHistory(fen, options.history, variant)
     const terminal = terminalEvaluation(board)
     if (terminal) return { fen, variant, evaluation: terminal, bestMove: null, bestMoveSan: null, pv: [], pvSan: [], depth: 0, lines: [] }
-    const depth = Math.max(4, Math.min(24, Math.round(options.depth ?? 16)))
-    const timeMs = Math.max(30, Math.min(10000, Math.round(options.timeMs ?? 500)))
-    const multiPv = Math.max(1, Math.min(5, Math.round(options.multiPv ?? 1)))
+    const multiPv = Number.isFinite(options.multiPv) ? Math.max(1, Math.min(5, Math.round(options.multiPv!))) : 1
     const lines = new Map<string, EngineLine>()
+    const candidates = Math.min(multiPv, board.moves().length)
+    const search = searchCommand(options)
+    let lastUpdate = 0
     this.worker.postMessage(`setoption name UCI_Chess960 value ${variant === 'chess960' ? 'true' : 'false'}`)
     this.worker.postMessage(`setoption name MultiPV value ${multiPv}`)
     this.worker.postMessage(options.history
       ? `position fen ${engineFen(options.history.initialFen, variant)} moves ${options.history.moves.join(' ')}`
       : `position fen ${engineFen(fen, variant)}`)
+    this.searchStarted = true
     const response = await this.waitFor(line => {
       const parsed = parseInfo(line, fen, variant)
-      if (parsed) lines.set(`${parsed.depth}:${parsed.rank}`, parsed)
+      if (parsed) {
+        lines.set(`${parsed.depth}:${parsed.rank}`, parsed)
+        if (options.onUpdate && Date.now() - lastUpdate >= 100) {
+          const update = searchResult(fen, variant, [...lines.values()], candidates)
+          if (update) { lastUpdate = Date.now(); options.onUpdate(update) }
+        }
+      }
       return line.startsWith('bestmove ')
-    }, `go depth ${depth} movetime ${timeMs}`, Math.max(30000, timeMs * 4))
-    const finished = completedLines([...lines.values()], Math.min(multiPv, board.moves().length))
-    const primary = finished.find(line => line.rank === 1)
-    const bestMove = primary?.pv[0]
-    if (!primary || !bestMove || response.split(' ')[1] === '(none)') throw new Error('Stockfish did not return an exact scored legal move. Increase the analysis time and try again.')
-    let bestMoveSan: string
-    try {
-      bestMoveSan = board.move({ from: bestMove.slice(0, 2), to: bestMove.slice(2, 4), promotion: bestMove[4] }).san
-    } catch {
-      throw new Error('Stockfish returned an illegal move. Please restart analysis.')
-    }
-    return {
-      fen,
-      variant,
-      evaluation: primary.evaluation,
-      bestMove,
-      bestMoveSan,
-      pv: primary.pv,
-      pvSan: primary.pvSan,
-      depth: primary.depth,
-      lines: finished,
+    }, search.command, search.timeout)
+    const result = searchResult(fen, variant, [...lines.values()], candidates)
+    if (!result || response.split(' ')[1] === '(none)') throw new Error('Stockfish did not return an exact scored legal move. Increase the analysis time and try again.')
+    options.onUpdate?.(result)
+    return result
+  }
+
+  stop() {
+    this.stopRequested = true
+    if (!this.disposed && this.searching) {
+      if (this.searchStarted) this.worker.postMessage('stop')
+      else this.dispose(new DOMException('Analysis cancelled', 'AbortError'))
     }
   }
 
@@ -121,7 +140,7 @@ export async function analyzePosition(fen: string, options: AnalysisOptions = {}
   const variant = resolveVariant(fen, options.variant)
   const terminal = terminalEvaluation(boardWithHistory(fen, options.history, variant))
   if (terminal) return { fen, variant, evaluation: terminal, bestMove: null, bestMoveSan: null, pv: [], pvSan: [], depth: 0, lines: [] }
-  const engine = new StockfishEngine(options.signal, variant)
+  const engine = new StockfishEngine(options.signal, variant, options.threads)
   try {
     return await engine.analyze(fen, options)
   } finally {

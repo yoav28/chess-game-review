@@ -10,8 +10,16 @@ import type { GameRecord } from "../lib/game";
 import type { ChessVariant } from "../lib/position";
 import type { PositionAnalysis } from "../engine/types";
 import { evaluationLabel } from "./EvaluationGraph";
+import { AnalysisSearchControls } from './AnalysisSearchControls';
+import type { Settings } from '../lib/settings';
 
 type Props = {
+  settings: Settings;
+  onSettings: (settings: Settings) => void;
+  stopped: boolean;
+  threads: number;
+  onStop: () => void;
+  onRun: () => void;
   variant: ChessVariant;
   games: GameRecord[];
   onExploreMove: (uci: string) => void;
@@ -43,6 +51,7 @@ export function AnalysisPanel({
   onBack,
   fen,
   threat,
+  settings, onSettings, stopped, threads, onStop, onRun,
 }: Props) {
   const outcome = positionOutcome(createPosition(fen, variant));
   return (
@@ -63,6 +72,7 @@ export function AnalysisPanel({
         {variant === 'threecheck' ? 'Fairy-Stockfish · classical evaluation · W = forced win' : 'Stockfish 19 Lite'} {analysis ? `· depth ${analysis.depth}` : ""}
         {busy && <LoaderCircle className="spin inline-icon" size={13} />}
       </p>
+      <AnalysisSearchControls settings={settings} onChange={onSettings} busy={busy} stopped={stopped} threads={threads} onStop={onStop} onRun={onRun} />
       {error && (
         <p role="alert" className="error-message">
           {error}
@@ -99,6 +109,8 @@ export function AnalysisPanel({
             <p className="engine-empty">
               {busy
                 ? "Finding the strongest continuations…"
+                : stopped
+                  ? "Analysis stopped before a scored line. Analyze again to continue."
                 : "Select a position to analyze."}
             </p>
           )}

@@ -1,4 +1,4 @@
-Open File distributes unmodified Stockfish.js 19.0.1 lite single-threaded JavaScript and WebAssembly files from the npm stockfish package.
+Open File distributes unmodified Stockfish.js 19.0.1 Lite JavaScript and WebAssembly files from the pinned npm stockfish package. Full-game reviews use stockfish-19-lite-single.js and stockfish-19-lite-single.wasm. Position analysis may use stockfish-19-lite.js and stockfish-19-lite.wasm for multiple WebAssembly threads when the browser supports them and enables cross-origin isolation.
 
 License: GNU General Public License v3.0. See COPYING.txt in this directory.
 Published package: https://registry.npmjs.org/stockfish/-/stockfish-19.0.1.tgz

@@ -81,7 +81,7 @@ export function useWorkspace() {
     }),
     [parsed.initialFen, parsed.moves, safePly, variation],
   );
-  const { positionAnalysis, engineBusy, engineError } = usePositionAnalysis({
+  const { positionAnalysis, engineBusy, engineError, engineStopped, analysisThreads, stopAnalysis, restartAnalysis } = usePositionAnalysis({
     tab, engineEnabled: engineEnabled && !play.active && !explanation.active, running, fen, settings, parseError: parsed.error, analysisHistory, variant,
   });
   const threat = useThreatAnalysis({ fen, variant, enabled: tab === 'analysis' && engineEnabled && !play.active && !explanation.active && !running && !parsed.error, depth: settings.depth, timeMs: settings.timeMs });
@@ -90,6 +90,8 @@ export function useWorkspace() {
       ? undefined
       : tab === "analysis" && positionAnalysis?.fen === fen
         ? positionAnalysis.evaluation
+        : tab === "analysis" && variation.length > 0
+          ? undefined
         : safePly
           ? currentMove?.evaluation
           : review?.initialAnalysis.evaluation;
@@ -316,7 +318,7 @@ export function useWorkspace() {
     dialog, setDialog, libraryOpen, setLibraryOpen,
     settings, setSettings, playing, setPlaying,
     variationState, setVariation, positionAnalysis, engineBusy,
-    engineError, engineEnabled, setEngineEnabled, practiceIndex,
+    engineError, engineEnabled, setEngineEnabled, engineStopped, analysisThreads, stopAnalysis, restartAnalysis, practiceIndex,
     practiceColor, practiceStatus, hint, practiceBusy, practiceFeedback,
     toast, setToast, parsed, review,
     progress, running, error, cacheNotice,

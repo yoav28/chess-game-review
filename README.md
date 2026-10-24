@@ -16,7 +16,7 @@ npm run dev
 
 Open the local URL printed by Vite. The dev script prepares the engine JavaScript, WebAssembly, licenses, and source information in `public/engine/`.
 
-Three-check needs `SharedArrayBuffer` and cross-origin isolation. Vite development and preview set `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. A production static host must serve those response headers too, over HTTPS or loopback. The standard/Chess960 single-thread engine does not itself need them. Missing isolation produces an explicit three-check engine error.
+Three-check and multi-thread position analysis need `SharedArrayBuffer` and cross-origin isolation. Vite development and preview set `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. A production static host must serve those response headers too, over HTTPS or loopback. The single-thread Stockfish 19 Lite build does not need them. Three-check reports an explicit engine error when isolation is missing; position analysis offers threads up to the limit reported by the browser.
 
 ```sh
 npm test
@@ -24,7 +24,7 @@ npm run build
 npm run preview
 ```
 
-Tests cover public archive import, cancellation and stale requests, standard, Chess960, and three-check legality, actual bundled-engine analysis, scoring, explanations, practice, training, historical model separation and duplicate suppression, portable-report validation, masters/tablebase responses, opening-data integrity, and exports. `build` typechecks the app, copies engine assets, and produces `chess-review/dist/`. `preview` serves that production build locally.
+Tests cover public archive import, cancellation and stale requests, standard, Chess960, and three-check legality, single- and multi-thread engine searches, bounded and continuous analysis, scoring, explanations, practice, training, historical model separation and duplicate suppression, portable-report validation, masters/tablebase responses, opening-data integrity, and exports. `build` typechecks the app, copies engine assets, and produces `chess-review/dist/`. `preview` serves that production build locally.
 
 ## Use the application
 
@@ -33,6 +33,7 @@ Enter a Chess.com username in the library and choose **Import all games**. Searc
 The application provides:
 
 - Full-game Stockfish review with progress, cancellation, adjustable depth/time, per-player accuracy, classifications, key moments, and opening/middlegame/endgame reports.
+- Position analysis streams scored lines using one to eight available threads. Choose 3–30 seconds or Unlimited, stop to retain the latest scored lines, or start a fresh search. Changing the position, variant, or search settings cancels the previous worker. Full-game reviews, practice, and engine play retain their own budgets.
 - Standard chess, material-odds games with their recorded custom starts, Chess960, and three-check replay, review, variations, engine continuation, and reviewed PGN export. Three-check tracks checks given and ends immediately on the third check. Chess960 uses king-to-rook engine UCI for castling while showing the physical king/rook destinations correctly.
 - Four original board palettes (Sage, Walnut, Graphite, High contrast), three original piece sets (Classic, Geometric, Letters), and optional coordinates. Preferences persist locally and apply to the live board, promotion choices, PNG reports, animated GIFs, and offline HTML/iframe replays or puzzles. Appearance controls are available in Settings and the embed exporter.
 - Board clocks, estimated time spent where sufficient PGN clock/control data exists, promotion choices, orientation and keyboard controls, right-click arrows/circles, and classification highlights.
@@ -81,7 +82,7 @@ Tablebase lookup follows the [Lichess HTTP API](https://github.com/lichess-org/l
 
 Complete-review files use a versioned Open File JSON envelope and validate PGN/history, legal standard/Chess960/three-check best/PV moves, metadata, numeric bounds, and summary consistency. Files are limited to 12 MB, 2,000 game plies, and 20,000 recorded continuation moves; importing does not authenticate the author or engine scores, and the imported-report notice survives saving/reopening. The app does not upload these files or create a public hosted share link.
 
-Full Chess.com parity has not been established. Proprietary scoring and Game Rating, coach personalities/media, complete explanation-theme coverage, cloud accounts/synchronization, shared analysis rooms, alternate proprietary engines and thread/unlimited-time controls, Chess.com training integration, and every account/experiment branch remain gaps. The [empirical rating pilot](docs/rating-pilot.md) analyzed 230 games but failed its release gates (held-out error 349.48 rating points); it remains research, with no user-facing rating estimate. The [REA feature/evidence ledger](docs/chess-com-review-research.md) separates observed source behavior from the independent implementation.
+Full Chess.com parity has not been established. Proprietary scoring and Game Rating, coach personalities/media, complete explanation-theme coverage, cloud accounts/synchronization, shared analysis rooms, alternate proprietary engines and premium strengths, Chess.com training integration, and every account/experiment branch remain gaps. Position analysis includes bounded and Unlimited searches with local thread controls; full-game reviews use a separate single-thread budget. The [empirical rating pilot](docs/rating-pilot.md) analyzed 230 games but failed its release gates (held-out error 349.48 rating points); it remains research, with no user-facing rating estimate. The [REA feature/evidence ledger](docs/chess-com-review-research.md) separates observed source behavior from the independent implementation.
 
 A separate [stratified rating study](docs/rating-validation-v2.md) reviewed 800 September games. Its 495.80-point held-out error and ±906.35-point empirical interval failed the unchanged release gates; no rating estimate is enabled. Offline embeds do not reproduce Chess.com forum codes, cloud diagram storage, or selectable proprietary piece sets. Offline recorded-move puzzles provide the corresponding interactive practice flow; alternate good moves are not accepted as the recorded move.
 
@@ -110,11 +111,13 @@ The application source and SVG artwork are independently written. Captured Chess
 
 ## Stockfish distribution and source
 
-The application pins the npm package [`stockfish@19.0.1`](https://www.npmjs.com/package/stockfish/v/19.0.1) and uses its `stockfish-19-lite-single.js` and `stockfish-19-lite-single.wasm` files. This is the single-threaded Lite build; it does not require cross-origin isolation headers. It is distinct from the larger full-network Stockfish build.
+The application pins the npm package [`stockfish@19.0.1`](https://www.npmjs.com/package/stockfish/v/19.0.1). Full-game reviews use `stockfish-19-lite-single.js` and `stockfish-19-lite-single.wasm`, the single-threaded Lite build. Position analysis can use `stockfish-19-lite.js` and `stockfish-19-lite.wasm` for multiple WebAssembly threads when the browser reports enough processors and cross-origin isolation is enabled. Both builds stay local and are distinct from the larger full-network Stockfish build.
 
 Stockfish.js is distributed under GPL-3.0. Its bundled license is copied from the package's `Copying.txt` to `public/engine/COPYING.txt` and included in the production build. The upstream project is [nmrugg/stockfish.js](https://github.com/nmrugg/stockfish.js), based on [Stockfish](https://github.com/official-stockfish/Stockfish).
 
 Version-specific upstream source: [v19.0.1 release](https://github.com/nmrugg/stockfish.js/releases/tag/v19.0.1), [source tree at commit `0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6`](https://github.com/nmrugg/stockfish.js/tree/0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6), and [source archive](https://github.com/nmrugg/stockfish.js/archive/0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6.tar.gz). That commit is the peeled upstream `v19.0.1` tag, verified with `git ls-remote`. The npm package metadata does not publish a `gitHead`; the source commit is therefore identified by the matching upstream release tag, not an npm-reported commit. The exact installed npm artifact is pinned by `package-lock.json` integrity and is available as the [19.0.1 package tarball](https://registry.npmjs.org/stockfish/-/stockfish-19.0.1.tgz).
+
+The multithreaded Lite JavaScript and WebAssembly files are also copied unmodified from that pinned package, with the same GPL-3.0 license and upstream release. The app selects them for position analysis only when the browser supports cross-origin isolation and the saved thread count fits the available hardware.
 
 ## Chessops distribution and source
 
@@ -124,4 +127,4 @@ GIF encoding uses [`gifenc@1.0.3`](https://github.com/mattdesl/gifenc), pinned i
 
 ## Fairy-Stockfish distribution and source
 
-Three-check pins [`fairy-stockfish-nnue.wasm@1.1.12`](https://www.npmjs.com/package/fairy-stockfish-nnue.wasm/v/1.1.12), with `UCI_Variant=3check`, one thread, Hash 32, and `Use NNUE=false`. It uses classical evaluation; no separate NNUE weights are supplied or fetched. The npm `gitHead` and upstream `1.1.12` tag both identify [commit `b2e693ef1e111233ce3fb40685921708b3276ed6`](https://github.com/fairy-stockfish/fairy-stockfish.wasm/tree/b2e693ef1e111233ce3fb40685921708b3276ed6). GPL-3.0, AUTHORS, exact-package information, and the corresponding source archive are included under `public/engine/fairy/`. The unmodified engine files are separate from the application’s browser bridge.
+Three-check pins [`fairy-stockfish-nnue.wasm@1.1.12`](https://www.npmjs.com/package/fairy-stockfish-nnue.wasm/v/1.1.12), with `UCI_Variant=3check`, Hash 32, and `Use NNUE=false`. Full-game reviews use one thread; position analysis can select up to the browser-reported thread limit. It uses classical evaluation; no separate NNUE weights are supplied or fetched. The npm `gitHead` and upstream `1.1.12` tag both identify [commit `b2e693ef1e111233ce3fb40685921708b3276ed6`](https://github.com/fairy-stockfish/fairy-stockfish.wasm/tree/b2e693ef1e111233ce3fb40685921708b3276ed6). GPL-3.0, AUTHORS, exact-package information, and the corresponding source archive are included under `public/engine/fairy/`. The unmodified engine files are separate from the application’s browser bridge.

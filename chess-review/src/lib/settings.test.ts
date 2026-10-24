@@ -66,3 +66,14 @@ test('board appearance survives storage while older settings retain the original
   assert.equal(settings.depth, 19)
   assert.deepEqual(normalizeSettings({ boardTheme: 'unknown', pieceSet: '__proto__', coordinates: 'false' }), defaultSettings)
 })
+
+test('position-analysis budgets migrate independently from full-game review settings', () => {
+  const old = normalizeSettings({ depth: 19, timeMs: 1500 })
+  assert.equal(old.analysisTimeMs, 5000)
+  assert.equal(old.analysisThreads, 1)
+  const live = normalizeSettings({ ...old, analysisTimeMs: 0, analysisThreads: 2 })
+  assert.equal(live.depth, 19)
+  assert.equal(live.timeMs, 1500)
+  assert.equal(live.analysisTimeMs, 0)
+  assert.equal(live.analysisThreads, 2)
+})

@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url)
 const packageDirectory = dirname(require.resolve('stockfish/package.json'))
 const publicDirectory = fileURLToPath(new URL('../public/engine/', import.meta.url))
 await mkdir(publicDirectory, { recursive: true })
-for (const file of ['stockfish-19-lite-single.js', 'stockfish-19-lite-single.wasm']) {
+for (const file of ['stockfish-19-lite-single.js', 'stockfish-19-lite-single.wasm', 'stockfish-19-lite.js', 'stockfish-19-lite.wasm']) {
   await copyFile(join(packageDirectory, 'bin', file), join(publicDirectory, file))
 }
 await copyFile(join(packageDirectory, 'Copying.txt'), join(publicDirectory, 'COPYING.txt'))
