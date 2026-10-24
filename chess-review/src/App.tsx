@@ -47,6 +47,7 @@ function App() {
           <GameLibrary
             library={library}
             selectedId={game.id}
+            reviewedGameId={review?.pgn === game.pgn ? game.id : undefined}
             onSelect={selectGame}
             onClose={() => setLibraryOpen(false)}
           />

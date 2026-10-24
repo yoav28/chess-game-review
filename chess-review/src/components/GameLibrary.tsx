@@ -7,19 +7,21 @@ import {
   Square,
   X,
 } from "lucide-react";
-import type { GameRecord } from "../lib/game";
+import { engineRules, type GameRecord } from "../lib/game";
+import { loadSavedReviews } from "../lib/storage";
 import type { useLibrary } from "../hooks/useLibrary";
 
 type Props = {
   library: ReturnType<typeof useLibrary>;
   selectedId: string;
+  reviewedGameId?: string;
   onSelect: (game: GameRecord) => void;
   onClose: () => void;
 };
 
 const rulesLabel = (rules: string) => rules === 'chess' ? 'Standard' : rules === 'chess960' ? 'Chess960' : rules === 'oddschess' ? 'Odds chess' : rules === 'threecheck' ? 'Three-check' : rules;
 
-export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
+export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onClose }: Props) {
   const [input, setInput] = useState(library.username);
   const [search, setSearch] = useState("");
   const [timeClass, setTimeClass] = useState("all");
@@ -28,6 +30,9 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
   const [sort, setSort] = useState("newest");
   const [month, setMonth] = useState("");
   const [rules, setRules] = useState('all');
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(() => new Set());
+  const [reviewedLoaded, setReviewedLoaded] = useState(false);
+  const [reviewHistoryError, setReviewHistoryError] = useState(false);
   const pgnFile = useRef<HTMLInputElement>(null);
   const ruleCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -75,11 +80,53 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
   const pages = Math.ceil(filtered.length / 30);
   const currentPage = Math.min(page, Math.max(0, pages - 1));
   const progress = library.progress;
+  const reviewed = useMemo(() => reviewedGameId ? new Set([...reviewedIds, reviewedGameId]) : reviewedIds, [reviewedIds, reviewedGameId]);
+  const reviewableGames = useMemo(() => library.games.filter(game => engineRules(game.rules)).sort((a, b) => b.endTime - a.endTime), [library.games]);
+  const unreviewedCount = reviewableGames.reduce((count, game) => count + (reviewed.has(game.id) ? 0 : 1), 0);
+  const selectedGameUnreviewed = reviewableGames.some(game => game.id === selectedId && !reviewed.has(game.id));
 
   useEffect(() => {
     const selectedIndex = filtered.findIndex(game => game.id === selectedId);
     if (selectedIndex >= 0) setPage(Math.floor(selectedIndex / 30));
   }, [filtered, selectedId]);
+
+  useEffect(() => {
+    let active = true;
+    void loadSavedReviews().then(entries => {
+      if (active) {
+        setReviewedIds(current => new Set([...current, ...entries.map(entry => entry.id)]));
+        setReviewedLoaded(true);
+      }
+    }).catch(() => {
+      if (active) {
+        setReviewHistoryError(true);
+        setReviewedLoaded(true);
+      }
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (reviewedGameId) setReviewedIds(current => new Set([...current, reviewedGameId]));
+  }, [reviewedGameId]);
+
+  function reviewNextUnreviewed() {
+    if (!reviewableGames.length) return;
+    const currentIndex = reviewableGames.findIndex(game => game.id === selectedId);
+    const order = currentIndex >= 0
+      ? [...reviewableGames.slice(currentIndex + 1), ...reviewableGames.slice(0, currentIndex)]
+      : reviewableGames;
+    const next = order.find(game => !reviewed.has(game.id));
+    if (!next) return;
+    setSearch("");
+    setTimeClass("all");
+    setResult("all");
+    setRules("all");
+    setMonth("");
+    setSort("newest");
+    setPage(Math.floor(reviewableGames.findIndex(game => game.id === next.id) / 30));
+    onSelect(next);
+  }
 
   return (
     <aside className="library" aria-label="Game library">
@@ -139,6 +186,12 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
         <button className="text-button" type="button" onClick={() => pgnFile.current?.click()}>
           <ArrowDownToLine size={14} /> Add games from PGN
         </button>
+        {reviewableGames.length > 0 && <>
+          <p className="fine-print">{reviewHistoryError ? 'Saved review history is unavailable.' : reviewedLoaded ? `${reviewableGames.length - unreviewedCount} of ${reviewableGames.length.toLocaleString()} reviewable games reviewed.` : 'Checking saved reviews…'}</p>
+          <button className="text-button" type="button" disabled={!reviewedLoaded || reviewHistoryError || !unreviewedCount || selectedGameUnreviewed || library.loading} onClick={reviewNextUnreviewed}>
+            {reviewHistoryError ? 'Review history unavailable' : !reviewedLoaded ? 'Checking saved reviews…' : selectedGameUnreviewed ? 'Review this game to continue' : unreviewedCount ? `Review next unreviewed game · ${unreviewedCount.toLocaleString()} left` : `All ${reviewableGames.length.toLocaleString()} reviewable games reviewed`}
+          </button>
+        </>}
       </form>
       {library.loading && (
         <div className="import-status" role="status">

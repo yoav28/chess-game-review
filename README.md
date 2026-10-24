@@ -30,6 +30,8 @@ Tests cover public archive import, cancellation and stale requests, standard, Ch
 
 Enter a Chess.com username in the library and choose **Import all games**. Search or filter by player, time control, result, or month. Select a game and start its review. Add a multi-game PGN export to include games outside public archives, or load one PGN game or a FEN position.
 
+The library counts saved reviews and can open the next unreviewed, supported game in sequence. After each review is saved, use the queue control to continue through the imported games.
+
 The application provides:
 
 - Full-game Stockfish review with progress, cancellation, adjustable depth/time/thread count, per-player accuracy, classifications, key moments, opening/middlegame/endgame reports, and best/second engine lines for each move. Reports record the engine profile; a different thread count can produce different search results.
