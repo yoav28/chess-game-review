@@ -4,6 +4,8 @@ import { coachProfiles } from '../lib/coach'
 import { BoardAppearanceControls } from './BoardAppearanceControls'
 import { AnalysisSettingsFields } from './AnalysisSettingsFields'
 import './ReviewSettings.css'
+import { ThreadCountControl } from './ThreadCountControl'
+import { browserThreadLimit } from '../engine/search-options'
 
 type ToggleKey = 'sound' | 'showClassifications' | 'autoplayExplanation' | 'showCoachAvatar' | 'showRecommendations' | 'showSkills' | 'showTimeSpent'
 
@@ -26,6 +28,8 @@ export function ReviewSettings({ settings, onChange, onDone }: { settings: Setti
         <option value="1500">Deep · 1.5 seconds</option>
         <option value="5000">Thorough · 5 seconds</option>
       </select>
+      <ThreadCountControl value={Math.min(settings.reviewThreads, browserThreadLimit())} label="Review threads" onChange={reviewThreads => update({ reviewThreads })} />
+      <p className="fine-print">Applies to new full-game reviews. Different thread counts can change search results.</p>
       <p className="fine-print">Analysis stops at the depth or time limit. These limits apply to the next review; saved reviews stay available.</p>
     </fieldset>
     <fieldset><legend>Position analysis</legend><AnalysisSettingsFields settings={settings} onChange={update} /></fieldset>

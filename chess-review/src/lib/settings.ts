@@ -8,6 +8,7 @@ export type Settings = BoardAppearance & {
   analysisLines: number
   analysisTimeMs: number
   analysisThreads: number
+  reviewThreads: number
   sound: boolean
   arrowMode: 'best' | 'coach' | 'both' | 'none'
   showClassifications: boolean
@@ -25,7 +26,7 @@ export type Settings = BoardAppearance & {
 export const defaultSettings: Settings = {
   ...defaultBoardAppearance,
   depth: 16, timeMs: 500, analysisLines: 3, sound: false, arrowMode: 'best',
-  analysisTimeMs: 5000, analysisThreads: 1,
+  analysisTimeMs: 5000, analysisThreads: 1, reviewThreads: 1,
   showClassifications: true, autoplayExplanation: true, explanationDelayMs: 1300,
   showCoachAvatar: true, showRecommendations: true, showSkills: true,
   showTimeSpent: true, highlight: 'all', coachDetail: 'detailed', coachProfile: 'clear',
@@ -51,6 +52,7 @@ export function normalizeSettings(value: unknown): Settings {
     analysisLines: bounded(source.analysisLines, defaultSettings.analysisLines, 1, 5),
     analysisTimeMs: analysisTimeLimit(source.analysisTimeMs),
     analysisThreads: engineThreads(source.analysisThreads),
+    reviewThreads: engineThreads(source.reviewThreads),
     sound: boolean('sound'),
     arrowMode: choice(source.arrowMode, ['best', 'coach', 'both', 'none'], legacyArrows),
     showClassifications: boolean('showClassifications'),

@@ -8,6 +8,7 @@ import { openingForMoves, type Opening } from './openings'
 import { isSoundSacrifice, isUniqueOpportunity } from './review-metrics'
 import { insightMethod, insightsForMove } from './insights'
 import { accuracyMethod, moveAccuracy, winningChance, winningChanceLoss } from './accuracy'
+import { engineThreads } from '../engine/search-options'
 export { moveAccuracy } from './accuracy'
 
 export type Classification = 'brilliant' | 'great' | 'book' | 'best' | 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'missed' | 'forced'
@@ -201,7 +202,8 @@ function average(moves: MoveReview[], color: Color): number | null {
   return selected.length ? Math.round(selected.reduce((sum, move) => sum + move.accuracy, 0) / selected.length * 10) / 10 : null
 }
 
-export function buildReview(game: ParsedGame, positions: PositionAnalysis[]): GameReview {
+export function buildReview(game: ParsedGame, positions: PositionAnalysis[], searchThreads = 1): GameReview {
+  const threads = engineThreads(searchThreads)
   if (positions.length !== game.moves.length + 1) throw new Error('The game analysis is incomplete.')
   const moves: MoveReview[] = game.moves.map((move, index) => {
     const before = positions[index]
@@ -234,7 +236,7 @@ export function buildReview(game: ParsedGame, positions: PositionAnalysis[]): Ga
     white: game.headers.White || 'White', black: game.headers.Black || 'Black', result: game.headers.Result || '*',
     opening: game.variant !== 'chess960' && game.initialFen === new Chess().fen() ? openingForMoves(game.moves.map(move => move.san)).opening : null,
     moves, whiteAccuracy: average(moves, 'w'), blackAccuracy: average(moves, 'b'), phases, keyMoments, counts,
-    initialAnalysis: positions[0], engine: game.variant === 'threecheck' ? 'Fairy-Stockfish wasm 1.1.12 · three-check · classical evaluation · single thread' : 'Stockfish 19 lite · single thread',
+    initialAnalysis: positions[0], engine: `${game.variant === 'threecheck' ? 'Fairy-Stockfish wasm 1.1.12 · three-check · classical evaluation' : 'Stockfish 19 lite'} · ${threads === 1 ? 'single thread' : `${threads} threads`}`,
     accuracyVersion: 2,
     accuracyModel: `${game.variant === 'threecheck' ? 'Three-check scores apply the same formula to Fairy-Stockfish classical scores as a move-quality heuristic. These are not calibrated three-check winning probabilities. ' : ''}${accuracyMethod} Brilliant means a best move with a material sacrifice and a favorable engine evaluation; Great means only the best of two candidates preserves equality or a win. These are depth-dependent heuristics. Book matches exact prefixes in 3,865 Lichess opening lines covering all 500 ECO codes; it does not imply the move is strongest or cover every possible opening.`,
     coachMethod: insightMethod,
@@ -245,7 +247,8 @@ export function buildReview(game: ParsedGame, positions: PositionAnalysis[]): Ga
 export async function reviewGame(pgn: string, options: ReviewOptions = {}): Promise<GameReview> {
   const game = parsePgn(pgn, options.variant)
   if (!game.moves.length) throw new Error('This game has no moves to review.')
-  const engine = new StockfishEngine(options.signal, game.variant)
+  const threads = engineThreads(options.threads)
+  const engine = new StockfishEngine(options.signal, game.variant, threads)
   const positions: PositionAnalysis[] = []
   const total = game.moves.length + 1
   const replay = createPosition(game.initialFen, game.variant)
@@ -259,7 +262,7 @@ export async function reviewGame(pgn: string, options: ReviewOptions = {}): Prom
       positions.push(terminal ? { ...analysis, evaluation: terminal } : analysis)
       options.onProgress?.({ completed: index + 1, total, percent: Math.round((index + 1) / total * 100) })
     }
-    return buildReview(game, positions)
+    return buildReview(game, positions, threads)
   } finally {
     engine.dispose()
   }

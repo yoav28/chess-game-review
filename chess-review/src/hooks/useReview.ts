@@ -4,7 +4,7 @@ import { reviewGame, type GameReview } from '../lib/review'
 import type { ReviewProgress } from '../engine/types'
 import { loadReview, saveReview } from '../lib/storage'
 
-export function useReview(game: GameRecord, depth: number, timeMs: number, restored?: GameReview) {
+export function useReview(game: GameRecord, depth: number, timeMs: number, threads = 1, restored?: GameReview) {
   const [review, setReview] = useState<GameReview | null>(null)
   const [progress, setProgress] = useState<ReviewProgress | null>(null)
   const [running, setRunning] = useState(false)
@@ -45,7 +45,7 @@ export function useReview(game: GameRecord, depth: number, timeMs: number, resto
     try {
       const variant = engineRules(game.rules)
       if (!variant) throw new Error(`Review does not support the ${game.rules} variant.`)
-      const report = await reviewGame(pgn, { variant, depth, timeMs, signal: request.signal, onProgress: value => { if (isCurrent()) setProgress(value) } })
+      const report = await reviewGame(pgn, { variant, depth, timeMs, threads, signal: request.signal, onProgress: value => { if (isCurrent()) setProgress(value) } })
       if (!isCurrent()) return
       setReview(report)
       await saveReview(id, report).catch(() => { if (isCurrent()) setCacheNotice('Review is ready. Browser storage is unavailable, so it will not be saved after you close this tab.') })

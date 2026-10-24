@@ -40,6 +40,6 @@ export type ReviewProgress = {
   percent: number
 }
 
-export type ReviewOptions = Omit<AnalysisOptions, 'limit' | 'threads' | 'onUpdate'> & {
+export type ReviewOptions = Omit<AnalysisOptions, 'limit' | 'onUpdate'> & {
   onProgress?: (progress: ReviewProgress) => void
 }

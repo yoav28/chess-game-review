@@ -15,6 +15,7 @@ import { usePracticeReview } from "./usePracticeReview";
 import { useThreatAnalysis } from "./useThreatAnalysis";
 import type { PracticeColor } from "../lib/practice";
 import { bestMoveArrow, continuationArrows, physicalMove } from "../lib/board-visuals";
+import { browserThreadLimit } from '../engine/search-options'
 
 type WorkspaceTab = "review" | "analysis" | "practice" | "history";
 
@@ -43,7 +44,7 @@ export function useWorkspace() {
     }
   }, [game]);
   const { review, progress, running, error, cacheNotice, start, cancel } =
-    useReview(game, settings.depth, settings.timeMs, transferredReview?.id === game.id ? transferredReview.review : undefined);
+    useReview(game, settings.depth, settings.timeMs, Math.min(settings.reviewThreads, browserThreadLimit()), transferredReview?.id === game.id ? transferredReview.review : undefined);
   const practice = usePracticeReview(review, settings.depth, settings.timeMs);
   const { practiceIndex, practiceColor, practiceStatus, hint, practiceFen, retryMoves, retry, practiceBusy, practiceFeedback } = practice;
   const variant = parsed.variant ?? 'chess';

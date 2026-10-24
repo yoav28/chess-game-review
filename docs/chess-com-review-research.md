@@ -46,7 +46,7 @@ Subsequent Codex-browser inspection exposed these controls without establishing 
 
 Open File now has one to five Stockfish lines, independent presentation profiles, and a subset of corresponding display/playback settings. Position analysis supports one to eight hardware-available threads, 3–30 second searches, Unlimited search, streaming results and a Stop action. Full-game review uses its separate single-thread budget. The other engines, premium strengths, proprietary personalities, and identical setting semantics remain unimplemented.
 
-The application tested Unlimited with two threads through one minute of active browser analysis, stopped at depth 37 and retained its complete lines. Position analysis alone uses the threaded Lite build; its full-game review budgets remain bounded and single-threaded.
+The application tested Unlimited with two threads through one minute of active browser analysis, stopped at depth 37 and retained its complete lines. Position analysis and full-game review can both select the threaded Lite build. Full-game reviews remain time-bounded, record their thread count in the saved engine description, and default to one thread.
 
 ### Public product documentation
 
