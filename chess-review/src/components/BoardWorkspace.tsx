@@ -164,7 +164,7 @@ export function BoardWorkspace({
             <div className="board-with-eval">
               <div
                 className={`evaluation-bar ${orientation === "b" ? "flipped" : ""}`}
-                aria-label={`Evaluation ${evaluationLabel(evaluation)}`}
+                aria-label={`Evaluation ${evaluationLabel(evaluation, parsed.variant)}`}
               >
                 <div
                   className="white-evaluation"
@@ -175,7 +175,7 @@ export function BoardWorkspace({
                     evaluation && evaluation.cp < 0 ? "dark-score" : ""
                   }
                 >
-                  {evaluationLabel(evaluation)}
+                  {evaluationLabel(evaluation, parsed.variant)}
                 </span>
               </div>
               <Board

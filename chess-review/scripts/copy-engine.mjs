@@ -15,3 +15,8 @@ const licenseDirectory = fileURLToPath(new URL('../public/licenses/', import.met
 await mkdir(licenseDirectory, { recursive: true })
 await copyFile(join(dirname(require.resolve('chessops/chess')), '..', '..', 'LICENSE.txt'), join(licenseDirectory, 'CHESSOPS-COPYING.txt'))
 await copyFile(join(dirname(require.resolve('gifenc/package.json')), 'LICENSE.md'), join(licenseDirectory, 'GIFENC-LICENSE.txt'))
+const fairyDirectory = dirname(require.resolve('fairy-stockfish-nnue.wasm/package.json'))
+const fairyPublic = join(publicDirectory, 'fairy')
+await mkdir(fairyPublic, { recursive: true })
+for (const file of ['stockfish.js', 'stockfish.wasm', 'stockfish.worker.js', 'AUTHORS']) await copyFile(join(fairyDirectory, file), join(fairyPublic, file))
+await copyFile(join(fairyDirectory, 'Copying.txt'), join(fairyPublic, 'COPYING.txt'))

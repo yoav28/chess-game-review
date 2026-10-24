@@ -13,6 +13,7 @@
   "dependencies": {
     "chess.js": "^1.4.0",
     "chessops": "^0.15.1",
+    "fairy-stockfish-nnue.wasm": "1.1.12",
     "gifenc": "1.0.3",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",

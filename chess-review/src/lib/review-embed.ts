@@ -3,6 +3,8 @@ import type { GameReview } from './review'
 import { reviewAnimationFrames } from './review-animation'
 import { pieceArtwork } from './piece-artwork'
 import { embedPlayerScript } from './embed-player'
+import { createPosition } from './position'
+import { positionOutcome } from './play-position'
 
 const escape = (value: string) => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!)
 const json = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
@@ -12,8 +14,8 @@ export function buildReviewEmbed(review: GameReview, artwork: Record<string, str
   const selected = Number.isFinite(options.ply) ? Math.max(0, Math.min(review.moves.length, Math.round(options.ply!))) : review.moves.length
   const payload = {
     white: review.white, black: review.black, result: review.result, imported: Boolean(review.importedAt),
-    model: review.accuracyVersion === 2 ? 'Win-chance accuracy v2' : 'Legacy accuracy v1', whiteAccuracy: review.whiteAccuracy, blackAccuracy: review.blackAccuracy,
-    frames: frames.map(frame => ({ ...frame, explanation: frame.ply ? review.moves[frame.ply - 1].explanation : 'Before the first recorded move.' })),
+    model: review.variant === 'threecheck' ? 'Three-check quality heuristic v2 (uncalibrated)' : review.accuracyVersion === 2 ? 'Win-chance accuracy v2' : 'Legacy accuracy v1', whiteAccuracy: review.whiteAccuracy, blackAccuracy: review.blackAccuracy,
+    frames: frames.map(frame => ({ ...frame, outcome: positionOutcome(createPosition(frame.fen, review.variant)), explanation: frame.ply ? review.moves[frame.ply - 1].explanation : 'Before the first recorded move.' })),
     artwork: Object.fromEntries(Object.entries(artwork).filter(([key]) => /^[wb][pnbrqk]$/.test(key)).map(([key, svg]) => [key, `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`])),
     selected, orientation: options.orientation ?? 'w', coordinates: options.coordinates !== false,
   }

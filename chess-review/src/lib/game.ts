@@ -1,5 +1,6 @@
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js'
 import { parseChess960Pgn } from './chess960'
+import { parseVariantPgn } from './variant-pgn'
 import { pgnVariant, type ChessVariant } from './position'
 
 export interface GamePlayer {
@@ -85,6 +86,8 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
   if (!pgn.trim()) throw new Error('The PGN is empty. Paste a game with legal moves.')
   const identified = pgnVariant(pgn)
   if (variant === 'chess' && identified === 'chess960') throw new Error('This PGN identifies Chess960 and cannot use standard chess rules.')
+  if (variant && identified !== 'chess' && variant !== identified) throw new Error('The PGN variant conflicts with the selected game rules.')
+  if (variant === 'threecheck' || identified === 'threecheck') return parseVariantPgn(pgn, 'threecheck')
   if (variant === 'chess960' || identified === 'chess960') return parseChess960Pgn(pgn)
   const chess = new Chess()
   try {
@@ -115,12 +118,12 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
 }
 
 export function engineRules(rules: string): ChessVariant | null {
-  return rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
+  return rules === 'threecheck' ? 'threecheck' : rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
 }
 
 export function parseGame(game: GameRecord): ParsedGame {
   const variant = engineRules(game.rules)
-  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, and Chess960.`)
+  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, Chess960, and three-check.`)
   return parsePgn(game.pgn, variant)
 }
 

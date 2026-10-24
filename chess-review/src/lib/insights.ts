@@ -20,6 +20,8 @@ function pinnedBy(board: ChessPosition, attacker: Square, blocker: Square, king:
 export function insightsForMove(move: ParsedMove): string[] {
   const before = createPosition(move.beforeFen, move.variant)
   const after = createPosition(move.afterFen, move.variant)
+  const outcome = after.variantOutcome?.()
+  if (outcome) return [`${outcome.winner === 'w' ? 'White' : 'Black'} delivers the third check and wins.`]
   if (after.isCheckmate() || move.san.startsWith('O-O')) return []
   const from = move.from as Square
   const to = move.to as Square
@@ -28,6 +30,8 @@ export function insightsForMove(move: ParsedMove): string[] {
   const enemy = opposite(move.color)
   const candidates: { priority: number; text: string }[] = []
   const add = (priority: number, text: string) => candidates.push({ priority, text })
+  const checks = after.checksRemaining?.()
+  if (checks && after.isCheck()) add(200, `${move.color === 'w' ? 'White' : 'Black'} has delivered ${3 - checks[move.color]} of 3 checks.`)
   const allPieces = pieces(after)
 
   const legalEnemyCaptures = after.moves({ verbose: true }).filter(reply => reply.to === to && reply.captured)

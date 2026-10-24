@@ -3,7 +3,7 @@ import { parsePgn } from './game'
 import { classificationLabels, type GameReview, type MoveReview } from './review'
 import type { Evaluation } from '../engine/types'
 import { createPosition, pgnVariant, type ChessPosition } from './position'
-import { reviewed960Pgn } from './reviewed960-pgn'
+import { reviewedVariantPgn } from './reviewed-variant-pgn'
 
 export type SkillScore = { accuracy: number | null; moves: number }
 export type SkillSummary = {
@@ -67,6 +67,8 @@ function replay(review: GameReview): ChessPosition {
 }
 
 function gameResult(review: GameReview, board: ChessPosition): string {
+  const outcome = board.variantOutcome?.()
+  if (outcome) return outcome.winner === 'w' ? '1-0' : '0-1'
   if (board.isCheckmate()) return board.turn() === 'w' ? '0-1' : '1-0'
   if (/^(?:1-0|0-1|1\/2-1\/2)$/.test(review.result)) return review.result
   if (board.isStalemate() || board.isInsufficientMaterial()) return '1/2-1/2'
@@ -83,7 +85,7 @@ function safeHeader(value: string): string {
 
 export function reviewedPgn(review: GameReview): string {
   const final = replay(review)
-  if ((review.variant ?? pgnVariant(review.pgn)) === 'chess960') return reviewed960Pgn(review, gameResult(review, final), skillMethod, evaluationTag, clockTag)
+  if ((review.variant ?? pgnVariant(review.pgn)) !== 'chess') return reviewedVariantPgn(review, gameResult(review, final), skillMethod, evaluationTag, clockTag)
   const source = new Chess()
   source.loadPgn(review.pgn)
   const comments = new Map(source.getComments().map(comment => [comment.fen, comment.comment]))

@@ -4,6 +4,8 @@ import { TablebasePanel } from "./TablebasePanel";
 import { MasterExplorer } from "./MasterExplorer";
 import { ThreatPanel } from "./ThreatPanel";
 import type { ThreatAnalysis } from "../hooks/useThreatAnalysis";
+import { createPosition } from "../lib/position";
+import { positionOutcome } from "../lib/play-position";
 import type { GameRecord } from "../lib/game";
 import type { ChessVariant } from "../lib/position";
 import type { PositionAnalysis } from "../engine/types";
@@ -42,6 +44,7 @@ export function AnalysisPanel({
   fen,
   threat,
 }: Props) {
+  const outcome = positionOutcome(createPosition(fen, variant));
   return (
     <div className="analysis-content">
       <div className="report-caption">
@@ -57,7 +60,7 @@ export function AnalysisPanel({
         </button>
       </div>
       <p className="muted">
-        Stockfish 19 Lite {analysis ? `· depth ${analysis.depth}` : ""}
+        {variant === 'threecheck' ? 'Fairy-Stockfish · classical evaluation · W = forced win' : 'Stockfish 19 Lite'} {analysis ? `· depth ${analysis.depth}` : ""}
         {busy && <LoaderCircle className="spin inline-icon" size={13} />}
       </p>
       {error && (
@@ -75,9 +78,10 @@ export function AnalysisPanel({
       )}
       {enabled ? (
         <div className="engine-lines">
+          {outcome && <p className="engine-empty" role="status">{outcome} No continuation is available from this ended position.</p>}
           {analysis?.lines.map((line) => (
             <div className="engine-line" key={line.rank}>
-              <strong>{evaluationLabel(line.evaluation)}</strong>
+              <strong>{evaluationLabel(line.evaluation, variant)}</strong>
               <div className="pv-moves">
                 {line.pvSan.slice(0, 12).map((san, index) => (
                   <button
@@ -106,7 +110,7 @@ export function AnalysisPanel({
       )}
       <ThreatPanel threat={threat} />
       <div className="analysis-tip">
-        <button className="secondary full-width" onClick={onPlay}>Play this position against Stockfish</button>
+        <button className="secondary full-width" disabled={!!outcome} onClick={onPlay}>Play this position against {variant === 'threecheck' ? 'Fairy-Stockfish' : 'Stockfish'}</button>
         <h3>Try a different move</h3>
         <p>
           Move any piece on the board to explore a legal variation. Right-click

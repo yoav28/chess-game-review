@@ -135,7 +135,7 @@ export function ReviewPanel({
             <ArrowRight size={17} />
           </button>
           <p className="fine-print">
-            Local Stockfish analysis. No review limit.
+            Local engine analysis. No review limit.
           </p>
         </div>
       ) : (
@@ -148,7 +148,7 @@ export function ReviewPanel({
                 How it’s measured
               </button>
             </div>
-            <p className="fine-print">{review.accuracyVersion === 2 ? 'Win-chance accuracy · v2' : 'Legacy centipawn accuracy · v1. Review again to update.'}</p>
+            <p className="fine-print">{review.variant === 'threecheck' ? 'Three-check move-quality heuristic · v2. Not calibrated winning probabilities.' : review.accuracyVersion === 2 ? 'Win-chance accuracy · v2' : 'Legacy centipawn accuracy · v1. Review again to update.'}</p>
             <div className="accuracy-players">
               <div>
                 <span className="player-dot white" />
@@ -189,8 +189,8 @@ export function ReviewPanel({
                     <span>{classificationLabels[move.classification]}</span>
                   </h3>
                   <span>
-                    {evaluationLabel(move.beforeEvaluation)}{" "}
-                    <ArrowRight size={11} /> {evaluationLabel(move.evaluation)}
+                    {evaluationLabel(move.beforeEvaluation, move.variant)}{" "}
+                    <ArrowRight size={11} /> {evaluationLabel(move.evaluation, move.variant)}
                   </span>
                 </div>
               </div>
@@ -293,7 +293,7 @@ export function ReviewPanel({
       {!engineRules(game.rules) && (
         <p className="error-message">
           This is a {game.rules} game. Its PGN is available for export; this
-          engine reviews standard chess, material odds, and Chess960.
+          engine reviews standard chess, material odds, Chess960, and three-check.
         </p>
       )}
       {!review && (

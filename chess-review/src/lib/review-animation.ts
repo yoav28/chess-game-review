@@ -2,6 +2,7 @@ import type { Color } from 'chess.js'
 import type { GameReview } from './review'
 import { parsePgn } from './game'
 import { drawReviewBoard, loadReviewPieceImages } from './review-board-image'
+import { createPosition } from './position'
 
 export function reviewAnimationFrames(review: GameReview, options: { from?: number; to?: number; delayMs?: number } = {}) {
   const parsed = parsePgn(review.pgn, review.variant)
@@ -35,13 +36,14 @@ export async function createReviewAnimation(review: GameReview, options: { from?
     abort()
     context.fillStyle = '#20221f'; context.fillRect(0, 0, 720, 790)
     context.fillStyle = '#eeeede'; context.font = '18px system-ui, sans-serif'
-    const title = `${review.white} vs ${review.black}`
+    const title = `${review.white} vs ${review.black}${review.variant === 'threecheck' ? ' · Three-check' : ''}`
     context.fillText(title.length > 65 ? `${title.slice(0, 62)}…` : title, 40, 32, 640)
     drawReviewBoard(context, { fen: frame.fen, variant: review.variant, orientation: options.orientation, lastMove: frame.lastMove }, pieces, { x: 40, y: 50, size: 640 })
     context.fillStyle = '#bdd09b'; context.font = '20px system-ui, sans-serif'
     context.fillText(`${frame.label} · ${frame.ply}/${review.moves.length}`, 40, 726, 640)
     context.fillStyle = '#a5a99d'; context.font = '14px system-ui, sans-serif'
-    context.fillText(review.importedAt ? 'Open File · imported report · recorded game replay' : 'Open File · recorded game replay', 40, 760, 640)
+    const checks = createPosition(frame.fen, review.variant).checksRemaining?.()
+    context.fillText(checks ? `Checks W ${3 - checks.w}/3 · B ${3 - checks.b}/3${review.importedAt ? ' · imported report' : ''}` : review.importedAt ? 'Open File · imported report · recorded game replay' : 'Open File · recorded game replay', 40, 760, 640)
     const rgba = context.getImageData(0, 0, 720, 790).data
     const palette = quantize(rgba, 256)
     gif.writeFrame(applyPalette(rgba, palette), 720, 790, { palette, delay: frame.delay, repeat: 0, dispose: 2 })

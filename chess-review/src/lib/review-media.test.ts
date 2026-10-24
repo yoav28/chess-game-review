@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { Script } from 'node:vm'
+import { embedPlayerScript } from './embed-player'
 import { reviewFixture } from '../test/review-fixture'
 import { reviewImageData, reviewImageGraph } from './review-image'
 import { reviewAnimationFrames } from './review-animation'
 import { buildReviewEmbed } from './review-embed'
+import { readFileSync } from 'node:fs'
 
 test('image metadata keeps model, recorded depth, starting selection and imported provenance', () => {
   const review = reviewFixture()
@@ -53,6 +56,7 @@ test('Chess960 replay exports the physical castled position and promotion frames
 })
 
 test('offline embed escapes user metadata, contains all frames, and restricts iframe privileges', () => {
+  assert.doesNotThrow(() => new Script(embedPlayerScript))
   const review = reviewFixture()
   const attack = '</script><script>fetch("https://example.invalid")</script>'
   review.white = attack
@@ -72,4 +76,18 @@ test('offline embed escapes user metadata, contains all frames, and restricts if
   assert.match(embed.iframe, /srcdoc="&lt;!doctype/)
   assert.match(embed.document, /default-src 'none'/)
   assert.ok(!embed.document.includes(`<title>${attack}`))
+})
+
+test('three-check media retain the variant, heuristic label and terminal counters', () => {
+  const review = reviewFixture(readFileSync(new URL('../test/fixtures/three-check-78864833399.pgn', import.meta.url), 'utf8'))
+  const data = reviewImageData(review)
+  assert.deepEqual(data.checks, { w: 2, b: 0 })
+  assert.match(data.model, /uncalibrated/)
+  assert.equal(reviewAnimationFrames(review).length, 53)
+  const embed = buildReviewEmbed(review, {})
+  const payload = JSON.parse(embed.document.match(/id="review-data">([\s\S]*?)<\/script>/)![1])
+  assert.match(payload.model, /Three-check quality heuristic/)
+  assert.match(payload.frames.at(-1).fen, /\+1\+3$/)
+  assert.match(payload.frames.at(-1).outcome, /third check/)
+  assert.doesNotThrow(() => new Script(embedPlayerScript))
 })

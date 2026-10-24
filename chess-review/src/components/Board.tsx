@@ -43,6 +43,8 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
     return `${files[file]}${rank}` as Square
   }), [orientation])
   const legalMoves = selected ? chess.moves({ square: selected, verbose: true }) : []
+  const outcome = chess.variantOutcome?.()
+  const turnDescription = outcome ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins by the third check.` : chess.isCheckmate() ? `${chess.turn() === 'w' ? 'Black' : 'White'} wins by checkmate.` : chess.isDraw() ? 'Drawn position.' : `${chess.turn() === 'w' ? 'White' : 'Black'} to move.`
 
   useEffect(() => {
     setSelected(null)
@@ -109,7 +111,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
 
   return (
     <div className="review-board" onContextMenu={event => event.preventDefault()}>
-      <div className="board-squares" role="grid" aria-label={`Chessboard, ${orientation === 'w' ? 'white' : 'black'} perspective. ${chess.turn() === 'w' ? 'White' : 'Black'} to move. Use arrow keys to navigate, Enter to select a piece and destination.`}>
+      <div className="board-squares" role="grid" aria-label={`Chessboard, ${orientation === 'w' ? 'white' : 'black'} perspective. ${turnDescription} Use arrow keys to navigate, Enter to select a piece and destination.`}>
         {squares.map((square, index) => {
           const piece = chess.get(square)
           const dark = (files.indexOf(square[0]) + Number(square[1])) % 2 === 0

@@ -105,7 +105,7 @@ export function useWorkspace() {
   const classificationMark = settings.showClassifications && currentMove && !isVariation && !play.active && (tab === 'review' && !explanation.active || explanation.active && explanation.steps[explanation.currentStep]?.stage === 'played')
     ? { square: currentMove.kingTo ?? currentMove.to, kind: currentMove.classification } : undefined;
   const opening =
-    review?.opening?.name ||
+    variant === 'threecheck' ? 'Three-check · three checks win' : review?.opening?.name ||
     parsed.headers.Opening ||
     (parsed.headers.ECOUrl
       ? decodeURIComponent(parsed.headers.ECOUrl.split("/").pop()!).replaceAll(

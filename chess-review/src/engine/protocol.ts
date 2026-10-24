@@ -45,6 +45,15 @@ export function boardWithHistory(fen: string, history?: AnalysisOptions['history
   return board
 }
 
+export function engineFen(fen: string, variant: ChessVariant): string {
+  if (variant !== 'threecheck') return fen
+  const board = createPosition(fen, variant)
+  const checks = board.checksRemaining?.()
+  if (!checks) throw new Error('Three-check analysis requires its check counters.')
+  const fields = board.fen().split(' ')
+  return [...fields.slice(0, 4), `${checks.w}+${checks.b}`, ...fields.slice(4, 6)].join(' ')
+}
+
 export function variationToSan(fen: string, moves: string[], variant?: ChessVariant): string[] {
   const board = createPosition(fen, variant)
   const san: string[] = []
@@ -60,6 +69,8 @@ export function variationToSan(fen: string, moves: string[], variant?: ChessVari
 }
 
 export function terminalEvaluation(board: ChessPosition): Evaluation | null {
+  const outcome = board.variantOutcome?.()
+  if (outcome) return { cp: outcome.winner === 'w' ? 100000 : -100000, mate: 0 }
   if (board.isCheckmate()) return { cp: board.turn() === 'w' ? -100000 : 100000, mate: 0 }
   if (board.isDraw()) return { cp: 0, mate: null }
   return null

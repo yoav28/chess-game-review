@@ -24,6 +24,7 @@ export function PlayerBar({ color, game, parsed, ply, review, board, hideClock }
     .filter(piece => piece?.color === color)
     .reduce((sum, piece) => sum + ({ p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }[piece!.type]), 0)
   const accuracy = color === 'w' ? review?.whiteAccuracy : review?.blackAccuracy
+  const checks = board.checksRemaining?.()
 
   return (
     <div className="player-bar">
@@ -37,9 +38,10 @@ export function PlayerBar({ color, game, parsed, ply, review, board, hideClock }
         <span>
           {color === 'w' ? 'White' : 'Black'}
           {review ? ` · ${accuracy?.toFixed(1) ?? '—'} accuracy` : ` · ${material} material`}
+          {checks && ` · ${3 - checks[color]}/3 checks`}
         </span>
       </div>
-      <div className={`player-clock ${board.turn() === color ? 'turn' : ''}`}>
+      <div className={`player-clock ${!board.isGameOver() && board.turn() === color ? 'turn' : ''}`}>
         {hideClock ? '—' : formatClock(lastClock ?? (Number.isFinite(initialClock) && initialClock > 0 ? initialClock : undefined))}
       </div>
     </div>

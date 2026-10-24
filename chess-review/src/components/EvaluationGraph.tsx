@@ -1,10 +1,11 @@
 import type { GameReview } from "../lib/review";
 import type { Evaluation } from "../engine/types";
+import type { ChessVariant } from "../lib/position";
 
-export function evaluationLabel(evaluation?: Evaluation | null) {
+export function evaluationLabel(evaluation?: Evaluation | null, variant?: ChessVariant) {
   if (!evaluation) return "—";
   if (evaluation.mate !== null)
-    return evaluation.mate === 0 ? "#" : `M${Math.abs(evaluation.mate)}`;
+    return evaluation.mate === 0 ? variant === 'threecheck' ? 'Win' : '#' : `${variant === 'threecheck' ? 'W' : 'M'}${Math.abs(evaluation.mate)}`;
   return `${evaluation.cp >= 0 ? "+" : ""}${(evaluation.cp / 100).toFixed(1)}`;
 }
 

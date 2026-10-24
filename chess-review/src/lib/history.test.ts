@@ -150,8 +150,9 @@ test('time-control statistics keep Chess960 separate without relabeling standard
   const tagged960 = fixture('tagged-960', '2026.10.02')
   tagged960.review.variant = undefined
   tagged960.review.headers.Variant = 'Chess960'
-  const summary = playerHistory([standard, chess960, tagged960], 'Ada')
-  assert.deepEqual(summary.controls.map(category => [category.label, category.score.games]), [['Blitz', 1], ['Blitz · Chess960', 2]])
+  const entries = [standard, chess960, tagged960]
+  assert.deepEqual(playerHistory(entries, 'Ada').controls.map(category => [category.label, category.score.games]), [['Blitz', 1]])
+  assert.deepEqual(playerHistory(entries, 'Ada', 'chess960').controls.map(category => [category.label, category.score.games]), [['Blitz · Chess960', 2]])
 })
 
 test('statistics prefer a local report over a newer imported copy of the same PGN and model without hiding either saved row', () => {
@@ -200,8 +201,9 @@ test('latest valid analysis date breaks ties only after model and provenance, wh
   differentVariant.id = '960'
   differentVariant.review.variant = 'chess960'
   const summary = playerHistory([later, differentVariant], 'Ada')
-  assert.equal(summary.games, 2)
+  assert.equal(summary.games, 1)
   assert.equal(summary.excludedDuplicates, 0)
+  assert.equal(playerHistory([later, differentVariant], 'Ada', 'chess960').games, 1)
 })
 
 test('importing two duplicate reports cannot create a four-game trend or inflate category samples', () => {
@@ -213,4 +215,20 @@ test('importing two duplicate reports cannot create a four-game trend or inflate
   assert.deepEqual(summary.overall, { accuracy: 60, moves: 4, games: 2 })
   assert.deepEqual(summary.categories.find(category => category.label === 'Opening')?.score, summary.overall)
   assert.equal(summary.controls[0].score.games, 2)
+})
+
+test('explicit rules pools keep three-check heuristics separate from standard accuracy', async () => {
+  const { reviewFixture } = await import('../test/review-fixture')
+  const { variantsForPlayer } = await import('./history')
+  const standard = reviewFixture()
+  const three = reviewFixture('[White "Ada"]\n[Black "Grace"]\n[Variant "3-check"]\n\n1. e4 e5 2. Nf3 Nc6 *')
+  three.moves.forEach(move => { move.accuracy = 0 })
+  const entries = [{ id: 'standard', review: standard }, { id: 'threecheck', review: three }]
+  assert.deepEqual(variantsForPlayer(entries, 'Ada'), ['chess', 'threecheck'])
+  assert.equal(playerHistory(entries, 'Ada', 'chess').overall.accuracy, 100)
+  const summary = playerHistory(entries, 'Ada', 'threecheck')
+  assert.equal(summary.overall.accuracy, 0)
+  assert.equal(summary.games, 1)
+  assert.match(summary.modelLabel, /Three-check quality heuristic/)
+  assert.equal(sortedSavedReviews(entries).length, 2)
 })

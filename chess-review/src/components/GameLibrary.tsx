@@ -320,7 +320,7 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
         <span>
           Independent chess analysis
           <br />
-          <span>Powered by Stockfish 19</span>
+          <span>Local engine analysis</span>
         </span>
       </div>
     </aside>

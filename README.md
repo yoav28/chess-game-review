@@ -1,6 +1,6 @@
 # Open File
 
-An independent chess review application built with React, TypeScript, Vite, chess.js, a Chess960 rules adapter using chessops, and local Stockfish 19 Lite. Choose a Chess.com username, import every available public archive, and review standard, material-odds, or Chess960 games in your browser. An Opera Game sample is included.
+An independent chess review application built with React, TypeScript, Vite, chess.js, Chess960/three-check rules using chessops, local Stockfish 19 Lite, and Fairy-Stockfish. Choose a Chess.com username, import every available public archive, and review standard, material-odds, Chess960, or three-check games in your browser. An Opera Game sample is included.
 
 The latest work is local. The [previous private deployment](https://open-file-chess-review.woolly-rice-1868.chatgpt.site) is an older release and has not been updated with the features below. No current changes have been pushed or redeployed. See [verification.md](docs/verification.md) for recorded checks and their limits.
 
@@ -14,7 +14,9 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite. The dev script prepares the engine JavaScript, WebAssembly, license, and source information in `public/engine/`.
+Open the local URL printed by Vite. The dev script prepares the engine JavaScript, WebAssembly, licenses, and source information in `public/engine/`.
+
+Three-check needs `SharedArrayBuffer` and cross-origin isolation. Vite development and preview set `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. A production static host must serve those response headers too, over HTTPS or loopback. The standard/Chess960 single-thread engine does not itself need them. Missing isolation produces an explicit three-check engine error.
 
 ```sh
 npm test
@@ -22,7 +24,7 @@ npm run build
 npm run preview
 ```
 
-Tests cover public archive import, cancellation and stale requests, standard and Chess960 legality, actual bundled-engine analysis, scoring, explanations, practice, training, historical model separation and duplicate suppression, portable-report validation, masters/tablebase responses, opening-data integrity, and exports. `build` typechecks the app, copies engine assets, and produces `chess-review/dist/`. `preview` serves that production build locally.
+Tests cover public archive import, cancellation and stale requests, standard, Chess960, and three-check legality, actual bundled-engine analysis, scoring, explanations, practice, training, historical model separation and duplicate suppression, portable-report validation, masters/tablebase responses, opening-data integrity, and exports. `build` typechecks the app, copies engine assets, and produces `chess-review/dist/`. `preview` serves that production build locally.
 
 ## Use the application
 
@@ -31,7 +33,7 @@ Enter a Chess.com username in the library and choose **Import all games**. Searc
 The application provides:
 
 - Full-game Stockfish review with progress, cancellation, adjustable depth/time, per-player accuracy, classifications, key moments, and opening/middlegame/endgame reports.
-- Standard chess, material-odds games with their recorded custom starts, and Chess960 replay, review, variations, engine continuation, and reviewed PGN export. Chess960 uses king-to-rook engine UCI for castling while showing the physical king/rook destinations correctly.
+- Standard chess, material-odds games with their recorded custom starts, Chess960, and three-check replay, review, variations, engine continuation, and reviewed PGN export. Three-check tracks checks given and ends immediately on the third check. Chess960 uses king-to-rook engine UCI for castling while showing the physical king/rook destinations correctly.
 - Board clocks, estimated time spent where sufficient PGN clock/control data exists, promotion choices, orientation and keyboard controls, right-click arrows/circles, and classification highlights.
 - Evaluation bar/graph, one to five configurable candidate lines, playable variations, and return to the recorded game.
 - Guided review and independent animated explanations showing the played move, alternative, and legal engine continuation, with pause/step/replay and reduced-motion behavior. Clear, Supportive, and Analyst presentation profiles change the original explanation/narration style; Analyst includes recorded search details. Optional speech uses local browser voices.
@@ -68,19 +70,21 @@ Move accuracy = clamp(103.1668 × exp(-0.04354 × winning-chance loss) - 3.1669,
 
 Loss is measured in percentage points from the mover’s perspective. Forced mates map to 100% or 0%; recorded best moves and only legal moves receive zero loss to reduce search-noise penalties. Game, phase, and category scores average the applicable move scores. This arithmetic mean differs from Lichess’s weighted game score and from Chess.com’s proprietary accuracy. Brilliant/Great, phase boundaries, category definitions, key-moment thresholds, and training themes remain independent heuristics affected by the engine budget.
 
-Older saved reviews retain their original centipawn-based scores. History counts an exact PGN/variant once for statistics, preferring the newer model, then a local-generated report, then the latest analysis. It selects each player’s newest available accuracy model and reports older-model and duplicate exclusions separately; all saved copies remain reopenable. Trends require at least four scored, game-dated reviews and a distinct recent/earlier date boundary. Category scores and trends are not calibrated player ratings. Elo or single-game rating prediction is not implemented.
+Three-check uses Fairy-Stockfish classical scores with the same bounded move-quality transformation as a heuristic. These scores are not calibrated winning probabilities, player ratings, or proprietary Chess.com scores. Forced variant wins are labeled as wins rather than checkmates. Standard opening-book, online masters, and standard Syzygy services do not apply to three-check.
+
+Older saved reviews retain their original centipawn-based scores. History counts an exact PGN/variant once for statistics, preferring the newer model, then a local-generated report, then the latest analysis. Statistics select one rules pool before selecting each player’s newest available accuracy model and reports older-model and duplicate exclusions separately; all saved copies remain reopenable. Trends require at least four scored, game-dated reviews and a distinct recent/earlier date boundary. Category scores and trends are not calibrated player ratings. Elo or single-game rating prediction is not implemented.
 
 Opening data is pinned to [lichess-org/chess-openings commit `a6189a3`](https://github.com/lichess-org/chess-openings/tree/a6189a30dc273ccb21fc2536a9a2fefd5592a67a), dedicated to the public domain under CC0 1.0. The [local provenance](chess-review/src/data/openings/provenance.json) records source hashes and generation checks. Book means an exact registered move prefix, not proof of move quality; transposed orders must be explicitly present in that dataset. The local explorer scans imported games. The separate optional masters client follows the [official Lichess API schema](https://github.com/lichess-org/api) and [opening-explorer service documentation](https://github.com/lichess-org/lila-openingexplorer). It validates returned moves/counts/example-game metadata and has cancellation, bounded caching, and actionable service errors. Both inspected live explorer hosts denied anonymous access with HTTP 401, so successful online data retrieval is not claimed.
 
 Tablebase lookup follows the [Lichess HTTP API](https://github.com/lichess-org/lila-tablebase#http-api), supports standard positions with at most seven pieces and no castling rights, and remains optional. DTZ is not mate distance; cursed wins/blessed losses and uncertain outcomes stay explicit. FEN alone does not supply repetition history. Service availability, CORS, rate limits, and table coverage can affect lookup.
 
-Complete-review files use a versioned Open File JSON envelope and validate PGN/history, legal standard/Chess960 best/PV moves, metadata, numeric bounds, and summary consistency. Files are limited to 12 MB, 2,000 game plies, and 20,000 recorded continuation moves; importing does not authenticate the author or engine scores, and the imported-report notice survives saving/reopening. The app does not upload these files or create a public hosted share link.
+Complete-review files use a versioned Open File JSON envelope and validate PGN/history, legal standard/Chess960/three-check best/PV moves, metadata, numeric bounds, and summary consistency. Files are limited to 12 MB, 2,000 game plies, and 20,000 recorded continuation moves; importing does not authenticate the author or engine scores, and the imported-report notice survives saving/reopening. The app does not upload these files or create a public hosted share link.
 
 Full Chess.com parity has not been established. Proprietary scoring and Game Rating, coach personalities/media, complete explanation-theme coverage, cloud accounts/synchronization, shared analysis rooms, alternate proprietary engines and thread/unlimited-time controls, Chess.com training integration, and every account/experiment branch remain gaps. The [empirical rating pilot](docs/rating-pilot.md) analyzed 230 games but failed its release gates (held-out error 349.48 rating points); it remains research, with no user-facing rating estimate. The [REA feature/evidence ledger](docs/chess-com-review-research.md) separates observed source behavior from the independent implementation.
 
 A separate [stratified rating study](docs/rating-validation-v2.md) reviewed 800 September games. Its 495.80-point held-out error and ±906.35-point empirical interval failed the unchanged release gates; no rating estimate is enabled. Offline embeds do not reproduce Chess.com forum codes, cloud diagram storage, selectable proprietary piece sets, or its embed puzzle option.
 
-The imported MagnusCarlsen library contains 9,648 standard games, 317 Chess960 games, six material-odds games, and two three-check games. The current engine supports the first three groups. Three-check review remains an explicit gap; those originals stay available for PGN export.
+The imported MagnusCarlsen library contains 9,648 standard games, 317 Chess960 games, six material-odds games, and two three-check games. All four groups now have appropriate rules and engine support. Both actual three-check PGNs completed browser review, and their original counters, positions, clocks, and results survived reviewed exports. This verifies the imported sample, not every possible variant or malformed PGN.
 
 ## Architecture
 
@@ -91,7 +95,7 @@ Paths below are relative to `chess-review/`.
 | `src/App.tsx`, `src/hooks/useWorkspace.ts` | Workspace presentation, selected game/position, mode coordination, and settings. |
 | `src/components/` | Board, library, reports, explanations, practice, training, saved history, analysis, tablebase, and dialogs. |
 | `src/lib/chesscom.ts`, `game.ts` | Public archive import, PGN/FEN parsing, clocks, and game records. |
-| `src/lib/position.ts`, `chess960.ts` | Shared position interface and chessops-backed Chess960 castling, history, and PGN. |
+| `src/lib/position.ts`, `chessops-board.ts`, `variants.ts`, `variant-pgn.ts` | Shared rules interface, Chess960 castling, three-check counters/outcomes, history, and variant PGN. |
 | `src/engine/` | Stockfish worker lifecycle, variant configuration, UCI parsing, and history-aware analysis. |
 | `src/lib/review.ts`, `accuracy.ts`, `review-metrics.ts` | Review orchestration, scoring model, classifications, and phases. |
 | `src/lib/openings.ts`, `src/data/openings/` | Generated opening trie, pinned source facts, CC0 dedication, and provenance. |
@@ -113,6 +117,10 @@ Version-specific upstream source: [v19.0.1 release](https://github.com/nmrugg/st
 
 ## Chessops distribution and source
 
-The Chess960 adapter uses [`chessops@0.15.1`](https://github.com/niklasf/chessops), licensed under GPL-3.0-or-later. The unmodified license is included at `chess-review/public/licenses/CHESSOPS-COPYING.txt`; [CHESSOPS-SOURCE.txt](chess-review/public/licenses/CHESSOPS-SOURCE.txt) identifies the upstream source and exact release. The installed artifact is the [0.15.1 npm tarball](https://registry.npmjs.org/chessops/-/chessops-0.15.1.tgz), with its exact package bytes pinned by `package-lock.json` integrity. The license/source files are included in the static production output.
+The Chess960 and three-check adapters use [`chessops@0.15.1`](https://github.com/niklasf/chessops), licensed under GPL-3.0-or-later. The unmodified license is included at `chess-review/public/licenses/CHESSOPS-COPYING.txt`; [CHESSOPS-SOURCE.txt](chess-review/public/licenses/CHESSOPS-SOURCE.txt) identifies the upstream source and exact release. The installed artifact is the [0.15.1 npm tarball](https://registry.npmjs.org/chessops/-/chessops-0.15.1.tgz), with its exact package bytes pinned by `package-lock.json` integrity. The license/source files are included in the static production output.
 
 GIF encoding uses [`gifenc@1.0.3`](https://github.com/mattdesl/gifenc), pinned in `package-lock.json`. Its MIT license and source information are included in `chess-review/public/licenses/GIFENC-LICENSE.txt` and `GIFENC-SOURCE.txt`. The encoder and SVG serialization runtime load when exporting; game analysis does not require them.
+
+## Fairy-Stockfish distribution and source
+
+Three-check pins [`fairy-stockfish-nnue.wasm@1.1.12`](https://www.npmjs.com/package/fairy-stockfish-nnue.wasm/v/1.1.12), with `UCI_Variant=3check`, one thread, Hash 32, and `Use NNUE=false`. It uses classical evaluation; no separate NNUE weights are supplied or fetched. The npm `gitHead` and upstream `1.1.12` tag both identify [commit `b2e693ef1e111233ce3fb40685921708b3276ed6`](https://github.com/fairy-stockfish/fairy-stockfish.wasm/tree/b2e693ef1e111233ce3fb40685921708b3276ed6). GPL-3.0, AUTHORS, exact-package information, and the corresponding source archive are included under `public/engine/fairy/`. The unmodified engine files are separate from the application’s browser bridge.

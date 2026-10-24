@@ -2,6 +2,7 @@ import type { Color, PieceSymbol } from 'chess.js'
 import type { Evaluation } from '../engine/types'
 import { classificationLabels, type Classification, type GameReview } from './review'
 import { createPosition } from './position'
+import { variantLabel } from './variants'
 import { drawReviewBoard, loadReviewPieceImages } from './review-board-image'
 
 export type ReviewImageOptions = {
@@ -19,10 +20,11 @@ export function reviewImageData(review: GameReview, options: ReviewImageOptions 
   const move = review.moves[ply - 1]
   const fen = move?.afterFen ?? review.initialFen
   const board = createPosition(fen, review.variant)
+  const checks = board.checksRemaining?.()
   const depths = review.moves.map(item => item.depth).filter(value => Number.isInteger(value) && value > 0)
   const minimum = depths.length ? Math.min(...depths) : null
   const maximum = depths.length ? Math.max(...depths) : null
-  const model = review.accuracyVersion === 2 ? 'Win-chance move accuracy v2 · arithmetic mean' : 'Legacy centipawn move accuracy v1'
+  const model = review.variant === 'threecheck' ? 'Three-check quality heuristic v2 · uncalibrated for this variant' : review.accuracyVersion === 2 ? 'Win-chance move accuracy v2 · arithmetic mean' : 'Legacy centipawn move accuracy v1'
   const counts = (Object.keys(classificationLabels) as Classification[]).map(classification => ({
     label: classificationLabels[classification], white: review.moves.filter(item => item.color === 'w' && item.classification === classification).length,
     black: review.moves.filter(item => item.color === 'b' && item.classification === classification).length,
@@ -30,12 +32,12 @@ export function reviewImageData(review: GameReview, options: ReviewImageOptions 
   const evaluations = [review.initialAnalysis.evaluation, ...review.moves.map(item => item.evaluation)]
   if (evaluations.some(value => !Number.isFinite(value.cp) || value.mate !== null && !Number.isFinite(value.mate))) throw new Error('This report has invalid evaluation data. Review the game again before exporting an image.')
   return {
-    ply, move, board, fen, orientation: options.orientation ?? 'w', counts, evaluations, model,
+    ply, move, board, fen, checks, orientation: options.orientation ?? 'w', counts, evaluations, model,
     white: clean(review.white), black: clean(review.black), whiteAccuracy: score(review.whiteAccuracy), blackAccuracy: score(review.blackAccuracy),
     result: ['1-0', '0-1', '1/2-1/2'].includes(review.result) ? review.result : 'Unfinished',
     positionLabel: move ? `Position after ${move.beforeFen.split(' ')[5]}${move.color === 'w' ? '.' : '…'} ${move.san}` : 'Starting position',
-    selection: move ? `${move.san} · ${classificationLabels[move.classification]}` : 'Before the first move',
-    opening: review.opening ? `${review.opening.name} · ${review.opening.eco}` : review.variant === 'chess960' ? 'Chess960 · standard opening book does not apply' : 'No named opening recorded',
+    selection: move ? `${move.san} · ${classificationLabels[move.classification]}${board.variantOutcome?.() ? ' · Third-check win' : ''}` : 'Before the first move',
+    opening: review.opening ? `${review.opening.name} · ${review.opening.eco}` : review.variant !== 'chess' && review.variant ? `${variantLabel(review.variant)} · standard opening book does not apply` : 'No named opening recorded',
     engine: clean(review.engine), depth: minimum === null ? 'Recorded depth unavailable' : `Recorded depth ${minimum === maximum ? minimum : `${minimum}–${maximum}`}`,
     imported: Boolean(review.importedAt), provenance: review.importedAt ? 'Imported report · scores supplied in a file, not reanalyzed here' : 'Independent Open File review · engine estimates depend on search limits',
     analyzedAt: Number.isFinite(Date.parse(review.analyzedAt)) ? new Date(review.analyzedAt).toISOString().slice(0, 10) : 'Date unavailable',
@@ -76,7 +78,7 @@ export async function createReviewImage(review: GameReview, options: ReviewImage
   context.fillStyle = colors.background
   context.fillRect(0, 0, canvas.width, canvas.height)
   fitText(context, 'Open File', 64, 57, 500, 26, colors.accent)
-  fitText(context, `${review.variant === 'chess960' ? 'Chess960' : 'Standard chess'} · ${review.moves.length} half-moves · ${data.analyzedAt}`, 880, 57, 656, 19, colors.muted)
+  fitText(context, `${variantLabel(review.variant)} · ${review.moves.length} half-moves · ${data.analyzedAt}`, 880, 57, 656, 19, colors.muted)
   fitText(context, `${data.white}  vs  ${data.black}`, 64, 123, 1472, 44)
   fitText(context, `Recorded result: ${data.result}`, 64, 163, 1200, 23, colors.muted)
   fitText(context, data.positionLabel, 64, 204, 640, 20)
@@ -116,7 +118,7 @@ export async function createReviewImage(review: GameReview, options: ReviewImage
     fitText(context, String(count.black), x + 320, y, 45, 16, colors.accent)
   })
   fitText(context, data.selection, 64, 899, 640, 22)
-  fitText(context, `${data.ply} / ${review.moves.length} half-moves shown on the board`, 64, 931, 640, 17, colors.muted)
+  fitText(context, `${data.ply} / ${review.moves.length} half-moves${data.checks ? ` · Checks W ${3 - data.checks.w}/3 · B ${3 - data.checks.b}/3` : ' shown on the board'}`, 64, 931, 640, 17, colors.muted)
   context.strokeStyle = colors.border
   context.beginPath(); context.moveTo(64, 951); context.lineTo(1536, 951); context.stroke()
   fitText(context, data.provenance, 64, 979, 1472, 18, data.imported ? '#e8cc89' : colors.muted)

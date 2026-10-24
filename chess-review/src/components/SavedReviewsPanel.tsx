@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import { accuracyModelLabel, historyMethod, playerHistory, playersInHistory, reviewAccuracyVersion, reviewDate, sortedSavedReviews, type HistoryScore } from '../lib/history'
+import { accuracyModelLabel, historyMethod, playerHistory, playersInHistory, reviewAccuracyVersion, reviewDate, reviewVariant, sortedSavedReviews, variantsForPlayer, type HistoryScore } from '../lib/history'
+import { variantLabel, type ChessVariant } from '../lib/variants'
 import { loadSavedReviews, type SavedReview } from '../lib/storage'
 import './SavedReviewsPanel.css'
 
@@ -19,9 +20,11 @@ export function SavedReviewsPanel({ onOpen, refreshKey }: { onOpen: (entry: Save
   const [reload, setReload] = useState(0)
   const [search, setSearch] = useState('')
   const [player, setPlayer] = useState('')
+  const [pool, setPool] = useState<ChessVariant>('chess')
   const [limit, setLimit] = useState(30)
   const searchId = useId()
   const playerId = useId()
+  const rulesId = useId()
   useEffect(() => {
     let active = true
     setLoading(true)
@@ -37,7 +40,9 @@ export function SavedReviewsPanel({ onOpen, refreshKey }: { onOpen: (entry: Save
   const query = search.trim().toLocaleLowerCase()
   const availablePlayers = players.filter(name => name.toLocaleLowerCase().includes(query))
   const selectedPlayer = players.includes(player) ? player : ''
-  const summary = useMemo(() => selectedPlayer ? playerHistory(entries, selectedPlayer) : null, [entries, selectedPlayer])
+  const pools = useMemo(() => variantsForPlayer(entries, selectedPlayer), [entries, selectedPlayer])
+  const selectedPool = pools.includes(pool) ? pool : pools[0] ?? 'chess'
+  const summary = useMemo(() => selectedPlayer ? playerHistory(entries, selectedPlayer, selectedPool) : null, [entries, selectedPlayer, selectedPool])
   const visible = useMemo(() => entries.filter(({ review }) => [review.white, review.black].some(name => name.toLocaleLowerCase().includes(query))), [entries, query])
   return <section className="saved-reviews" aria-label="Saved reviews">
     <div className="report-caption"><h2>Saved reviews</h2><button className="text-button" disabled={loading} onClick={() => setReload(value => value + 1)}>Refresh</button></div>
@@ -52,6 +57,7 @@ export function SavedReviewsPanel({ onOpen, refreshKey }: { onOpen: (entry: Save
         <option value="">Choose a player</option>
         {[...new Set([...availablePlayers, ...(selectedPlayer ? [selectedPlayer] : [])])].map(name => <option key={name} value={name}>{name}</option>)}
       </select>
+      {selectedPlayer && <><label htmlFor={rulesId}>Statistics rules</label><select id={rulesId} value={selectedPool} onChange={event => setPool(event.target.value as ChessVariant)}>{pools.map(variant => <option key={variant} value={variant}>{variantLabel(variant)}</option>)}</select><p className="saved-history-note">Statistics use one rules pool. Three-check quality scores are a heuristic, not calibrated winning probabilities.</p></>}
       {summary && <section className="saved-player-summary" aria-label={`${summary.player} saved review statistics`}>
         <h3>{summary.player}</h3>
         <p>Statistics use {summary.modelLabel}.{summary.excludedReviews > 0 ? ` ${summary.excludedReviews} older-model ${summary.excludedReviews === 1 ? 'review is' : 'reviews are'} excluded from these statistics and ${summary.excludedReviews === 1 ? 'remains' : 'remain'} available below.` : ' All statistics below use this model.'}</p>
@@ -72,7 +78,7 @@ export function SavedReviewsPanel({ onOpen, refreshKey }: { onOpen: (entry: Save
           <strong>{entry.review.white} <span>vs</span> {entry.review.black}</strong>
           <span>{entry.review.result} · {dateText(entry)}</span>
           <span>Accuracy · White {entry.review.whiteAccuracy?.toFixed(1) ?? '—'} · Black {entry.review.blackAccuracy?.toFixed(1) ?? '—'}</span>
-          <span>{accuracyModelLabel(reviewAccuracyVersion(entry.review))}{entry.review.variant === 'chess960' ? ' · Chess960' : ''}</span>
+          <span>{accuracyModelLabel(reviewAccuracyVersion(entry.review), reviewVariant(entry.review))}{entry.review.variant === 'chess960' ? ' · Chess960' : ''}</span>
           {entry.review.importedAt && <span>Imported review file</span>}
         </button>
       </li>)}</ul>

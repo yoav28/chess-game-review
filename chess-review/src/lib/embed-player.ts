@@ -1,4 +1,4 @@
-export const embedPlayerScript = `
+export const embedPlayerScript = String.raw`
 const data = JSON.parse(document.getElementById('review-data').textContent);
 let ply = data.selected, orientation = data.orientation, timer = null;
 const el = id => document.getElementById(id);
@@ -44,8 +44,11 @@ function draw() {
     }
     el('board').append(cell);
   }
-  el('board').setAttribute('aria-label', frame.label + '; ' + (frame.fen.split(' ')[1] === 'w' ? 'White' : 'Black') + ' to move');
-  el('caption').textContent = frame.label + ' · ' + ply + '/' + (data.frames.length - 1);
+  el('board').setAttribute('aria-label', frame.outcome || frame.label + '; ' + (frame.fen.split(' ')[1] === 'w' ? 'White' : 'Black') + ' to move');
+  const checks = frame.fen.split(' ')[6]?.match(/^\+([0-3])\+([0-3])$/);
+  el('caption').textContent = frame.label + ' · ' + ply + '/' + (data.frames.length - 1)
+    + (checks ? ' · Checks White ' + checks[1] + '/3 · Black ' + checks[2] + '/3' : '')
+    + (frame.outcome ? ' · ' + frame.outcome : '');
   el('explanation').textContent = frame.explanation;
   el('timeline').value = ply;
   el('previous').disabled = ply === 0;

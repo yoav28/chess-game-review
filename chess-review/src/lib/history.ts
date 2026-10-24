@@ -1,6 +1,7 @@
 import type { Color } from 'chess.js'
 import type { GameReview, MoveReview } from './review'
 import type { SavedReview } from './storage'
+import { variantLabel, type ChessVariant } from './variants'
 
 export type HistoryScore = { accuracy: number | null; moves: number; games: number }
 export type ReviewDate = { timestamp: number | null; source: 'game' | 'review' | 'unknown' }
@@ -22,7 +23,7 @@ export type PlayerHistory = {
   trend: { recent: HistoryScore; earlier: HistoryScore; delta: number } | null
 }
 
-export const historyMethod = 'Saved reviews on this browser only. Statistics count each exact PGN and variant once, preferring the newest accuracy model, then a locally generated report over an imported report, then the latest analysis date. Duplicate rows remain reopenable. Player statistics use that player’s newest available accuracy model; legacy centipawn scores are never pooled with win-chance scores. Accuracy pools actual move scores, with move and game sample counts. Opening and Endgame use recorded phases; Tactics includes captures, checks, and promotions; Strategy includes quiet middlegame moves. Categories can overlap. Time groups estimate duration as base + 40 increments and separate Chess960. Trend compares equally sized recent and preceding groups (up to five games each), requires at least four scored games in the same model with valid PGN dates and a distinct date boundary, and uses game dates rather than review dates. Different review depths can affect comparisons. These scores are not ratings.'
+export const historyMethod = 'Saved reviews on this browser only. Statistics count each exact PGN and variant once, preferring the newest accuracy model, then a locally generated report over an imported report, then the latest analysis date. Duplicate rows remain reopenable. Player statistics use that player’s newest available accuracy model; legacy centipawn scores are never pooled with win-chance scores. Accuracy pools actual move scores, with move and game sample counts. Opening and Endgame use recorded phases; Tactics includes captures, checks, and promotions; Strategy includes quiet middlegame moves. Categories can overlap. The interface selects one rules pool before computing statistics. Time groups estimate duration as base + 40 increments and separate game variants. Three-check scores are an uncalibrated quality heuristic, not winning probabilities. Trend compares equally sized recent and preceding groups (up to five games each), requires at least four scored games in the same model with valid PGN dates and a distinct date boundary, and uses game dates rather than review dates. Different review depths can affect comparisons. These scores are not ratings.'
 
 const normalize = (name: string) => name.trim().toLocaleLowerCase()
 const round = (value: number) => Math.round(value * 10) / 10
@@ -33,7 +34,8 @@ export function reviewAccuracyVersion(review: GameReview): number {
   return version !== undefined && Number.isInteger(version) && version >= 1 ? version : 1
 }
 
-export function accuracyModelLabel(version: number): string {
+export function accuracyModelLabel(version: number, variant?: ChessVariant): string {
+  if (variant === 'threecheck') return 'Three-check quality heuristic (v2)'
   return version === 2 ? 'Win-chance accuracy (v2)' : version === 1 ? 'Legacy centipawn accuracy (v1)' : `Accuracy model v${version}`
 }
 
@@ -90,8 +92,13 @@ export function historyTimeClass(control?: string): string {
   return seconds < 180 ? 'Bullet' : seconds < 600 ? 'Blitz' : 'Rapid'
 }
 
-const reviewVariant = (review: GameReview) => review.variant ?? (/^(?:Chess960|Fischerandom|Fischer Random|Freestyle)$/i.test(review.headers.Variant ?? '') ? 'chess960' : 'chess')
-const timeGroup = (review: GameReview) => `${historyTimeClass(review.headers.TimeControl)}${reviewVariant(review) === 'chess960' ? ' · Chess960' : ''}`
+export const reviewVariant = (review: GameReview): ChessVariant => review.variant ?? (/^(?:3-?check|Three-?check|Three Check)$/i.test(review.headers.Variant ?? '') ? 'threecheck' : /^(?:Chess960|Fischerandom|Fischer Random|Freestyle)$/i.test(review.headers.Variant ?? '') ? 'chess960' : 'chess')
+const timeGroup = (review: GameReview) => `${historyTimeClass(review.headers.TimeControl)}${reviewVariant(review) !== 'chess' ? ` · ${variantLabel(reviewVariant(review))}` : ''}`
+
+export function variantsForPlayer(entries: SavedReview[], playerName: string): ChessVariant[] {
+  const player = normalize(playerName)
+  return (['chess', 'chess960', 'threecheck'] as ChessVariant[]).filter(variant => entries.some(({ review }) => reviewVariant(review) === variant && [normalize(review.white), normalize(review.black)].includes(player)))
+}
 
 function uniqueStatisticReviews(entries: SavedReview[]): SavedReview[] {
   const unique = new Map<string, SavedReview>()
@@ -121,9 +128,10 @@ function score(groups: MoveReview[][]): HistoryScore {
   return { accuracy: moves.length ? round(moves.reduce((sum, move) => sum + move.accuracy, 0) / moves.length) : null, moves: moves.length, games: groups.filter(group => group.length).length }
 }
 
-export function playerHistory(entries: SavedReview[], playerName: string): PlayerHistory {
+export function playerHistory(entries: SavedReview[], playerName: string, variant?: ChessVariant): PlayerHistory {
   const player = normalize(playerName)
-  const allGames = sortedSavedReviews(entries).filter(({ review }) => [normalize(review.white), normalize(review.black)].includes(player))
+  const selectedVariant = variant ?? variantsForPlayer(entries, playerName)[0] ?? 'chess'
+  const allGames = sortedSavedReviews(entries).filter(({ review }) => [normalize(review.white), normalize(review.black)].includes(player) && reviewVariant(review) === selectedVariant)
   const distinctGames = uniqueStatisticReviews(allGames)
   const accuracyVersion = distinctGames.reduce((latest, { review }) => Math.max(latest, reviewAccuracyVersion(review)), 1)
   const games = distinctGames.filter(({ review }) => reviewAccuracyVersion(review) === accuracyVersion)
@@ -155,6 +163,6 @@ export function playerHistory(entries: SavedReview[], playerName: string): Playe
       trend = { recent, earlier, delta: round(recent.accuracy! - earlier.accuracy!) }
     }
   }
-  return { player: playerName.trim(), accuracyVersion, modelLabel: accuracyModelLabel(accuracyVersion), excludedReviews: distinctGames.length - games.length,
+  return { player: playerName.trim(), accuracyVersion, modelLabel: accuracyModelLabel(accuracyVersion, selectedVariant), excludedReviews: distinctGames.length - games.length,
     excludedDuplicates: allGames.length - distinctGames.length, games: games.length, ...result, overall: score(groups), categories, controls, trend }
 }

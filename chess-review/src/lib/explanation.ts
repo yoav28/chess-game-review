@@ -28,7 +28,7 @@ function describeMove(move: PositionMove, legalMoves: number, ply: number, varia
   let action = `${move.color === 'w' ? 'White' : 'Black'} plays ${move.san}.`
   if (move.captured) action += ` The ${names[move.piece]} captures ${move.captured === 'p' ? 'a pawn' : `the ${names[move.captured]}`} on ${move.to}.`
   if (move.promotion) action += ` The pawn promotes to a ${names[move.promotion]}.`
-  if (move.san.endsWith('#')) action += ' This is checkmate.'
+  if (createPosition(move.after, variant).isCheckmate()) action += ' This is checkmate.'
   else if (move.san.endsWith('+')) action += ' This gives check.'
   const concepts = insightsForMove(parsed)
   return `${action}${concepts.length ? ` ${concepts.join(' ')}` : ''}`

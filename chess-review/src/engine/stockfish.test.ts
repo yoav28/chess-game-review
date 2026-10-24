@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import test, { after } from 'node:test'
 import { Chess } from 'chess.js'
 import { analyzePosition, StockfishEngine } from './stockfish'
@@ -14,11 +15,13 @@ const originalWorker = globalThis.Worker
 const originalDocument = globalThis.document
 
 class ProcessWorker extends EventTarget {
-  private process = spawn(process.execPath, [engineFile])
+  private process: ChildProcessWithoutNullStreams
   private buffer = ''
 
-  constructor() {
+  constructor(url?: URL | string) {
     super()
+    const file = String(url).includes('/engine/fairy/bridge.js') ? fileURLToPath(new URL('../../scripts/fairy-uci.cjs', import.meta.url)) : engineFile
+    this.process = spawn(process.execPath, [file])
     this.process.stdout.on('data', (chunk: Buffer) => {
       this.buffer += chunk.toString()
       const lines = this.buffer.split('\n')
@@ -125,4 +128,44 @@ test('complete Chess960 review records exact mating castle, variant and physical
   assert.equal(review.moves[0].classification, 'best')
   assert.deepEqual(review.moves[0].evaluation, { cp: 100000, mate: 0 })
   assert.equal(review.opening, null)
+})
+
+test('real variant engine finds a third-check win that is not standard checkmate', { timeout: 30000 }, async () => {
+  const { readFileSync } = await import('node:fs')
+  const { parsePgn } = await import('../lib/game')
+  const game = parsePgn(readFileSync(new URL('../test/fixtures/three-check-78864833399.pgn', import.meta.url), 'utf8'))
+  const fen = game.positions[51]
+  const result = await analyzePosition(fen, { variant: 'threecheck', depth: 10, timeMs: 150 })
+  assert.match(result.bestMoveSan!, /#$/)
+  assert.equal(result.evaluation.mate, -1)
+  const board = createPosition(fen, 'threecheck')
+  board.move(result.bestMove!)
+  assert.deepEqual(board.variantOutcome?.(), { winner: 'b', reason: 'third-check' })
+  assert.equal(board.isCheckmate(), false)
+})
+
+test('both actual three-check games review and export every counter, position, clock and result', { timeout: 90000 }, async () => {
+  const { readFileSync } = await import('node:fs')
+  const { parsePgn } = await import('../lib/game')
+  const { reviewedPgn } = await import('../lib/report')
+  const { parseReviewTransfer, serializeReviewTransfer } = await import('../lib/review-transfer')
+  for (const id of ['78864833399', '61860050863']) {
+    const pgn = readFileSync(new URL(`../test/fixtures/three-check-${id}.pgn`, import.meta.url), 'utf8')
+    const original = parsePgn(pgn)
+    const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
+    assert.equal(review.variant, 'threecheck')
+    assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12/)
+    assert.match(review.accuracyModel, /not calibrated three-check/)
+    assert.equal(review.opening, null)
+    const exported = parsePgn(reviewedPgn(review))
+    assert.deepEqual(exported.positions, original.positions)
+    assert.deepEqual(exported.clocks, original.clocks)
+    assert.equal(exported.result, original.result)
+    const transferred = parseReviewTransfer(serializeReviewTransfer(review))
+    assert.deepEqual(transferred.moves, JSON.parse(JSON.stringify(review.moves)))
+    if (id === '78864833399') {
+      assert.match(review.moves.at(-1)!.explanation, /third check and wins/)
+      assert.doesNotMatch(review.moves.at(-1)!.explanation, /Checkmate ends/)
+    }
+  }
 })

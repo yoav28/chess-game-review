@@ -33,7 +33,10 @@ export interface ExplorerOptions {
   onProgress?: (progress: ExplorerProgress) => void
 }
 
-const positionKey = (fen: string) => fen.split(' ').slice(0, 4).join(' ')
+const positionKey = (fen: string) => {
+  const fields = fen.split(' ')
+  return fields.slice(0, 4).join(' ') + (/^\+[0-3]\+[0-3]$/.test(fields[6] ?? '') ? ` ${fields[6]}` : '')
+}
 export const canonicalPosition = (fen: string, variant?: ChessVariant): string => positionKey(createPosition(fen, variant).fen())
 
 function checkAbort(signal?: AbortSignal) {
@@ -97,7 +100,8 @@ export async function exploreImportedGames(games: readonly GameRecord[], fen: st
         let matches = false
         try {
           if (!game.pgn.trim()) throw new Error('Empty PGN.')
-          if (pgnVariant(game.pgn) === 'chess960' && variant !== 'chess960') throw new Error('Mismatched variant.')
+          const identified = pgnVariant(game.pgn)
+          if (identified !== 'chess' && identified !== variant) throw new Error('Mismatched variant.')
           const setup = game.pgn.match(/^\s*\[FEN\s+"([^"\r\n]+)"\]/m)?.[1]
           if (variant === 'chess960' && !setup) throw new Error('Chess960 requires its starting FEN.')
           const board = createPosition(setup, variant)

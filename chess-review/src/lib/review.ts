@@ -151,7 +151,12 @@ export function gamePhase(fen: string, ply: number, variant?: ChessVariant): Gam
   return ply <= 20 ? 'opening' : 'middlegame'
 }
 
-function evaluationText(evaluation: Evaluation): string {
+function evaluationText(evaluation: Evaluation, move: ParsedMove): string {
+  if (move.variant === 'threecheck' && evaluation.mate !== null) {
+    if (evaluation.mate === 0 && createPosition(move.afterFen, move.variant).variantOutcome?.()) return ''
+    if (evaluation.mate !== 0) return `${evaluation.cp > 0 ? 'White' : 'Black'} has a forced win in ${Math.abs(evaluation.mate)} with best play under three-check rules.`
+  }
+  if (move.variant === 'threecheck' && evaluation.mate === null) return evaluation.cp === 0 ? 'The variant engine evaluates this position as roughly equal.' : `The variant engine favors ${evaluation.cp > 0 ? 'White' : 'Black'} (White-relative score ${(evaluation.cp / 100).toFixed(2)} pawn units).`
   if (evaluation.mate === 0) return 'Checkmate ends the game.'
   if (evaluation.mate !== null) return `${evaluation.mate > 0 ? 'White' : 'Black'} has a forced mate in ${Math.abs(evaluation.mate)} with best play.`
   const score = Math.abs(evaluation.cp)
@@ -182,11 +187,11 @@ export function explainMove(move: ParsedMove, classification: Classification, be
     inaccuracy: ' A more accurate move would preserve more of the position’s value.',
     mistake: ' This gives the opponent a significantly better position.', blunder: ' This sharply changes the evaluation in the opponent’s favor.',
     missed: before.evaluation.mate !== null && winningChance(before.evaluation, move.color) === 100
-      ? ' The previously found mate is no longer found, and the engine’s winning-chance estimate falls below 90%.'
+      ? ` The previously found ${move.variant === 'threecheck' ? 'forced win' : 'mate'} is no longer found, and the engine’s winning-chance estimate falls below 90%.`
       : ' This lets a winning opportunity slip away.',
   }[classification]
   const insights = insightsForMove(move)
-  const describe = () => `${action}${insights.length ? ` ${insights.join(' ')}` : ''}${lesson}${alternative} ${evaluationText(after.evaluation)}`
+  const describe = () => `${action}${insights.length ? ` ${insights.join(' ')}` : ''}${lesson}${alternative} ${evaluationText(after.evaluation, move)}`.trim()
   while (insights.length && describe().length > 720) insights.pop()
   return describe()
 }
@@ -229,9 +234,9 @@ export function buildReview(game: ParsedGame, positions: PositionAnalysis[]): Ga
     white: game.headers.White || 'White', black: game.headers.Black || 'Black', result: game.headers.Result || '*',
     opening: game.variant !== 'chess960' && game.initialFen === new Chess().fen() ? openingForMoves(game.moves.map(move => move.san)).opening : null,
     moves, whiteAccuracy: average(moves, 'w'), blackAccuracy: average(moves, 'b'), phases, keyMoments, counts,
-    initialAnalysis: positions[0], engine: 'Stockfish 19 lite · single thread',
+    initialAnalysis: positions[0], engine: game.variant === 'threecheck' ? 'Fairy-Stockfish wasm 1.1.12 · three-check · classical evaluation · single thread' : 'Stockfish 19 lite · single thread',
     accuracyVersion: 2,
-    accuracyModel: `${accuracyMethod} Brilliant means a best move with a material sacrifice and a favorable engine evaluation; Great means only the best of two candidates preserves equality or a win. These are depth-dependent heuristics. Book matches exact prefixes in 3,865 Lichess opening lines covering all 500 ECO codes; it does not imply the move is strongest or cover every possible opening.`,
+    accuracyModel: `${game.variant === 'threecheck' ? 'Three-check scores apply the same formula to Fairy-Stockfish classical scores as a move-quality heuristic. These are not calibrated three-check winning probabilities. ' : ''}${accuracyMethod} Brilliant means a best move with a material sacrifice and a favorable engine evaluation; Great means only the best of two candidates preserves equality or a win. These are depth-dependent heuristics. Book matches exact prefixes in 3,865 Lichess opening lines covering all 500 ECO codes; it does not imply the move is strongest or cover every possible opening.`,
     coachMethod: insightMethod,
     analyzedAt: new Date().toISOString(),
   }
@@ -240,7 +245,7 @@ export function buildReview(game: ParsedGame, positions: PositionAnalysis[]): Ga
 export async function reviewGame(pgn: string, options: ReviewOptions = {}): Promise<GameReview> {
   const game = parsePgn(pgn, options.variant)
   if (!game.moves.length) throw new Error('This game has no moves to review.')
-  const engine = new StockfishEngine(options.signal)
+  const engine = new StockfishEngine(options.signal, game.variant)
   const positions: PositionAnalysis[] = []
   const total = game.moves.length + 1
   const replay = createPosition(game.initialFen, game.variant)

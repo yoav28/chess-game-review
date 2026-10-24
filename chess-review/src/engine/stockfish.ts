@@ -1,6 +1,6 @@
-import { boardWithHistory, completedLines, parseInfo, terminalEvaluation } from './protocol'
+import { boardWithHistory, completedLines, engineFen, parseInfo, terminalEvaluation } from './protocol'
 import type { AnalysisOptions, EngineLine, PositionAnalysis } from './types'
-import { resolveVariant } from '../lib/position'
+import { resolveVariant, type ChessVariant } from '../lib/position'
 
 type Pending = { reject: (reason: Error) => void }
 
@@ -12,9 +12,10 @@ export class StockfishEngine {
   private signal?: AbortSignal
   private abort = () => this.dispose(new DOMException('Analysis cancelled', 'AbortError'))
 
-  constructor(signal?: AbortSignal) {
+  constructor(signal?: AbortSignal, private readonly rules: ChessVariant = 'chess') {
     this.signal = signal
-    this.worker = new Worker(new URL('engine/stockfish-19-lite-single.js', document.baseURI))
+    if (rules === 'threecheck' && globalThis.crossOriginIsolated === false) throw new Error('Three-check analysis needs a browser session with WebAssembly threads enabled. Serve this app with cross-origin isolation headers.')
+    this.worker = new Worker(new URL(rules === 'threecheck' ? 'engine/fairy/bridge.js' : 'engine/stockfish-19-lite-single.js', document.baseURI))
     this.worker.addEventListener('error', () => this.dispose(new Error('Stockfish could not load. Check that the engine files are available.')))
     this.worker.addEventListener('messageerror', () => this.dispose(new Error('Stockfish returned an unreadable response.')))
     signal?.addEventListener('abort', this.abort, { once: true })
@@ -24,6 +25,11 @@ export class StockfishEngine {
 
   private async initialize() {
     await this.waitFor(line => line === 'uciok', 'uci', 30000)
+    if (this.rules === 'threecheck') {
+      this.worker.postMessage('setoption name UCI_Variant value 3check')
+      this.worker.postMessage('setoption name Threads value 1')
+      this.worker.postMessage('setoption name Use NNUE value false')
+    }
     this.worker.postMessage('setoption name Hash value 32')
     await this.waitFor(line => line === 'readyok', 'isready', 30000)
   }
@@ -39,6 +45,7 @@ export class StockfishEngine {
       const request = { reject: (reason: Error) => { cleanup(); reject(reason) } }
       const listener = (event: MessageEvent) => {
         for (const line of String(event.data).split('\n')) {
+          if (line.startsWith('engineerror ')) { this.dispose(new Error(line.slice(12))); return }
           if (predicate(line.trim())) {
             cleanup()
             resolve(line.trim())
@@ -57,6 +64,7 @@ export class StockfishEngine {
     await this.ready
     if (this.disposed) throw new DOMException('Analysis cancelled', 'AbortError')
     const variant = resolveVariant(fen, options.variant)
+    if ((variant === 'threecheck') !== (this.rules === 'threecheck')) throw new Error('The selected engine does not match this game variant.')
     const board = boardWithHistory(fen, options.history, variant)
     const terminal = terminalEvaluation(board)
     if (terminal) return { fen, variant, evaluation: terminal, bestMove: null, bestMoveSan: null, pv: [], pvSan: [], depth: 0, lines: [] }
@@ -67,8 +75,8 @@ export class StockfishEngine {
     this.worker.postMessage(`setoption name UCI_Chess960 value ${variant === 'chess960' ? 'true' : 'false'}`)
     this.worker.postMessage(`setoption name MultiPV value ${multiPv}`)
     this.worker.postMessage(options.history
-      ? `position fen ${options.history.initialFen} moves ${options.history.moves.join(' ')}`
-      : `position fen ${fen}`)
+      ? `position fen ${engineFen(options.history.initialFen, variant)} moves ${options.history.moves.join(' ')}`
+      : `position fen ${engineFen(fen, variant)}`)
     const response = await this.waitFor(line => {
       const parsed = parseInfo(line, fen, variant)
       if (parsed) lines.set(`${parsed.depth}:${parsed.rank}`, parsed)
@@ -109,7 +117,11 @@ export class StockfishEngine {
 }
 
 export async function analyzePosition(fen: string, options: AnalysisOptions = {}): Promise<PositionAnalysis> {
-  const engine = new StockfishEngine(options.signal)
+  if (options.signal?.aborted) throw new DOMException('Analysis cancelled', 'AbortError')
+  const variant = resolveVariant(fen, options.variant)
+  const terminal = terminalEvaluation(boardWithHistory(fen, options.history, variant))
+  if (terminal) return { fen, variant, evaluation: terminal, bestMove: null, bestMoveSan: null, pv: [], pvSan: [], depth: 0, lines: [] }
+  const engine = new StockfishEngine(options.signal, variant)
   try {
     return await engine.analyze(fen, options)
   } finally {

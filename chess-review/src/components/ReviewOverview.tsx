@@ -13,12 +13,12 @@ export function ReviewOverview({ review, onSelect }: { review: GameReview; onSel
   return <details className="review-overview">
     <summary>Game summary & opening</summary>
     <p>{result} {review.moves.length} half-moves reviewed. {errors.length} {errors.length === 1 ? 'move was' : 'moves were'} classified as a mistake, blunder, or missed opportunity.</p>
-    {critical && <p>Largest recorded loss: <button className="text-button" onClick={() => onSelect(critical.ply)}>{label(critical)} · {classificationLabels[critical.classification]}</button>{' '}({review.accuracyVersion === 2 ? `${loss(critical).toFixed(1)} winning-chance points` : `legacy loss score ${Math.round(loss(critical))}; review again for the current metric`}).</p>}
+    {critical && <p>Largest recorded loss: <button className="text-button" onClick={() => onSelect(critical.ply)}>{label(critical)} · {classificationLabels[critical.classification]}</button>{' '}({review.accuracyVersion === 2 ? `${loss(critical).toFixed(1)} ${review.variant === 'threecheck' ? 'heuristic points' : 'winning-chance points'}` : `legacy loss score ${Math.round(loss(critical))}; review again for the current metric`}).</p>}
     {review.opening && <p><strong>{review.opening.name}</strong> · {review.opening.eco}</p>}
     {lastBook ? <>
       <p>Last book position recorded in this report: <button className="text-button" onClick={() => onSelect(lastBook.ply)}>{label(lastBook)}</button>.</p>
       <div className="opening-replay" aria-label="Recorded opening moves">{book.map(move => <button className="text-button" key={move.ply} onClick={() => onSelect(move.ply)}>{label(move)}</button>)}</div>
-    </> : <p>{review.variant === 'chess960' ? 'Chess960 starts from a shuffled position; the standard opening book does not apply.' : 'No local book prefix was identified for this recorded starting position and move order.'}</p>}
+    </> : <p>{review.variant === 'threecheck' ? 'Three-check has its own win condition; the standard opening book does not apply.' : review.variant === 'chess960' ? 'Chess960 starts from a shuffled position; the standard opening book does not apply.' : 'No local book prefix was identified for this recorded starting position and move order.'}</p>}
     <p className="fine-print">This summary uses the recorded result and this report’s engine estimates and book labels. New reviews use the local Lichess-derived opening registry.</p>
   </details>
 }
