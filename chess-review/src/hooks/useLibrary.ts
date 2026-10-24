@@ -29,6 +29,14 @@ async function saveCompleteLibrary(username: string, games: GameRecord[], save: 
   try { await pending } finally { if (pendingSaves.get(username) === pending) pendingSaves.delete(username) }
 }
 
+function gameIdentity(game: GameRecord) {
+  const initialPosition = game.pgn.match(/^\[FEN\s+"([^"]*)"\]/im)?.[1] ?? 'startpos'
+  let movetext = game.pgn.replace(/^\s*\[[^\r\n]*\]\s*$/gm, ' ').replace(/\{[\s\S]*?\}|;[^\r\n]*/g, ' ')
+  while (/\([^()]*\)/.test(movetext)) movetext = movetext.replace(/\([^()]*\)/g, ' ')
+  const moves = movetext.trim().split(/\s+/).map(token => token.replace(/^\d+\.{1,3}/, '').replace(/\$\d+/g, '').replace(/[!?+#]+$/, '').toLowerCase()).filter(Boolean).join(' ')
+  return [game.rules, initialPosition, game.endTime, game.timeControl, game.white.username.toLowerCase(), game.black.username.toLowerCase(), moves].join('|')
+}
+
 export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies: LibraryDependencies = { load: loadLibrary, save: saveLibrary, importGames: importChessComGames }) {
   let active = true
   let current: { controller: AbortController; games: GameRecord[]; importing: boolean; username: string } | null = null
@@ -37,10 +45,13 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
   const mergeGames = (...groups: GameRecord[][]) => {
     const byId = new Map<string, GameRecord>()
     const byUrl = new Set<string>()
+    const byIdentity = new Set<string>()
     for (const game of groups.flat()) {
-      if (byId.has(game.id) || game.url && byUrl.has(game.url)) continue
+      const identity = gameIdentity(game)
+      if (byId.has(game.id) || game.url && byUrl.has(game.url) || byIdentity.has(identity)) continue
       byId.set(game.id, game)
       if (game.url) byUrl.add(game.url)
+      byIdentity.add(identity)
     }
     return [...byId.values()].sort((a, b) => b.endTime - a.endTime)
   }
