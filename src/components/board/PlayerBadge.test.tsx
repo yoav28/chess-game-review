@@ -6,6 +6,7 @@ import { useVariationStore } from '../../stores/useVariationStore';
 import PlayerBadge from './PlayerBadge';
 
 vi.mock('../../queries/usePlayerCountry', () => ({ default: () => ({ data: null }) }));
+vi.mock('../../queries/usePlayerProfile', () => ({ default: () => ({ data: null }) }));
 vi.mock('../../hooks/useLoser', () => ({ default: () => ({ loser: null, loseBy: null }) }));
 
 beforeEach(() => {

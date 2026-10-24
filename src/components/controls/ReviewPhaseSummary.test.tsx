@@ -10,7 +10,7 @@ test('does not substitute player Elo for unavailable game performance or phase s
   expect(screen.getByLabelText('White game rating unavailable')).toHaveTextContent('—');
   expect(screen.getByLabelText('Black game rating unavailable')).toHaveTextContent('—');
   expect(screen.getByLabelText('White opening assessment unavailable')).toHaveTextContent('—');
-  expect(screen.getByLabelText('Black middlegame assessment unavailable')).toHaveTextContent('—');
+  expect(screen.getByLabelText('Black strategy assessment unavailable')).toHaveTextContent('—');
   expect(screen.queryByText('2700')).not.toBeInTheDocument();
 });
 

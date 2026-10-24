@@ -15,6 +15,8 @@ import Forms from './Forms';
 import GameNav from './GameNav';
 import Games from './Games';
 import Review from './Review';
+import ReviewFavoriteButton from './ReviewFavoriteButton';
+import ReviewStartButton from './ReviewStartButton';
 
 import '../../styles/review.css';
 
@@ -68,22 +70,26 @@ export default function Controls() {
         <title>{isLoaded ? `${wName} vs. ${bName} | Game Review` : 'Game Review'}</title>
       </Helmet>
       <header className="review-panel-header">
-        <Button
-          aria-label="Back"
-          className={`
-            review-back
-            ${stage === 'home' ? 'invisible' : ''}
-          `}
-          isIconOnly
-          onPress={back}
-          radius="sm"
-          size="sm"
-          variant="light"
-        >
-          <Icon icon="material-symbols:chevron-left-rounded" />
-        </Button>
+        {stage === 'review-overview'
+          ? <ReviewFavoriteButton />
+          : (
+              <Button
+                aria-label="Back"
+                className={`
+                  review-back
+                  ${stage === 'home' ? 'invisible' : ''}
+                `}
+                isIconOnly
+                onPress={back}
+                radius="sm"
+                size="sm"
+                variant="light"
+              >
+                <Icon icon="material-symbols:chevron-left-rounded" />
+              </Button>
+            )}
         <h1>
-          {isAnalysis ? <NavigationIcon name="analysis" /> : <img alt="" src="/star.svg" />}
+          {isAnalysis ? <NavigationIcon name="analysis" /> : <img alt="" src="/navigation/review.png" />}
           {stage === 'select-month' || stage === 'select-game' ? 'Recent Games' : isAnalysis ? 'Analysis' : 'Game Review'}
         </h1>
         {reviewFinished && (
@@ -107,6 +113,7 @@ export default function Controls() {
       {isAnalysis && <AnalysisTabs />}
       <div className={`
         review-panel-content
+        ${stage === 'review-overview' ? 'review-panel-content-overview' : ''}
         ${stage === 'review-moves'
 ? `review-panel-content-moves`
 : ''}
@@ -118,6 +125,7 @@ export default function Controls() {
             ? <Games />
             : <Review />}
       </div>
+      {stage === 'review-overview' && <ReviewStartButton />}
       {stage === 'review-moves' && <GameNav />}
     </section>
   );

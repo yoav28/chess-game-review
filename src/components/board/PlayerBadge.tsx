@@ -19,6 +19,7 @@ import getDiff from '../../utils/getDiff';
 import isChessCom from '../../utils/isChessCom';
 import useNames from '../../utils/useNames';
 import CountryFlag from '../CountryFlag';
+import PlayerAvatar from '../PlayerAvatar';
 import CapturedGroup from './CapturedGroup';
 
 import type { Capturable } from '../../utils/getCaptured';
@@ -57,7 +58,8 @@ export default function PlayerBadge({ color }: {
   const [wName, bName] = useNames();
   const name = color === 'w' ? wName : bName;
   const site = useSelectGameStore(state => state.site);
-  const { data: country } = usePlayerCountry(site, name);
+  const profileSite = header.White || header.Black ? site : undefined;
+  const { data: country } = usePlayerCountry(profileSite, name);
   const rating = color === 'w' ? header.WhiteElo : header.BlackElo;
   const title = color === 'w' ? header.WhiteTitle : header.BlackTitle;
   const turn = displayedGame.turn() === 'w' ? 'b' : 'w';
@@ -149,18 +151,11 @@ export default function PlayerBadge({ color }: {
   return (
     <div className="board-player">
       <div className="board-player-identity">
-        <img
-          alt=""
-          className="board-player-avatar"
-          height={40}
-          src={`/players/${color === 'w' ? 'white' : 'black'}.png`}
-          width={40}
-        />
+        <PlayerAvatar className="board-player-avatar" color={color} name={name} site={profileSite} />
         <div className="board-player-details">
           <div className="board-player-name-line">
             {title && <span className="board-player-title">{title}</span>}
             <span className="board-player-name">{name}</span>
-            <CountryFlag country={country || (color === 'w' ? header.WhiteCountry : header.BlackCountry)} />
             {rating && showRatings && (
               <span className="board-player-rating">
                 (
@@ -168,6 +163,7 @@ export default function PlayerBadge({ color }: {
                 )
               </span>
             )}
+            <CountryFlag country={country || (color === 'w' ? header.WhiteCountry : header.BlackCountry)} />
           </div>
           <div className="board-player-captured">
             {Object.entries(captured).map(([piece, number]) => (
@@ -188,7 +184,7 @@ export default function PlayerBadge({ color }: {
             board-clock-${color}
           `, color !== turn && `board-clock-active`)}
         >
-          {color !== turn && <Icon icon="material-symbols:timer-outline-rounded" />}
+          {color !== turn && <Icon icon="material-symbols:schedule-outline-rounded" />}
           <span>{timeLeft}</span>
         </div>
       )}

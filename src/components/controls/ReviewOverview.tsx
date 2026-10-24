@@ -1,4 +1,3 @@
-import { Button } from '@heroui/react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { useMemo, useState } from 'react';
 
@@ -6,12 +5,12 @@ import Miss from '../../icons/move-classifications/Miss';
 import MoveClassification from '../../icons/move-classifications/MoveClassification';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useEvalStore } from '../../stores/useEvalStore';
-import { useReviewViewStore } from '../../stores/useReviewViewStore';
-import { useStageStore } from '../../stores/useStageStore';
+import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import capitalize from '../../utils/capitalize';
 import { chooseTextColor } from '../../utils/chooseColorFromClassification';
 import cn from '../../utils/cn';
 import useNames from '../../utils/useNames';
+import PlayerAvatar from '../PlayerAvatar';
 import EvalGraph from './EvalGraph';
 import ReviewCoach from './ReviewCoach';
 import ReviewPhaseSummary from './ReviewPhaseSummary';
@@ -20,13 +19,11 @@ import type { Classification } from '../../utils/classify';
 
 export default function ReviewOverview() {
   const [wName, bName] = useNames();
-  const [expanded, setExpanded] = useState(false);
-  const currentMoveNum = useBoardStore(state => state.currentMoveNum);
-  const toNextMove = useBoardStore(state => state.toNextMove);
+  const [expanded, setExpanded] = useState(true);
+  const site = useSelectGameStore(state => state.site);
   const accuracy = useEvalStore(state => state.accuracy);
   const classHistory = useEvalStore(state => state.classHistory);
   const currentGame = useBoardStore(state => state.currentGame);
-  const setStage = useStageStore(state => state.setStage);
   const header = currentGame.header();
 
   const record = useMemo(() => {
@@ -53,13 +50,11 @@ export default function ReviewOverview() {
     return record;
   }, [classHistory, currentGame]);
 
-  const tacticalSide = record.brilliant[0] + record.great[0] >= record.brilliant[1] + record.great[1] ? 0 : 1;
-  const tacticalFinds = record.brilliant[tacticalSide] + record.great[tacticalSide];
-  const errors = record.mistake[0] + record.mistake[1] + record.blunder[0] + record.blunder[1];
-  const summary = tacticalFinds > 0 ? `${tacticalSide === 0 ? 'White' : 'Black'} found ${tacticalFinds === 1 ? 'a great tactical move' : `${tacticalFinds} great tactical moves`} this game.` : errors > 0 ? 'There are some key moments to learn from in this game.' : 'A well-played game! Let’s take a closer look.';
-  const visibleClasses: (Classification | 'miss')[] = ['brilliant', 'great', 'best', 'mistake', 'miss', 'blunder'];
-  if (expanded)
-    visibleClasses.push('excellent', 'good', 'book', 'inaccuracy');
+  const summary = 'Alright, let’s review some key moments from this game.';
+
+  const visibleClasses: (Classification | 'miss')[] = expanded
+    ? ['brilliant', 'great', 'book', 'best', 'excellent', 'good', 'inaccuracy', 'mistake', 'miss', 'blunder']
+    : ['brilliant', 'great', 'best', 'mistake', 'miss', 'blunder'];
 
   return (
     <div className="review-overview" id="ReviewOverview">
@@ -76,19 +71,26 @@ export default function ReviewOverview() {
             key={index}
           >
             <p className="review-player-name">{name}</p>
-            <img
-              alt=""
+            <PlayerAvatar
               className="review-player-avatar"
+              color={index === 0 ? 'w' : 'b'}
               data-winner={(index === 0 && header.Result === '1-0') || (index === 1 && header.Result === '0-1') || undefined}
-              height={48}
-              src={`/players/${index === 0 ? 'white' : 'black'}.png`}
-              width={48}
+              height={64}
+              name={name}
+              site={site}
+              width={64}
             />
           </div>
         ))}
         <span className="review-comparison-label review-accuracy-label">Accuracy</span>
         <strong className="review-accuracy review-accuracy-white">{accuracy[0]}</strong>
         <strong className="review-accuracy review-accuracy-black">{accuracy[1]}</strong>
+      </div>
+      <div className="review-skills-row">
+        <span>Skills</span>
+        <strong aria-label={`White skills ${header.WhiteSkills || 'unavailable'}`} title={header.WhiteSkills ? 'Skills from game metadata' : 'Skills data is not included in this game’s metadata.'}>{header.WhiteSkills || '—'}</strong>
+        <span aria-hidden="true" className="review-skills-icon"><Icon icon="material-symbols:star-rounded" /></span>
+        <strong aria-label={`Black skills ${header.BlackSkills || 'unavailable'}`} title={header.BlackSkills ? 'Skills from game metadata' : 'Skills data is not included in this game’s metadata.'}>{header.BlackSkills || '—'}</strong>
       </div>
       <div className="review-classifications">
         {visibleClasses.map((classification) => {
@@ -115,20 +117,6 @@ export default function ReviewOverview() {
         </button>
       </div>
       <ReviewPhaseSummary header={header} />
-      <Button
-        className="review-primary-button"
-        color="primary"
-        fullWidth
-        onPress={() => {
-          useReviewViewStore.getState().setView('review');
-          setStage('review-moves');
-          if (currentMoveNum === 0)
-            toNextMove();
-        }}
-        radius="sm"
-      >
-        Start Review
-      </Button>
     </div>
   );
 }

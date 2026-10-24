@@ -24,8 +24,8 @@
   --sidebar-width: 170px;
   --panel-width: clamp(
     340px,
-    calc((100vw - var(--sidebar-width) - 32px) * 0.3915),
-    480px
+    calc(100vw - var(--sidebar-width) - 100dvh + 32px),
+    500px
   );
   --board-size: min(
     calc(100dvh - 136px),
@@ -157,11 +157,6 @@ select:focus-visible {
     sans-serif;
 }
 
-.review-panel-header h1 img {
-  filter: grayscale(1);
-  opacity: 0.75;
-}
-
 @media (min-width: 900px) and (max-width: 1100px) {
   :root {
     --sidebar-width: 56px;
@@ -187,6 +182,10 @@ select:focus-visible {
   .site-sidebar-bottom span,
   .site-signup,
   .site-login {
+    display: none;
+  }
+
+  .site-footer-icons a {
     display: none;
   }
 }

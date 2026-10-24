@@ -27,6 +27,7 @@
 
 .site-navigation-link {
   display: flex;
+  width: 100%;
   height: 40px;
   align-items: center;
   gap: 12px;
@@ -34,17 +35,27 @@
   color: #ffffffd9;
   font-size: 16px;
   font-weight: 600;
+  text-align: left;
 }
 
-.site-navigation-link img {
+.site-navigation-link img,
+.site-navigation-link > svg {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
 }
 
+.site-more-button {
+  color: #b3b2b1;
+}
+
+.site-free-trial {
+  color: #5ad3f5;
+}
+
 .site-navigation-link:hover,
 .site-search:hover,
-.site-support:hover {
+.site-profile:hover {
   background: #1f1e1b;
   color: #fff;
 }
@@ -52,67 +63,71 @@
 .site-sidebar-bottom {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   margin-top: auto;
-  padding: 0 8px 12px;
+  padding: 0 16px 8px;
 }
 
 .site-search,
-.site-support,
-.site-language {
+.site-profile {
   display: flex;
   height: 40px;
   align-items: center;
-  gap: 10px;
-  padding: 0 8px;
+  gap: 12px;
   color: #ffffff80;
   font-size: 14px;
   font-weight: 600;
 }
 
-.site-search svg,
-.site-support svg,
-.site-language svg {
+.site-search svg {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
 }
 
-.site-signup,
-.site-login {
+.site-profile {
+  color: #ffffffd9;
+}
+
+.site-profile img {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.site-profile span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-footer-icons {
   display: flex;
   height: 40px;
   align-items: center;
+  justify-content: space-between;
+  color: #ffffff80;
+}
+
+.site-footer-icons a,
+.site-footer-icons > button {
+  display: inline-flex;
+  width: 24px;
+  min-width: 24px;
+  height: 32px;
+  align-items: center;
   justify-content: center;
   margin: 0;
-  border-radius: 5px;
-  color: #ffffffd9;
-  font-size: 14px;
-  font-weight: 600;
+  color: inherit;
+  font-size: 20px;
 }
 
-.site-signup {
-  background: linear-gradient(#81b64c, #5d9948);
-  box-shadow:
-    inset 0 1px #b2e06866,
-    inset 0 -1px #45753c,
-    inset 0 2px 4px #b2e06880,
-    inset 0 -2px 4px #45753c80,
-    0 1px 2px #00000024;
+.site-footer-icons svg {
+  width: 20px;
+  height: 20px;
+}
+
+.site-footer-icons a:hover,
+.site-footer-icons > button:hover {
   color: #fff;
-}
-
-.site-signup:hover {
-  background: #95c55b;
-}
-
-.site-login {
-  background: linear-gradient(#ffffff1a, #ffffff0d);
-  box-shadow:
-    inset 0 1px #ffffff14,
-    0 1px 2px #00000024;
-}
-
-.site-login:hover {
-  background: #454340;
 }

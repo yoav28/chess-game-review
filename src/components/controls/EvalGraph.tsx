@@ -41,7 +41,7 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
     const toMove = useBoardStore(state => state.toMove);
     const stage = useStageStore(state => state.stage);
     const setStage = useStageStore(state => state.setStage);
-    const graphH = 80;
+    const graphH = 78;
     const classHistory = useEvalStore(state => state.classHistory);
 
     const getNumericValue = (item: { val: string | number; i: number }) => {
@@ -68,7 +68,7 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
       scaleLinear({
         domain: [0, Math.max(1, cpObj.length - 1)],
         range: [0, width],
-      }), [width]);
+      }), [width, cpObj.length]);
 
     const yLinear = scaleLinear({
       domain: [-570, 570], // cp
@@ -126,7 +126,7 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
           width="100%"
         >
           <rect
-            fill="#f1f1ee"
+            fill="#fff"
             height={graphH}
             width={width}
             x={0}
@@ -135,13 +135,13 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
           <AreaClosed<{ val: string | number; i: number }>
             curve={curveMonotoneX}
             data={cpObj}
-            fill="#595854"
+            fill="#3f3d39"
             id="area"
             x={d => xScale(getIndex(d))}
             y={d => yScale(getNumericValue(d))}
             yScale={yScale}
           />
-          <line id="x-axis" stroke="#9b9a96" strokeWidth={1} x1="0" x2={width} y1="40" y2="40" />
+          <line id="x-axis" stroke="#9b9a96" strokeWidth={1} x1="0" x2={width} y1={graphH / 2} y2={graphH / 2} />
           <Bar
             className="cursor-pointer"
             fill="transparent"
@@ -236,7 +236,7 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
 
 export default function EvalGraph() {
   return (
-    <ParentSize style={{ width: '100%', height: 80 }}>
+    <ParentSize debounceTime={0} style={{ width: '100%', height: 78 }}>
       {({ width, height }) => <EvalGraphNotResponsive height={height} width={width} />}
     </ParentSize>
   );
