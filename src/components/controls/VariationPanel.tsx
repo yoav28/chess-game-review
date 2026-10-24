@@ -30,12 +30,14 @@ export default function VariationPanel() {
           {feedback.bestMove && (
             <p className="text-small text-foreground-500">
               Best move in the previous position:
+              {' '}
               {feedback.bestMove}
             </p>
           )}
           {feedback.continuation.length > 0 && (
             <p className="text-small text-foreground-500">
               Best continuation:
+              {' '}
               {feedback.continuation.join(' ')}
             </p>
           )}

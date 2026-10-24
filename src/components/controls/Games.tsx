@@ -78,6 +78,7 @@ export default function Games() {
       <BatchAnalysis />
       <p className="text-sm text-foreground-500">
         Recent games for
+        {' '}
         {username}
       </p>
       <Accordion
