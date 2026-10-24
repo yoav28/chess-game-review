@@ -1,4 +1,4 @@
-import type { Evaluation, PositionAnalysis } from '../engine/types'
+import type { EngineLine, Evaluation, PositionAnalysis } from '../engine/types'
 import { parsePgn } from './game'
 import { createPosition, positionMoveUci, type ChessVariant } from './position'
 import { classificationLabels, type Classification, type GameReview, type MoveReview } from './review'
@@ -70,6 +70,15 @@ function bestMove(data: Record<string, unknown>, fen: string, rules: ChessVarian
   }
 }
 
+function candidateLine(value: unknown, fen: string, rules: ChessVariant, budget: { remaining: number }, field: string): asserts value is EngineLine {
+  const line = record(value, ['rank', 'depth', 'evaluation', 'pv', 'pvSan'], field)
+  number(line.rank, 1, 5, `${field} rank`, true)
+  number(line.depth, 0, 256, `${field} depth`, true)
+  evaluation(line.evaluation, `${field} evaluation`)
+  pv(line.pv, line.pvSan, fen, rules, budget, `${field} continuation`)
+  requireValue(line.pv.length > 0, `${field} is empty`)
+}
+
 function analysis(value: unknown, initialFen: string, rules: ChessVariant, budget: { remaining: number }): asserts value is PositionAnalysis {
   const data = record(value, ['variant', 'fen', 'evaluation', 'bestMove', 'bestMoveSan', 'pv', 'pvSan', 'depth', 'lines'], 'initial analysis')
   requireValue(data.fen === initialFen, 'initial analysis position')
@@ -80,14 +89,9 @@ function analysis(value: unknown, initialFen: string, rules: ChessVariant, budge
   requireValue(Array.isArray(data.lines) && data.lines.length <= 5, 'initial candidate lines')
   const ranks = new Set<number>()
   for (const item of data.lines) {
-    const line = record(item, ['rank', 'depth', 'evaluation', 'pv', 'pvSan'], 'candidate line')
-    number(line.rank, 1, 5, 'candidate rank', true)
-    requireValue(!ranks.has(line.rank), 'duplicate candidate rank')
-    ranks.add(line.rank)
-    number(line.depth, 0, 256, 'candidate depth', true)
-    evaluation(line.evaluation, 'candidate evaluation')
-    pv(line.pv, line.pvSan, initialFen, rules, budget, 'candidate continuation')
-    requireValue(line.pv.length > 0, 'empty candidate continuation')
+    candidateLine(item, initialFen, rules, budget, 'candidate line')
+    requireValue(!ranks.has(item.rank), 'duplicate candidate rank')
+    ranks.add(item.rank)
   }
 }
 
@@ -128,7 +132,7 @@ export function validateTransferredReview(value: unknown): GameReview {
   let previousEvaluation = data.initialAnalysis.evaluation
   const board = createPosition(parsed.initialFen, rules)
   for (const [index, item] of data.moves.entries()) {
-    const move = record(item, ['variant', 'ply', 'san', 'uci', 'beforeFen', 'afterFen', 'color', 'piece', 'captured', 'promotion', 'from', 'to', 'legalMoves', 'bookName', 'kingTo', 'rookFrom', 'rookTo', 'classification', 'centipawnLoss', 'winningChanceLoss', 'accuracy', 'beforeEvaluation', 'evaluation', 'bestMove', 'bestMoveSan', 'pv', 'pvSan', 'depth', 'phase', 'explanation'], `move ${index + 1}`)
+    const move = record(item, ['variant', 'ply', 'san', 'uci', 'beforeFen', 'afterFen', 'color', 'piece', 'captured', 'promotion', 'from', 'to', 'legalMoves', 'bookName', 'kingTo', 'rookFrom', 'rookTo', 'classification', 'centipawnLoss', 'winningChanceLoss', 'accuracy', 'beforeEvaluation', 'evaluation', 'bestMove', 'bestMoveSan', 'pv', 'pvSan', 'alternativeLine', 'depth', 'phase', 'explanation'], `move ${index + 1}`)
     const original = parsed.moves[index]
     variant(move.variant, rules, 'move variant')
     for (const [key, expected] of Object.entries({ ply: index + 1, san: original.san, uci: original.uci, beforeFen: original.before, afterFen: original.after, color: original.color, piece: original.piece, captured: original.captured, promotion: original.promotion, from: original.from, to: original.to })) requireValue(move[key] === expected, `move ${index + 1} ${key} does not match PGN`)
@@ -150,6 +154,11 @@ export function validateTransferredReview(value: unknown): GameReview {
     requireValue(move.beforeEvaluation.cp === previousEvaluation.cp && move.beforeEvaluation.mate === previousEvaluation.mate, 'evaluation history')
     previousEvaluation = move.evaluation
     bestMove(move, original.before, rules, budget, `move ${index + 1}`)
+    if (move.alternativeLine !== undefined) {
+      candidateLine(move.alternativeLine, original.before, rules, budget, `move ${index + 1} alternative`)
+      requireValue((move.alternativeLine as EngineLine).rank === 2, `move ${index + 1} alternative rank`)
+      requireValue((move.alternativeLine as EngineLine).pv[0] !== move.bestMove, `move ${index + 1} alternative repeats best move`)
+    }
   }
   const review = data as unknown as GameReview
   score(data.whiteAccuracy, 'White accuracy'); score(data.blackAccuracy, 'Black accuracy')

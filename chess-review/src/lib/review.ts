@@ -3,7 +3,7 @@ import { parsePgn as parseGamePgn } from './game'
 import { createPosition, type ChessVariant } from './position'
 import { StockfishEngine } from '../engine/stockfish'
 import { terminalEvaluation } from '../engine/protocol'
-import type { Evaluation, PositionAnalysis, ReviewOptions } from '../engine/types'
+import type { EngineLine, Evaluation, PositionAnalysis, ReviewOptions } from '../engine/types'
 import { openingForMoves, type Opening } from './openings'
 import { isSoundSacrifice, isUniqueOpportunity } from './review-metrics'
 import { insightMethod, insightsForMove } from './insights'
@@ -53,6 +53,7 @@ export type MoveReview = ParsedMove & {
   bestMoveSan: string | null
   pv: string[]
   pvSan: string[]
+  alternativeLine?: EngineLine
   depth: number
   phase: GamePhase
   explanation: string
@@ -209,10 +210,12 @@ export function buildReview(game: ParsedGame, positions: PositionAnalysis[], sea
     const before = positions[index]
     const after = positions[index + 1]
     const assessed = classifyMove(move, before, after)
+    const alternative = before.lines.find(line => line.rank === 2)
     return {
       ...move, ...assessed, accuracy: moveAccuracy(assessed.winningChanceLoss), beforeEvaluation: before.evaluation,
       evaluation: after.evaluation, bestMove: before.bestMove, bestMoveSan: before.bestMoveSan,
       pv: before.pv, pvSan: before.pvSan, depth: Math.min(before.depth, after.depth || before.depth),
+      alternativeLine: alternative ? { ...alternative, pv: alternative.pv.slice(0, 32), pvSan: alternative.pvSan.slice(0, 32) } : undefined,
       phase: gamePhase(move.beforeFen, move.ply, game.variant), explanation: explainMove(move, assessed.classification, before, after),
     }
   })

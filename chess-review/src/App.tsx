@@ -31,7 +31,7 @@ function App() {
     start, cancel, currentMove, retry,
     retryMoves, fen, displayEvaluation, isVariation,
     lastMove, opening, navigate, selectGame,
-    boardMove, beginPractice, bestLine, copyPosition,
+    boardMove, beginPractice, bestLine, showLine, copyPosition,
     play, startPlay, stopPlay,
     explanation, explainCurrent, practicePosition,
     openSaved, importReport,
@@ -134,6 +134,7 @@ function App() {
                 onExplain={explainCurrent}
                 preferredColor={game.white.username.toLowerCase() === library.username ? 'w' : game.black.username.toLowerCase() === library.username ? 'b' : undefined}
                 onBestLine={bestLine}
+                onShowLine={showLine}
                 onMethod={() => setDialog("method")}
                 onImportReport={importReport}
                 orientation={orientation}

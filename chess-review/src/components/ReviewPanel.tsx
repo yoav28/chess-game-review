@@ -49,6 +49,7 @@ type Props = {
   settings: Settings;
   onSettings: (settings: Settings) => void;
   onBestLine: () => void;
+  onShowLine: (line: string[]) => void;
   onMethod: () => void;
   onImportReport: (review: GameReview) => void;
   orientation: 'w' | 'b';
@@ -74,6 +75,7 @@ export function ReviewPanel({
   settings,
   onSettings,
   onBestLine,
+  onShowLine,
   onMethod,
   onImportReport,
   orientation,
@@ -204,6 +206,7 @@ export function ReviewPanel({
               <label className="coach-detail">Explanation style<select aria-label="Explanation style" value={coachDetail} onChange={event => onSettings({ ...settings, coachDetail: event.target.value as CoachDetail })}><option value="detailed">Detailed</option><option value="concise">Concise</option></select></label>
               <p>{coachText(move, coachDetail, settings.coachProfile)}</p>
               <div className="coach-actions"><button className="secondary" onClick={onExplain}><Lightbulb size={15} /> Explain move</button>{move.bestMove && <button className="text-button" onClick={onBestLine}>Analyze {move.bestMoveSan}<ChevronRight size={14} /></button>}</div>
+              {move.alternativeLine?.pv.length ? <button className="text-button" title={`Second engine line: ${move.alternativeLine.pvSan.slice(0, 6).join(' ')}`} onClick={() => onShowLine(move.alternativeLine!.pv)}>Explore second engine line <ChevronRight size={14} /></button> : null}
               {retryableMove && move && <button className="text-button" onClick={() => onPracticePosition(move.ply)}><RotateCcw size={14} /> Retry this move</button>}
             </section>
           )}

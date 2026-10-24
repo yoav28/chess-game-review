@@ -290,13 +290,19 @@ export function useWorkspace() {
     setVariation([]);
   }
 
-  function bestLine() {
-    if (!currentMove?.bestMove) return;
+  function showLine(line: string[]) {
+    if (!currentMove || !line.length) return;
+    play.stop();
     explanation.stop();
+    practice.stop();
     setPly(safePly - 1);
-    setVariation([currentMove.bestMove]);
+    setVariation(line);
     setTab("analysis");
     setPlaying(false);
+  }
+
+  function bestLine() {
+    if (currentMove?.bestMove) showLine([currentMove.bestMove]);
   }
 
   function startPlay() {
@@ -346,7 +352,7 @@ export function useWorkspace() {
     start, cancel, currentMove, retry,
     retryMoves, fen, displayEvaluation, isVariation,
     lastMove, opening, navigate, selectGame,
-    boardMove, beginPractice, bestLine, copyPosition,
+    boardMove, beginPractice, bestLine, showLine, copyPosition,
     play, startPlay, stopPlay,
     explanation, explainCurrent, practicePosition,
     openSaved, importReport,
