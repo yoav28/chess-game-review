@@ -1,0 +1,5 @@
+Chessops 0.15.1 provides the Chess960 rules adapter.
+License: GNU General Public License 3 or later. The unmodified license is included as CHESSOPS-COPYING.txt.
+Source repository and documentation: https://github.com/niklasf/chessops
+Exact npm release: https://registry.npmjs.org/chessops/-/chessops-0.15.1.tgz
+The exact package bytes are pinned by package-lock.json integrity.

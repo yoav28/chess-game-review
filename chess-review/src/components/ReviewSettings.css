@@ -1,0 +1,30 @@
+.review-settings fieldset {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 20px 0 0;
+  padding: 16px 0 0;
+  min-width: 0;
+}
+.review-settings legend {
+  font-size: 15px;
+  font-weight: 650;
+  padding: 0 12px 0 0;
+}
+.review-settings label:not(.checkbox-label) {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+.review-settings input[type="range"],
+.review-settings select {
+  width: 100%;
+}
+.review-settings .checkbox-label {
+  margin: 14px 0;
+  gap: 10px;
+}
+.review-settings > button {
+  margin-top: 20px;
+}

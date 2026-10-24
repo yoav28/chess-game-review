@@ -1,33 +1,32 @@
 import { useEffect, useRef } from "react";
-import type { GameMove } from "../lib/game";
+import type { GameMove, ParsedGame } from "../lib/game";
+import { moveTimes } from "../lib/move-time";
 import { classificationLabels, type GameReview } from "../lib/review";
+import { classificationGlyph } from "../lib/classification";
 
-export const classificationGlyph: Record<string, string> = {
-  brilliant: "!!",
-  great: "!",
-  best: "★",
-  excellent: "✓",
-  good: "•",
-  book: "▤",
-  inaccuracy: "?!",
-  mistake: "?",
-  blunder: "??",
-  missed: "×",
-  forced: "→",
-};
+export { classificationGlyph } from "../lib/classification";
 
 export function MoveList({
   moves,
   review,
   ply,
   onSelect,
+  parsed,
+  timeControl,
+  timeClass,
+  showTimeSpent,
 }: {
   moves: GameMove[];
   review: GameReview | null;
   ply: number;
   onSelect: (ply: number) => void;
+  parsed: ParsedGame;
+  timeControl: string;
+  timeClass: string;
+  showTimeSpent: boolean;
 }) {
   const selected = useRef<HTMLButtonElement>(null);
+  const elapsed = showTimeSpent ? moveTimes(parsed, timeControl, timeClass) : [];
   const list = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = list.current;
@@ -72,6 +71,7 @@ export function MoveList({
                 aria-label={`Move ${row.number} ${color === "w" ? "White" : "Black"} ${move.san}${rating ? `, ${classificationLabels[rating.classification]}` : ""}`}
               >
                 <span>{move.san}</span>
+                {showTimeSpent && elapsed[move.ply - 1] != null && <span className="move-time" title="Time spent on this move">{`${elapsed[move.ply - 1]!.toFixed(elapsed[move.ply - 1]! < 10 ? 1 : 0)}s`}</span>}
                 {rating && (
                   <span
                     className={`move-glyph ${rating.classification}`}

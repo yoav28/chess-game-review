@@ -6,6 +6,7 @@ import test, { after } from 'node:test'
 import { Chess } from 'chess.js'
 import { analyzePosition, StockfishEngine } from './stockfish'
 import { reviewGame } from '../lib/review'
+import { createPosition } from '../lib/position'
 
 const require = createRequire(import.meta.url)
 const engineFile = join(dirname(require.resolve('stockfish/package.json')), 'bin/stockfish-19-lite-single.js')
@@ -84,4 +85,44 @@ test('aborting during game review prevents stale positions from completing', { t
   })
   await assert.rejects(analyzing, error => error instanceof Error && error.name === 'AbortError')
   assert.equal(completed, 1)
+})
+
+test('real Stockfish Chess960 mode returns canonical king-to-rook castling UCI and legal mating SAN', { timeout: 30000 }, async () => {
+  const fen = '4rkr1/4p1p1/8/8/8/8/8/5K1R w H - 0 1'
+  const analysis = await analyzePosition(fen, { variant: 'chess960', depth: 10, timeMs: 200, multiPv: 2 })
+  assert.equal(analysis.variant, 'chess960')
+  assert.equal(analysis.bestMove, 'f1h1')
+  assert.equal(analysis.bestMoveSan, 'O-O#')
+  assert.equal(analysis.evaluation.mate, 1)
+  const board = createPosition(fen, 'chess960')
+  board.move({ from: analysis.bestMove!.slice(0, 2), to: analysis.bestMove!.slice(2, 4) })
+  assert.equal(board.get('g1')?.type, 'k')
+  assert.equal(board.get('f1')?.type, 'r')
+  assert.equal(board.isCheckmate(), true)
+})
+
+test('real engine replays a public Chess960 game history containing both colors castling', { timeout: 30000 }, async () => {
+  const initialFen = 'brqbknrn/pppppppp/8/8/8/8/PPPPPPPP/BRQBKNRN w GBgb - 0 1'
+  const board = createPosition(initialFen, 'chess960')
+  const sans = ['d4', 'Nhg6', 'e4', 'c5', 'd5', 'b5', 'Ne3', 'c4', 'O-O', 'd6', 'b4', 'Nd7', 'Ng3', 'e6', 'Nh5', 'Bf6', 'Nxf6+', 'gxf6', 'f4', 'Qc7', 'Bg4', 'e5', 'Bxd7+', 'Qxd7', 'Nf5', 'Ne7', 'Nh6', 'Rg6', 'fxe5', 'dxe5', 'Qe3', 'O-O-O']
+  const moves = sans.map(san => { const move = board.move(san); return move.uci! })
+  const analysis = await analyzePosition(board.fen(), { variant: 'chess960', depth: 8, timeMs: 100, history: { initialFen, moves } })
+  assert.equal(analysis.variant, 'chess960')
+  assert.ok(analysis.bestMove)
+  assert.doesNotThrow(() => board.move({ from: analysis.bestMove!.slice(0, 2), to: analysis.bestMove!.slice(2, 4), promotion: analysis.bestMove![4] }))
+  assert.ok(analysis.pvSan.length > 0)
+})
+
+test('complete Chess960 review records exact mating castle, variant and physical destinations', { timeout: 30000 }, async () => {
+  const pgn = '[Variant "Chess960"]\n[FEN "4rkr1/4p1p1/8/8/8/8/8/5K1R w H - 0 1"]\n[Result "1-0"]\n\n1. O-O# 1-0'
+  const review = await reviewGame(pgn, { depth: 8, timeMs: 100 })
+  assert.equal(review.variant, 'chess960')
+  assert.equal(review.moves[0].variant, 'chess960')
+  assert.equal(review.moves[0].uci, 'f1h1')
+  assert.equal(review.moves[0].kingTo, 'g1')
+  assert.equal(review.moves[0].rookTo, 'f1')
+  assert.equal(review.moves[0].bestMoveSan, 'O-O#')
+  assert.equal(review.moves[0].classification, 'best')
+  assert.deepEqual(review.moves[0].evaluation, { cp: 100000, mate: 0 })
+  assert.equal(review.opening, null)
 })

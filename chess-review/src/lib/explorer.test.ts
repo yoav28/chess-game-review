@@ -130,3 +130,21 @@ test('empty libraries are explicit and invalid query positions are rejected', as
   assert.deepEqual(result.moves, [])
   await assert.rejects(exploreImportedGames([], 'invalid FEN'), /Invalid FEN/)
 })
+
+test('Chess960 exploration returns canonical castling moves and never mixes standard inventories', async () => {
+  const fen = '4k3/8/8/8/8/8/8/5K1R w H - 0 1'
+  const chess960 = gameFromPgn(`[Variant "Chess960"]\n[FEN "${fen}"]\n\n1. O-O *`)
+  const result = await exploreImportedGames([chess960, game('standard', '1. e4')], fen, { variant: 'chess960' })
+  assert.equal(result.variant, 'chess960')
+  assert.equal(result.matchingGames, 1)
+  assert.equal(result.skippedGames, 1)
+  assert.equal(result.moves[0].uci, 'f1h1')
+  assert.equal(result.moves[0].san, 'O-O')
+  const noRights = '4k3/8/8/8/8/8/8/R5K1 w - - 0 1'
+  const ordinary = gameFromPgn(`[FEN "${noRights}"]\n[SetUp "1"]\n\n1. Ra2 *`)
+  const variantGame = gameFromPgn(`[Variant "Chess960"]\n[FEN "${noRights}"]\n\n1. Ra2 *`)
+  const explicit = await exploreImportedGames([ordinary, variantGame], noRights, { variant: 'chess960' })
+  assert.equal(explicit.standardGames, 1)
+  assert.equal(explicit.moves[0].games, 1)
+  assert.equal(explicit.skippedGames, 1)
+})

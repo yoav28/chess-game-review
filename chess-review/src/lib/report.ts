@@ -2,6 +2,8 @@ import { Chess, type Color } from 'chess.js'
 import { parsePgn } from './game'
 import { classificationLabels, type GameReview, type MoveReview } from './review'
 import type { Evaluation } from '../engine/types'
+import { createPosition, pgnVariant, type ChessPosition } from './position'
+import { reviewed960Pgn } from './reviewed960-pgn'
 
 export type SkillScore = { accuracy: number | null; moves: number }
 export type SkillSummary = {
@@ -54,8 +56,8 @@ function clockTag(seconds: number): string {
   return `[%clk ${hours}:${String(minutes).padStart(2, '0')}:${whole}${fraction}]`
 }
 
-function replay(review: GameReview): Chess {
-  const board = new Chess(review.initialFen)
+function replay(review: GameReview): ChessPosition {
+  const board = createPosition(review.initialFen, review.variant ?? pgnVariant(review.pgn))
   for (const move of review.moves) {
     if (board.fen() !== move.beforeFen) throw new Error('The review contains an inconsistent move sequence.')
     board.move({ from: move.from, to: move.to, promotion: move.promotion })
@@ -64,7 +66,7 @@ function replay(review: GameReview): Chess {
   return board
 }
 
-function gameResult(review: GameReview, board: Chess): string {
+function gameResult(review: GameReview, board: ChessPosition): string {
   if (board.isCheckmate()) return board.turn() === 'w' ? '0-1' : '1-0'
   if (/^(?:1-0|0-1|1\/2-1\/2)$/.test(review.result)) return review.result
   if (board.isStalemate() || board.isInsufficientMaterial()) return '1/2-1/2'
@@ -81,6 +83,7 @@ function safeHeader(value: string): string {
 
 export function reviewedPgn(review: GameReview): string {
   const final = replay(review)
+  if ((review.variant ?? pgnVariant(review.pgn)) === 'chess960') return reviewed960Pgn(review, gameResult(review, final), skillMethod, evaluationTag, clockTag)
   const source = new Chess()
   source.loadPgn(review.pgn)
   const comments = new Map(source.getComments().map(comment => [comment.fen, comment.comment]))

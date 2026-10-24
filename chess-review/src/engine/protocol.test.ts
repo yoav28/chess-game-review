@@ -68,3 +68,21 @@ test('UCI mate zero means the side to move is checkmated', () => {
   chess.loadPgn('1. f3 e5 2. g4 Qh4# 0-1')
   assert.equal(parseInfo('info depth 0 score mate 0 pv a2a3', chess.fen())?.evaluation.cp, -100000)
 })
+
+test('Chess960 PV castling uses canonical king-to-rook UCI and SAN without standard fallback', () => {
+  const fen = '4rkr1/4p1p1/8/8/8/8/8/5K1R w H - 0 1'
+  assert.deepEqual(variationToSan(fen, ['f1h1'], 'chess960'), ['O-O#'])
+  const info = parseInfo('info depth 10 score mate 1 pv f1h1', fen, 'chess960')
+  assert.deepEqual(info?.pvSan, ['O-O#'])
+  assert.equal(info?.evaluation.mate, 1)
+  assert.throws(() => variationToSan(fen, ['f1h1'], 'chess'), /cannot use standard/)
+})
+
+test('Chess960 history preserves variant and physical rook movement after castling', () => {
+  const initialFen = '4k3/8/8/8/8/8/8/5K1R w H - 0 1'
+  const target = '4k3/8/8/8/8/8/8/5RK1 b - - 1 1'
+  const board = boardWithHistory(target, { initialFen, moves: ['f1h1'] }, 'chess960')
+  assert.equal(board.get('g1')?.type, 'k')
+  assert.equal(board.get('f1')?.type, 'r')
+  assert.equal(board.fen(), target)
+})

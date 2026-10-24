@@ -49,7 +49,21 @@ test('en passant moves include the actual capture information', () => {
 test('invalid PGNs and unsupported variants return actionable errors', () => {
   assert.throws(() => parsePgn(''), /empty/)
   assert.throws(() => parsePgn('1. e4 e5 2. Qxe8 *'), /Cannot read this PGN/)
-  assert.throws(() => parseGame({ ...demoGame, rules: 'chess960' }), /standard chess/)
+  assert.throws(() => parseGame({ ...demoGame, rules: 'atomic' }), /standard chess and Chess960/)
+})
+
+test('Chess960 PGN import preserves variant, clocks, headers and physical castle destinations', () => {
+  const pgn = '[Variant "Chess960"]\n[FEN "4k3/8/8/8/8/8/8/5KR1 w G - 0 1"]\n[White "Ada"]\n[Black "Grace"]\n\n1. O-O {[%clk 0:03:00]} *'
+  const game = gameFromPgn(pgn)
+  assert.equal(game.rules, 'chess960')
+  const parsed = parseGame(game)
+  assert.equal(parsed.variant, 'chess960')
+  assert.equal(parsed.headers.White, 'Ada')
+  assert.equal(parsed.moves[0].uci, 'f1g1')
+  assert.equal(parsed.moves[0].kingTo, 'g1')
+  assert.equal(parsed.moves[0].rookTo, 'f1')
+  assert.equal(parsed.clocks[0], 180)
+  assert.throws(() => parseGame({ ...game, rules: 'chess' }), /cannot use standard/)
 })
 
 test('imported PGN keeps player names, ratings, result, and stable IDs', () => {

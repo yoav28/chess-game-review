@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { exploreImportedGames, type ExplorerProgress, type ExplorerResult } from '../lib/explorer'
 import type { GameRecord } from '../lib/game'
+import type { ChessVariant } from '../lib/position'
 
 const cell: CSSProperties = { padding: '10px 3px', textAlign: 'right', borderBottom: '1px solid var(--border)' }
 const heading: CSSProperties = { ...cell, fontWeight: 500, color: 'var(--muted)' }
 
-type Props = { games: GameRecord[]; fen: string; onMove: (uci: string) => void }
+type Props = { games: GameRecord[]; fen: string; variant?: ChessVariant; onMove: (uci: string) => void }
 
-export function OpeningExplorer({ games, fen, onMove }: Props) {
+export function OpeningExplorer({ games, fen, variant = 'chess', onMove }: Props) {
   const [result, setResult] = useState<ExplorerResult | null>(null)
   const [progress, setProgress] = useState<ExplorerProgress | null>(null)
   const [running, setRunning] = useState(false)
@@ -24,7 +25,7 @@ export function OpeningExplorer({ games, fen, onMove }: Props) {
     setError('')
     setStopped(false)
     return () => { request.current?.abort(); request.current = null }
-  }, [games, fen])
+  }, [games, fen, variant])
 
   async function explore() {
     request.current?.abort()
@@ -38,6 +39,7 @@ export function OpeningExplorer({ games, fen, onMove }: Props) {
     try {
       const next = await exploreImportedGames(games, fen, {
         signal: controller.signal,
+        variant,
         onProgress: value => { if (request.current === controller && !controller.signal.aborted) setProgress(value) },
       })
       if (request.current === controller && !controller.signal.aborted) setResult(next)
@@ -63,7 +65,7 @@ export function OpeningExplorer({ games, fen, onMove }: Props) {
     {stopped && <p className="library-notice" role="status">Search stopped. Run it again to get complete results.</p>}
     {error && <p className="error-message" role="alert">{error}</p>}
     {result && <>
-      <p className="library-notice" role="status">{result.matchingGames.toLocaleString()} matching games · {result.standardGames.toLocaleString()} valid standard games checked.{result.skippedGames > 0 && ` ${result.skippedGames.toLocaleString()} variants or invalid games skipped.`}{result.duplicateGames > 0 && ` ${result.duplicateGames.toLocaleString()} duplicates excluded.`}</p>
+      <p className="library-notice" role="status">{result.matchingGames.toLocaleString()} matching games · {result.standardGames.toLocaleString()} valid {variant === 'chess960' ? 'Chess960' : 'standard'} games checked.{result.skippedGames > 0 && ` ${result.skippedGames.toLocaleString()} other-variant or invalid games skipped.`}{result.duplicateGames > 0 && ` ${result.duplicateGames.toLocaleString()} duplicates excluded.`}</p>
       {result.moves.length ? <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }} aria-label="Moves played in imported games"><thead><tr><th scope="col" style={{ ...heading, textAlign: 'left' }}>Move</th><th scope="col" style={heading}>Games</th><th scope="col" style={heading} title="White wins / draws / Black wins">W / D / B</th><th scope="col" style={heading} title="Average of all known player ratings in these games">Avg Elo</th></tr></thead><tbody>{result.moves.map(move => <tr key={move.uci}><td style={{ ...cell, textAlign: 'left' }}><button className="text-button" onClick={() => onMove(move.uci)} aria-label={`Play ${move.san}`}>{move.san}</button></td><td style={cell}>{move.games.toLocaleString()}</td><td style={cell}>{move.whiteWins} / {move.draws} / {move.blackWins}{move.unknownResults > 0 && <span title="Games without a known result"> · {move.unknownResults} ?</span>}</td><td style={cell}>{move.averageRating ?? '—'}</td></tr>)}</tbody></table></div> : <p className="engine-empty">No continuations were recorded from this position.</p>}
       <p className="fine-print" style={{ marginTop: 12 }}>Results show White wins, draws, and Black wins. Each game counts once per distinct next move, including transpositions. Unfinished results are marked ?. Ratings average known players.</p>
     </>}

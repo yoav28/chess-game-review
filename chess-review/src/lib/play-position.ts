@@ -1,10 +1,12 @@
-import { Chess, type Color } from 'chess.js'
+import type { Color } from 'chess.js'
+import { createPosition, positionMoveUci, resolveVariant, type ChessPosition, type ChessVariant } from './position'
 import { boardWithHistory } from '../engine/protocol'
 import { analyzePosition } from '../engine/stockfish'
 import type { AnalysisOptions } from '../engine/types'
 
 export type PositionHistory = NonNullable<AnalysisOptions['history']>
 export type PlayPositionState = {
+  variant?: ChessVariant
   active: boolean
   fen: string
   historySans: string[]
@@ -18,7 +20,7 @@ export type PlayPositionState = {
 }
 
 export const initialPlayPositionState: PlayPositionState = {
-  active: false, fen: new Chess().fen(), historySans: [], thinking: false,
+  active: false, variant: 'chess', fen: createPosition().fen(), historySans: [], thinking: false,
   error: '', outcome: null, playerColor: 'w', turn: 'w', canUndo: false, lastMove: null,
 }
 
@@ -28,7 +30,7 @@ type Dependencies = {
   timeMs?: number
 }
 
-export function positionOutcome(board: Chess): string | null {
+export function positionOutcome(board: ChessPosition): string | null {
   if (board.isCheckmate()) return (board.turn() === 'w' ? 'Black' : 'White') + ' wins by checkmate.'
   if (board.isStalemate()) return 'Draw by stalemate.'
   if (board.isInsufficientMaterial()) return 'Draw by insufficient material.'
@@ -41,8 +43,8 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
   const analyze = dependencies.analyze ?? analyzePosition
   let settings = { depth: dependencies.depth ?? 16, timeMs: dependencies.timeMs ?? 500 }
   let live = true
-  let board: Chess | null = null
-  let base: { fen: string; history: PositionHistory } | null = null
+  let board: ChessPosition | null = null
+  let base: { fen: string; history: PositionHistory; variant: ChessVariant } | null = null
   let userMoves: number[] = []
   let request: AbortController | null = null
   let state = { ...initialPlayPositionState }
@@ -58,7 +60,7 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
       historySans: continuation.map(move => move.san),
       outcome: board ? positionOutcome(board) : null,
       canUndo: userMoves.length > 0,
-      lastMove: last ? { from: last.from, to: last.to } : null,
+      lastMove: last ? { from: last.from, to: last.kingTo ?? last.to } : null,
     }
     if (live) onChange(state)
   }
@@ -75,12 +77,12 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
     const controller = new AbortController()
     request = controller
     const owns = () => live && state.active && request === controller && !controller.signal.aborted && board === currentBoard
-    const history = currentBoard.history({ verbose: true }).map(move => move.from + move.to + (move.promotion ?? ''))
+    const history = currentBoard.history({ verbose: true }).map(positionMoveUci)
     state = { ...state, thinking: true, error: '' }
     emit()
     try {
       const result = await analyze(currentBoard.fen(), {
-        ...settings, multiPv: 1, signal: controller.signal,
+        ...settings, variant: base!.variant, multiPv: 1, signal: controller.signal,
         history: { initialFen: base!.history.initialFen, moves: history },
       })
       if (!owns()) return
@@ -98,17 +100,19 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
     }
   }
 
-  function start(fen: string, playerColor: Color, history?: PositionHistory): boolean {
+  function start(fen: string, playerColor: Color, history?: PositionHistory, variant?: ChessVariant): boolean {
     if (!live) return false
     abort()
     try {
-      board = boardWithHistory(fen, history)
+      const rules = resolveVariant(history?.initialFen ?? fen, variant)
+      board = boardWithHistory(fen, history, rules)
       base = {
         fen: board.fen(),
+        variant: rules,
         history: history ? { initialFen: history.initialFen, moves: [...history.moves] } : { initialFen: board.fen(), moves: [] },
       }
       userMoves = []
-      state = { ...initialPlayPositionState, active: true, playerColor }
+      state = { ...initialPlayPositionState, variant: rules, active: true, playerColor }
       emit()
       void engineTurn()
       return true
@@ -151,7 +155,7 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
       return true
     },
     restart: () => {
-      if (base) start(base.fen, state.playerColor, base.history)
+      if (base) start(base.fen, state.playerColor, base.history, base.variant)
     },
     stop: () => {
       abort()

@@ -1,4 +1,5 @@
-import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js'
+import type { Color, PieceSymbol, Square } from 'chess.js'
+import { createPosition, type ChessPosition, type ChessVariant, type PositionMove } from './position'
 import type { ParsedMove } from './review'
 
 export const insightMethod = 'Conceptual coaching uses position-based rule heuristics. It describes selected structures and threats without claiming a move is good or that material can be won.'
@@ -7,18 +8,18 @@ const names: Record<PieceSymbol, string> = { p: 'pawn', n: 'knight', b: 'bishop'
 const value: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 99 }
 const center: Square[] = ['d4', 'e4', 'd5', 'e5']
 const opposite = (color: Color): Color => color === 'w' ? 'b' : 'w'
-const pieces = (board: Chess) => board.board().flat().filter(piece => piece !== null)
+const pieces = (board: ChessPosition) => board.board().flat().filter(piece => piece !== null)
 
-function pinnedBy(board: Chess, attacker: Square, blocker: Square, king: Square, color: Color): boolean {
+function pinnedBy(board: ChessPosition, attacker: Square, blocker: Square, king: Square, color: Color, variant?: ChessVariant): boolean {
   if (!board.get(blocker) || !board.attackers(blocker, color).includes(attacker)) return false
-  const withoutBlocker = new Chess(board.fen())
+  const withoutBlocker = createPosition(board.fen(), variant)
   withoutBlocker.remove(blocker)
   return withoutBlocker.attackers(king, color).includes(attacker)
 }
 
 export function insightsForMove(move: ParsedMove): string[] {
-  const before = new Chess(move.beforeFen)
-  const after = new Chess(move.afterFen)
+  const before = createPosition(move.beforeFen, move.variant)
+  const after = createPosition(move.afterFen, move.variant)
   if (after.isCheckmate() || move.san.startsWith('O-O')) return []
   const from = move.from as Square
   const to = move.to as Square
@@ -38,8 +39,8 @@ export function insightsForMove(move: ParsedMove): string[] {
     const king = allPieces.find(target => target.color === enemy && target.type === 'k')
     if (king && !after.attackers(king.square, move.color).includes(to)) {
       const blocker = allPieces.find(target => target.color === enemy && target.type !== 'k'
-        && pinnedBy(after, to, target.square, king.square, move.color)
-        && !pinnedBy(before, from, target.square, king.square, move.color))
+        && pinnedBy(after, to, target.square, king.square, move.color, move.variant)
+        && !pinnedBy(before, from, target.square, king.square, move.color, move.variant))
       if (blocker) add(90, `The ${names[piece.type]} pins the ${names[blocker.type]} on ${blocker.square} to the king.`)
     }
   }
@@ -47,8 +48,9 @@ export function insightsForMove(move: ParsedMove): string[] {
   const nextTurnFen = after.fen().split(' ')
   nextTurnFen[1] = move.color
   nextTurnFen[3] = '-'
-  const nextTurn = new Chess(nextTurnFen.join(' '))
-  const captures = nextTurn.moves({ square: to, verbose: true }).filter(candidate => candidate.captured)
+  let captures: PositionMove[] = []
+  try { captures = createPosition(nextTurnFen.join(' '), move.variant).moves({ square: to, verbose: true }).filter(candidate => candidate.captured) }
+  catch {}
   const forkTargets = allPieces.filter(target => target.color === enemy && value[target.type] >= 3
     && after.attackers(target.square, move.color).includes(to)
     && (target.type === 'k' || captures.some(capture => capture.to === target.square)))

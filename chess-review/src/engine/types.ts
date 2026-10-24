@@ -1,3 +1,5 @@
+import type { ChessVariant } from '../lib/position'
+
 export type Evaluation = { cp: number; mate: number | null }
 
 export type EngineLine = {
@@ -9,6 +11,7 @@ export type EngineLine = {
 }
 
 export type PositionAnalysis = {
+  variant?: ChessVariant
   fen: string
   evaluation: Evaluation
   bestMove: string | null
@@ -20,6 +23,7 @@ export type PositionAnalysis = {
 }
 
 export type AnalysisOptions = {
+  variant?: ChessVariant
   depth?: number
   timeMs?: number
   multiPv?: number

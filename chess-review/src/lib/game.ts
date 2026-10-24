@@ -1,4 +1,6 @@
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js'
+import { parseChess960Pgn } from './chess960'
+import { pgnVariant, type ChessVariant } from './position'
 
 export interface GamePlayer {
   username: string
@@ -33,9 +35,13 @@ export interface GameMove {
   before: string
   after: string
   clockSeconds?: number
+  kingTo?: Square
+  rookFrom?: Square
+  rookTo?: Square
 }
 
 export interface ParsedGame {
+  variant?: ChessVariant
   headers: Record<string, string>
   moves: GameMove[]
   positions: string[]
@@ -75,8 +81,11 @@ function pgnClocks(pgn: string, moveCount: number): (number | null)[] {
   return clocks
 }
 
-export function parsePgn(pgn: string): ParsedGame {
+export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
   if (!pgn.trim()) throw new Error('The PGN is empty. Paste a game with legal moves.')
+  const identified = pgnVariant(pgn)
+  if (variant === 'chess' && identified === 'chess960') throw new Error('This PGN identifies Chess960 and cannot use standard chess rules.')
+  if (variant === 'chess960' || identified === 'chess960') return parseChess960Pgn(pgn)
   const chess = new Chess()
   try {
     chess.loadPgn(pgn.replace(/^\uFEFF/, ''))
@@ -102,12 +111,12 @@ export function parsePgn(pgn: string): ParsedGame {
     after: move.after,
     clockSeconds: clocks[index] ?? undefined,
   }))
-  return { headers, moves, positions: [initialFen, ...moves.map((move) => move.after)], clocks, initialFen, result: headers.Result ?? '*' }
+  return { variant: 'chess', headers, moves, positions: [initialFen, ...moves.map((move) => move.after)], clocks, initialFen, result: headers.Result ?? '*' }
 }
 
 export function parseGame(game: GameRecord): ParsedGame {
-  if (game.rules !== 'chess') throw new Error(`This game uses ${game.rules}. Engine review currently supports standard chess.`)
-  return parsePgn(game.pgn)
+  if (game.rules !== 'chess' && game.rules !== 'chess960') throw new Error(`This game uses ${game.rules}. Engine review supports standard chess and Chess960.`)
+  return parsePgn(game.pgn, game.rules)
 }
 
 function pgnResult(result: string, color: Color): string {
@@ -123,7 +132,7 @@ function pgnId(pgn: string): string {
 }
 
 export function gameFromPgn(pgn: string): GameRecord {
-  const { headers, result } = parsePgn(pgn)
+  const { headers, result, variant } = parsePgn(pgn)
   const date = headers.UTCDate ?? headers.Date ?? ''
   const timestamp = Date.parse(`${date.replace(/\./g, '-')}T${headers.UTCTime ?? '00:00:00'}Z`)
   return {
@@ -135,7 +144,7 @@ export function gameFromPgn(pgn: string): GameRecord {
     timeClass: 'imported',
     timeControl: headers.TimeControl ?? '-',
     endTime: Number.isFinite(timestamp) ? Math.floor(timestamp / 1000) : 0,
-    rules: 'chess',
+    rules: variant ?? 'chess',
     eco: headers.ECOUrl ?? headers.ECO,
   }
 }

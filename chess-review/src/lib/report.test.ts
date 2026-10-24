@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { Chess } from 'chess.js'
 import { buildReview, parsePgn as parseReview, type GameReview } from './review'
 import { parsePgn } from './game'
 import { plainTextReport, reviewedPgn, skillSummaries } from './report'
 import { terminalEvaluation } from '../engine/protocol'
 import type { PositionAnalysis } from '../engine/types'
+import { createPosition } from './position'
 
 function fixture(pgn: string): GameReview {
   const game = parseReview(pgn)
   const positions = [game.initialFen, ...game.moves.map(move => move.afterFen)].map((fen, index): PositionAnalysis => ({
-    fen, evaluation: terminalEvaluation(new Chess(fen)) ?? { cp: 0, mate: null },
+    fen, variant: game.variant, evaluation: terminalEvaluation(createPosition(fen, game.variant)) ?? { cp: 0, mate: null },
     bestMove: game.moves[index]?.uci ?? null, bestMoveSan: game.moves[index]?.san ?? null,
     pv: [], pvSan: [], depth: 16, lines: [],
   }))
@@ -93,11 +93,41 @@ test('plain text sharing includes category sample counts and independent scoring
   assert.match(text, /Opening: White 100\.0% \(1 move\); Black 100\.0% \(1 move\)/)
   assert.match(text, /Tactics: White unavailable \(0 moves\); Black unavailable \(0 moves\)/)
   assert.match(text, /No moves exceeded the key-moment threshold/)
-  assert.match(text, /Independent metric/)
+  assert.match(text, /Lichess’s published win-chance model/)
 })
 
 test('export rejects an inconsistent review rather than emitting misleading chess positions', () => {
   const review = fixture('1. e4 e5 *')
   review.moves[1].beforeFen = review.initialFen
   assert.throws(() => reviewedPgn(review), /inconsistent move sequence/)
+})
+
+test('native Chess960 export preserves setup, black move numbers, source comments, variations, NAGs and clocks', () => {
+  const pgn = '[Variant "Chess960"]\n[Event "960 source"]\n[White "Ada"]\n[Black "Grace"]\n[SetUp "1"]\n[FEN "5k1r/8/8/8/8/8/8/4K3 b h - 3 42"]\n[Result "*"]\n\n{Opening note} 42... O-O $2 {Castle note [%clk 0:01:02.5] [%eval 8.88]} (42... Rh7 {Sideline note}) 43. Kd2 {White note} Kf7 {Black note [%clk 0:00:59.5]} *'
+  const review = fixture(pgn)
+  const output = reviewedPgn(review)
+  const parsed = parsePgn(output)
+  const source = parsePgn(pgn)
+  assert.equal(parsed.variant, 'chess960')
+  assert.deepEqual(parsed.positions, source.positions)
+  assert.deepEqual(parsed.moves.map(move => move.uci), source.moves.map(move => move.uci))
+  assert.deepEqual(parsed.clocks, [62.5, null, 59.5])
+  assert.equal(parsed.headers.Variant, 'Chess960')
+  assert.equal(parsed.headers.SetUp, '1')
+  assert.equal(parsed.headers.Event, '960 source')
+  assert.match(output, /42\.\.\. O-O/)
+  assert.match(output, /Opening note/)
+  assert.match(output, /Castle note/)
+  assert.match(output, /Sideline note/)
+  assert.match(output, /Rh7/)
+  assert.match(output, /\$2/)
+  assert.doesNotMatch(output, /8\.88/)
+  assert.match(output, /\[%eval 0\.00\]/)
+  assert.match(plainTextReport(review), /Ada vs Grace/)
+})
+
+test('Chess960 export refuses a review whose saved UCI disagrees with the source game', () => {
+  const review = fixture('[Variant "Chess960"]\n[FEN "4k3/8/8/8/8/8/8/5K1R w H - 0 1"]\n\n1. O-O *')
+  review.moves[0].uci = 'f1e1'
+  assert.throws(() => reviewedPgn(review), /do not match/)
 })

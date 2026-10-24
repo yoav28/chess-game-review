@@ -11,3 +11,6 @@ for (const file of ['stockfish-19-lite-single.js', 'stockfish-19-lite-single.was
   await copyFile(join(packageDirectory, 'bin', file), join(publicDirectory, file))
 }
 await copyFile(join(packageDirectory, 'Copying.txt'), join(publicDirectory, 'COPYING.txt'))
+const licenseDirectory = fileURLToPath(new URL('../public/licenses/', import.meta.url))
+await mkdir(licenseDirectory, { recursive: true })
+await copyFile(join(dirname(require.resolve('chessops/chess')), '..', '..', 'LICENSE.txt'), join(licenseDirectory, 'CHESSOPS-COPYING.txt'))

@@ -1,0 +1,41 @@
+.explanation-step {
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+  padding-top: 20px;
+  min-height: 180px;
+}
+.explanation-step h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+.explanation-step h3 span {
+  font-family: ui-monospace, monospace;
+}
+.explanation-step p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0;
+}
+.explanation-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+.explanation-controls button {
+  flex: 1;
+  justify-content: center;
+}
+.explanation-footer {
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+}

@@ -1,5 +1,6 @@
 import { boardWithHistory, completedLines, parseInfo, terminalEvaluation } from './protocol'
 import type { AnalysisOptions, EngineLine, PositionAnalysis } from './types'
+import { resolveVariant } from '../lib/position'
 
 type Pending = { reject: (reason: Error) => void }
 
@@ -55,19 +56,21 @@ export class StockfishEngine {
   async analyze(fen: string, options: AnalysisOptions = {}): Promise<PositionAnalysis> {
     await this.ready
     if (this.disposed) throw new DOMException('Analysis cancelled', 'AbortError')
-    const board = boardWithHistory(fen, options.history)
+    const variant = resolveVariant(fen, options.variant)
+    const board = boardWithHistory(fen, options.history, variant)
     const terminal = terminalEvaluation(board)
-    if (terminal) return { fen, evaluation: terminal, bestMove: null, bestMoveSan: null, pv: [], pvSan: [], depth: 0, lines: [] }
+    if (terminal) return { fen, variant, evaluation: terminal, bestMove: null, bestMoveSan: null, pv: [], pvSan: [], depth: 0, lines: [] }
     const depth = Math.max(4, Math.min(24, Math.round(options.depth ?? 16)))
     const timeMs = Math.max(30, Math.min(10000, Math.round(options.timeMs ?? 500)))
     const multiPv = Math.max(1, Math.min(5, Math.round(options.multiPv ?? 1)))
     const lines = new Map<string, EngineLine>()
+    this.worker.postMessage(`setoption name UCI_Chess960 value ${variant === 'chess960' ? 'true' : 'false'}`)
     this.worker.postMessage(`setoption name MultiPV value ${multiPv}`)
     this.worker.postMessage(options.history
       ? `position fen ${options.history.initialFen} moves ${options.history.moves.join(' ')}`
       : `position fen ${fen}`)
     const response = await this.waitFor(line => {
-      const parsed = parseInfo(line, fen)
+      const parsed = parseInfo(line, fen, variant)
       if (parsed) lines.set(`${parsed.depth}:${parsed.rank}`, parsed)
       return line.startsWith('bestmove ')
     }, `go depth ${depth} movetime ${timeMs}`, Math.max(30000, timeMs * 4))
@@ -83,6 +86,7 @@ export class StockfishEngine {
     }
     return {
       fen,
+      variant,
       evaluation: primary.evaluation,
       bestMove,
       bestMoveSan,

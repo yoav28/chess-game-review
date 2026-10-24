@@ -1,31 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Chess } from "chess.js";
-import type { DialogName, Settings } from "../components/Dialogs";
+import type { DialogName } from "../components/Dialogs";
+import { readSettings, type Settings } from "../lib/settings";
+import { createPosition } from "../lib/position";
 import { demoGame } from "../lib/demo";
-import { parseGame, type GameRecord } from "../lib/game";
+import { gameFromPgn, parseGame, type GameRecord } from "../lib/game";
+import type { SavedReview } from "../lib/storage";
 import { useLibrary } from "./useLibrary";
 import { useReview } from "./useReview";
 import { usePositionAnalysis } from "./usePositionAnalysis";
 import { usePlayPosition } from "./usePlayPosition";
+import { useExplanation } from "./useExplanation";
+import { usePracticeReview } from "./usePracticeReview";
+import type { PracticeColor } from "../lib/practice";
+import { bestMoveArrow, continuationArrows, physicalMove } from "../lib/board-visuals";
 
-type WorkspaceTab = "review" | "analysis" | "practice";
-const defaultSettings: Settings = {
-  depth: 16,
-  timeMs: 500,
-  showArrows: true,
-  sound: false,
-};
-
-function initialSettings(): Settings {
-  try {
-    return {
-      ...defaultSettings,
-      ...JSON.parse(localStorage.getItem("open-file-settings") || "{}"),
-    };
-  } catch {
-    return defaultSettings;
-  }
-}
+type WorkspaceTab = "review" | "analysis" | "practice" | "history";
 
 export function useWorkspace() {
   const library = useLibrary();
@@ -35,18 +24,12 @@ export function useWorkspace() {
   const [tab, setTab] = useState<WorkspaceTab>("review");
   const [dialog, setDialog] = useState<DialogName>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [settings, setSettings] = useState<Settings>(initialSettings);
+  const [settings, setSettings] = useState<Settings>(readSettings);
   const play = usePlayPosition(settings.depth, settings.timeMs);
+  const explanation = useExplanation({ autoplay: settings.autoplayExplanation, delayMs: settings.explanationDelayMs });
   const [playing, setPlaying] = useState(false);
   const [variation, setVariation] = useState<string[]>([]);
   const [engineEnabled, setEngineEnabled] = useState(true);
-  const [practiceIndex, setPracticeIndex] = useState(0);
-  const [practiceColor, setPracticeColor] = useState("all");
-  const [practiceStatus, setPracticeStatus] = useState<
-    "thinking" | "wrong" | "solved" | "revealed"
-  >("thinking");
-  const [hint, setHint] = useState(false);
-  const [practiceFen, setPracticeFen] = useState<string | null>(null);
   const [toast, setToast] = useState("");
   const audio = useRef<AudioContext | null>(null);
   const parsed = useMemo(() => {
@@ -58,25 +41,15 @@ export function useWorkspace() {
   }, [game]);
   const { review, progress, running, error, cacheNotice, start, cancel } =
     useReview(game, settings.depth, settings.timeMs);
+  const practice = usePracticeReview(review, settings.depth, settings.timeMs);
+  const { practiceIndex, practiceColor, practiceStatus, hint, practiceFen, retryMoves, retry, practiceBusy, practiceFeedback } = practice;
+  const variant = parsed.variant ?? 'chess';
   const safePly = Math.min(ply, parsed.moves.length);
   const currentMove = review?.moves[safePly - 1];
-  const retryMoves = useMemo(
-    () =>
-      review?.moves.filter(
-        (move) =>
-          ["inaccuracy", "mistake", "blunder", "missed"].includes(
-            move.classification,
-          ) &&
-          (practiceColor === "all" || move.color === practiceColor) &&
-          move.bestMove,
-      ) ?? [],
-    [review, practiceColor],
-  );
-  const retry = retryMoves[practiceIndex];
   const baseFen =
     tab === "practice" && retry ? retry.beforeFen : parsed.positions[safePly];
   const variationState = useMemo(() => {
-    const board = new Chess(baseFen);
+    const board = createPosition(baseFen, variant);
     const sans: string[] = [];
     for (const uci of variation) {
       try {
@@ -92,9 +65,9 @@ export function useWorkspace() {
       }
     }
     return { fen: board.fen(), sans };
-  }, [baseFen, variation]);
+  }, [baseFen, variation, variant]);
   const fen =
-    play.active ? play.fen : tab === "practice" ? (practiceFen ?? baseFen) : variationState.fen;
+    explanation.active ? explanation.fen : play.active ? play.fen : tab === "practice" ? (practiceFen ?? baseFen) : variationState.fen;
   const analysisHistory = useMemo(
     () => ({
       initialFen: parsed.initialFen,
@@ -106,10 +79,10 @@ export function useWorkspace() {
     [parsed.initialFen, parsed.moves, safePly, variation],
   );
   const { positionAnalysis, engineBusy, engineError } = usePositionAnalysis({
-    tab, engineEnabled: engineEnabled && !play.active, running, fen, settings, parseError: parsed.error, analysisHistory,
+    tab, engineEnabled: engineEnabled && !play.active && !explanation.active, running, fen, settings, parseError: parsed.error, analysisHistory, variant,
   });
   const displayEvaluation =
-    tab === "practice" || play.active
+    tab === "practice" || play.active || explanation.active
       ? undefined
       : tab === "analysis" && positionAnalysis?.fen === fen
         ? positionAnalysis.evaluation
@@ -117,9 +90,16 @@ export function useWorkspace() {
           ? currentMove?.evaluation
           : review?.initialAnalysis.evaluation;
   const isVariation = variation.length > 0;
-  const lastMove = play.active ? play.lastMove ?? undefined : isVariation
-    ? { from: variation.at(-1)!.slice(0, 2), to: variation.at(-1)!.slice(2, 4) }
-    : parsed.moves[safePly - 1];
+  const lastMove = explanation.active ? explanation.lastMove : play.active ? play.lastMove ?? undefined : isVariation
+    ? continuationArrows(baseFen, variation, variant, variation.length).at(-1)
+    : parsed.moves[safePly - 1] ? physicalMove(parsed.moves[safePly - 1]) : undefined;
+  const visualPv = explanation.active ? explanation.steps[explanation.currentStep + 1]?.uci ? [explanation.steps[explanation.currentStep + 1].uci!] : []
+    : tab === 'analysis' ? positionAnalysis?.pv ?? [] : tab === 'review' ? review?.moves[safePly]?.pv ?? [] : [];
+  const boardBestMove = bestMoveArrow(fen, visualPv[0], variant);
+  const showBestArrow = !play.active && (settings.arrowMode === 'best' || settings.arrowMode === 'both');
+  const boardCoachArrows = !play.active && (settings.arrowMode === 'coach' || settings.arrowMode === 'both') ? continuationArrows(fen, visualPv, variant) : [];
+  const classificationMark = settings.showClassifications && currentMove && !isVariation && !play.active && (tab === 'review' && !explanation.active || explanation.active && explanation.steps[explanation.currentStep]?.stage === 'played')
+    ? { square: currentMove.kingTo ?? currentMove.to, kind: currentMove.classification } : undefined;
   const opening =
     review?.opening?.name ||
     parsed.headers.Opening ||
@@ -135,6 +115,7 @@ export function useWorkspace() {
   useEffect(() => {
     if (play.active) setOrientation(play.playerColor);
   }, [play.active, play.playerColor]);
+  useEffect(() => { if (tab !== 'practice') practice.stop(); }, [tab, practice.stop]);
   useEffect(() => {
     try {
       localStorage.setItem("open-file-settings", JSON.stringify(settings));
@@ -147,7 +128,7 @@ export function useWorkspace() {
     }
   }, [toast]);
   useEffect(() => {
-    if (!playing || tab === "practice" || play.active) return;
+    if (!playing || tab === "practice" || play.active || explanation.active) return;
     const timer = setInterval(
       () =>
         setPly((value) => {
@@ -160,16 +141,18 @@ export function useWorkspace() {
       1100,
     );
     return () => clearInterval(timer);
-  }, [playing, parsed.moves.length, tab, play.active]);
+  }, [playing, parsed.moves.length, tab, play.active, explanation.active]);
 
   const navigate = useCallback(
     (next: number) => {
       play.stop();
+      explanation.stop();
+      practice.stop();
       setPly(Math.max(0, Math.min(parsed.moves.length, next)));
       setVariation([]);
       setPlaying(false);
     },
-    [parsed.moves.length, play.stop],
+    [parsed.moves.length, play.stop, explanation.stop, practice.stop],
   );
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -183,7 +166,7 @@ export function useWorkspace() {
         return;
       if (event.key === "f" || event.key === "F")
         setOrientation((value) => (value === "w" ? "b" : "w"));
-      if (tab === "practice" || play.active) return;
+      if (tab === "practice" || tab === "history" || play.active || explanation.active) return;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         navigate(safePly - 1);
@@ -208,22 +191,27 @@ export function useWorkspace() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dialog, safePly, parsed.moves.length, navigate, tab, play.active]);
+  }, [dialog, safePly, parsed.moves.length, navigate, tab, play.active, explanation.active]);
 
 
 
   function selectGame(selected: GameRecord) {
     play.stop();
+    explanation.stop();
+    practice.stop();
     setGame(selected);
     setPly(0);
     setVariation([]);
     setPlaying(false);
-    setPracticeFen(null);
-    setPracticeIndex(0);
     setTab("review");
     setOrientation(
       selected.black.username.toLowerCase() === library.username ? "b" : "w",
     );
+  }
+
+  function openSaved(entry: SavedReview) {
+    try { selectGame({ ...gameFromPgn(entry.review.pgn), id: entry.id }); }
+    catch { setToast('This saved game could not be read. Try reviewing the original game again.'); }
   }
 
   function playSound() {
@@ -245,40 +233,30 @@ export function useWorkspace() {
   }
 
   function boardMove(uci: string) {
+    if (explanation.active) return;
     playSound();
     setPlaying(false);
     if (play.active) { play.move(uci); return; }
     if (tab === "practice" && retry) {
-      if (practiceStatus === "solved" || practiceStatus === "revealed") return;
-      if (uci === retry.bestMove) {
-        const board = new Chess(retry.beforeFen);
-        board.move({
-          from: uci.slice(0, 2),
-          to: uci.slice(2, 4),
-          promotion: uci[4],
-        });
-        setPracticeFen(board.fen());
-        setPracticeStatus("solved");
-      } else setPracticeStatus("wrong");
+      void practice.attempt(uci);
       return;
     }
     setTab("analysis");
     setVariation((value) => [...value, uci]);
   }
 
-  function beginPractice() {
+  function beginPractice(color?: PracticeColor) {
     play.stop();
+    explanation.stop();
     setTab("practice");
-    setPracticeIndex(0);
-    setPracticeStatus("thinking");
-    setPracticeFen(null);
-    setHint(false);
+    practice.begin(undefined, color);
     setPlaying(false);
     setVariation([]);
   }
 
   function bestLine() {
     if (!currentMove?.bestMove) return;
+    explanation.stop();
     setPly(safePly - 1);
     setVariation([currentMove.bestMove]);
     setTab("analysis");
@@ -287,11 +265,28 @@ export function useWorkspace() {
 
   function startPlay() {
     if (parsed.error) { setToast(parsed.error); return; }
+    explanation.stop();
     setPlaying(false);
-    play.start(fen, orientation, analysisHistory);
+    play.start(fen, orientation, analysisHistory, variant);
   }
 
   function stopPlay() { play.stop(); }
+
+  function explainCurrent() {
+    if (!currentMove) return;
+    play.stop();
+    practice.stop();
+    setPlaying(false);
+    setVariation([]);
+    explanation.start(currentMove);
+  }
+
+  function practicePosition(ply: number) {
+    const move = review?.moves.find(candidate => candidate.ply === ply);
+    if (!move || !move.bestMove) return;
+    beginPractice();
+    practice.begin(ply);
+  }
 
   async function copyPosition() {
     try {
@@ -309,8 +304,7 @@ export function useWorkspace() {
     settings, setSettings, playing, setPlaying,
     variationState, setVariation, positionAnalysis, engineBusy,
     engineError, engineEnabled, setEngineEnabled, practiceIndex,
-    setPracticeIndex, practiceColor, setPracticeColor, practiceStatus,
-    setPracticeStatus, hint, setHint, setPracticeFen,
+    practiceColor, practiceStatus, hint, practiceBusy, practiceFeedback,
     toast, setToast, parsed, review,
     progress, running, error, cacheNotice,
     start, cancel, currentMove, retry,
@@ -318,5 +312,9 @@ export function useWorkspace() {
     lastMove, opening, navigate, selectGame,
     boardMove, beginPractice, bestLine, copyPosition,
     play, startPlay, stopPlay,
+    explanation, explainCurrent, practicePosition,
+    openSaved,
+    practice, variant,
+    boardBestMove, showBestArrow, boardCoachArrows, classificationMark,
   };
 }

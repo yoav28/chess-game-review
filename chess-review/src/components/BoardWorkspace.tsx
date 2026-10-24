@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Chess } from "chess.js";
+import { createPosition } from "../lib/position";
 import {
   ArrowDownToLine,
   ArrowLeft,
@@ -23,7 +23,7 @@ import { MoveList } from "./MoveList";
 import { PlayerBar } from "./PlayerBar";
 import { demoGame } from "../lib/demo";
 import type { GameRecord, ParsedGame } from "../lib/game";
-import type { GameReview } from "../lib/review";
+import type { Classification, GameReview } from "../lib/review";
 import { downloadText } from "../lib/storage";
 import type { Evaluation } from "../engine/types";
 
@@ -39,6 +39,9 @@ type BoardWorkspaceProps = {
   lastMove?: { from: string; to: string };
   bestMove?: string;
   showBestMove: boolean;
+  coachArrows: { from: string; to: string }[];
+  classification?: { square: string; kind: Classification };
+  showTimeSpent: boolean;
   disabled: boolean;
   evaluation?: Evaluation;
   playing: boolean;
@@ -67,6 +70,9 @@ export function BoardWorkspace({
   lastMove,
   bestMove,
   showBestMove,
+  coachArrows,
+  classification,
+  showTimeSpent,
   disabled,
   evaluation,
   playing,
@@ -82,7 +88,7 @@ export function BoardWorkspace({
   onReturnToGame,
   onSelectMove,
 }: BoardWorkspaceProps) {
-  const board = useMemo(() => new Chess(fen), [fen]);
+  const board = useMemo(() => createPosition(fen, parsed.variant), [fen, parsed.variant]);
   const whitePercent = evaluation
     ? 50 + Math.tanh(evaluation.cp / 500) * 48
     : 50;
@@ -171,11 +177,14 @@ export function BoardWorkspace({
                 </span>
               </div>
               <Board
+                variant={parsed.variant}
                 fen={fen}
                 orientation={orientation}
                 lastMove={lastMove}
                 bestMove={bestMove}
                 showBestMove={showBestMove}
+                coachArrows={coachArrows}
+                classification={classification}
                 onMove={onMove}
                 disabled={disabled}
               />
@@ -294,6 +303,10 @@ export function BoardWorkspace({
             </span>
           </div>
           <MoveList
+            parsed={parsed}
+            timeControl={game.timeControl}
+            timeClass={game.timeClass}
+            showTimeSpent={showTimeSpent}
             moves={parsed.moves}
             review={review}
             ply={ply}

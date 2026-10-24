@@ -5,6 +5,9 @@ import { GameLibrary } from "./components/GameLibrary";
 import { ReviewPanel } from "./components/ReviewPanel";
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { PlayPositionPanel } from "./components/PlayPositionPanel";
+import { ExplanationPanel } from "./components/ExplanationPanel";
+import { SavedReviewsPanel } from "./components/SavedReviewsPanel";
+import { WorkspaceTabs } from "./components/WorkspaceTabs";
 import { PracticePanel } from "./components/PracticePanel";
 import { Dialogs } from "./components/Dialogs";
 import { demoGame } from "./lib/demo";
@@ -19,8 +22,7 @@ function App() {
     settings, setSettings, playing, setPlaying,
     variationState, setVariation, positionAnalysis, engineBusy,
     engineError, engineEnabled, setEngineEnabled, practiceIndex,
-    setPracticeIndex, practiceColor, setPracticeColor, practiceStatus,
-    setPracticeStatus, hint, setHint, setPracticeFen,
+    practiceColor, practiceStatus, hint, practiceBusy, practiceFeedback,
     toast, setToast, parsed, review,
     progress, running, error, cacheNotice,
     start, cancel, currentMove, retry,
@@ -28,6 +30,9 @@ function App() {
     lastMove, opening, navigate, selectGame,
     boardMove, beginPractice, bestLine, copyPosition,
     play, startPlay, stopPlay,
+    explanation, explainCurrent, practicePosition,
+    openSaved,
+    practice, variant, boardBestMove, showBestArrow, boardCoachArrows, classificationMark,
   } = useWorkspace();
 
   return (
@@ -55,30 +60,22 @@ function App() {
           review={review}
           ply={safePly}
           orientation={orientation}
-          practice={tab === "practice" || play.active}
+          practice={tab === "practice" || play.active || explanation.active}
           opening={opening}
           fen={fen}
           lastMove={tab !== "practice" ? lastMove : undefined}
-          bestMove={
-            tab === "practice"
-              ? practiceStatus === "revealed"
-                ? (retry?.bestMove ?? undefined)
-                : undefined
-              : tab === "analysis" && !play.active
-                ? (positionAnalysis?.bestMove ?? undefined)
-                : undefined
-          }
-          showBestMove={
-            settings.showArrows && !play.active &&
-            (tab !== "practice" || practiceStatus === "revealed")
-          }
+          bestMove={boardBestMove}
+          showBestMove={showBestArrow}
+          coachArrows={boardCoachArrows}
+          classification={classificationMark}
+          showTimeSpent={settings.showTimeSpent}
           disabled={
-            (tab === "practice" && ["solved", "revealed"].includes(practiceStatus)) ||
+            explanation.active || (tab === "practice" && (practiceBusy || ["solved", "revealed"].includes(practiceStatus))) ||
             (play.active && (play.thinking || Boolean(play.outcome) || play.turn !== play.playerColor))
           }
           evaluation={displayEvaluation}
           playing={playing}
-          isVariation={isVariation}
+          isVariation={isVariation && !explanation.active}
           variationSans={variationState.sans}
           onOpenLibrary={() => setLibraryOpen(true)}
           onMove={boardMove}
@@ -98,37 +95,23 @@ function App() {
           }}
         />
         <aside className="inspector">
-          <div
-            className="inspector-tabs"
-            role="tablist"
-            aria-label="Review workspace"
-          >
-            {(["review", "analysis", "practice"] as const).map((value) => (
-              <button
-                role="tab"
-                aria-selected={tab === value}
-                key={value}
-                onClick={() => {
+          <WorkspaceTabs tab={tab} onChange={value => {
                   stopPlay();
+                  explanation.stop();
+                  practice.stop();
                   if (value === "practice") beginPractice();
                   else {
                     setTab(value);
                     setVariation([]);
                     setPlaying(false);
                   }
-                }}
-              >
-                {value === "review"
-                  ? "Review"
-                  : value === "analysis"
-                    ? "Analysis"
-                    : "Practice"}
-              </button>
-            ))}
-          </div>
-          <div className="inspector-body">
-            {tab === "review" ? (
+                }} />
+          <div className="inspector-body" role="tabpanel" id="workspace-panel" aria-labelledby={`workspace-tab-${tab}`}>
+            {explanation.active ? (
+              <ExplanationPanel explanation={explanation} onExit={explanation.stop} />
+            ) : tab === "review" ? (
               <ReviewPanel
+                key={game.id}
                 game={game}
                 review={review}
                 move={currentMove}
@@ -139,9 +122,16 @@ function App() {
                 onCancel={cancel}
                 onSelect={navigate}
                 onPractice={beginPractice}
+                onPracticePosition={practicePosition}
+                onExplain={explainCurrent}
+                preferredColor={game.white.username.toLowerCase() === library.username ? 'w' : game.black.username.toLowerCase() === library.username ? 'b' : undefined}
                 onBestLine={bestLine}
                 onMethod={() => setDialog("method")}
+                settings={settings}
+                onSettings={setSettings}
               />
+            ) : tab === "history" ? (
+              <SavedReviewsPanel onOpen={openSaved} refreshKey={review?.analyzedAt} />
             ) : tab === "analysis" && play.active ? (
               <PlayPositionPanel play={play} onExit={stopPlay} />
             ) : tab === "analysis" ? (
@@ -161,6 +151,7 @@ function App() {
                 games={library.games}
                 onExploreMove={boardMove}
                 onPlay={startPlay}
+                variant={variant}
               />
             ) : (
               <>
@@ -169,13 +160,7 @@ function App() {
                   <select
                     id="practice-color"
                     value={practiceColor}
-                    onChange={(e) => {
-                      setPracticeColor(e.target.value);
-                      setPracticeIndex(0);
-                      setPracticeFen(null);
-                      setHint(false);
-                      setPracticeStatus("thinking");
-                    }}
+                    onChange={(e) => practice.setColor(e.target.value as 'all' | 'w' | 'b')}
                   >
                     <option value="all">Both players</option>
                     <option value="w">White’s moves</option>
@@ -187,23 +172,19 @@ function App() {
                   index={practiceIndex}
                   status={practiceStatus}
                   hint={hint}
-                  onHint={() => setHint(true)}
-                  onSolution={() => {
-                    setPracticeStatus("revealed");
-                    setPracticeFen(null);
-                  }}
+                  busy={practiceBusy}
+                  feedback={practiceFeedback}
+                  onHint={practice.showHint}
+                  onSolution={practice.showSolution}
                   onNext={() => {
-                    if (practiceIndex + 1 >= retryMoves.length) {
+                    if (practice.next()) {
                       setTab("review");
                       setToast(
                         "Practice complete. Review another game to keep learning.",
                       );
-                    } else setPracticeIndex((value) => value + 1);
-                    setPracticeFen(null);
-                    setHint(false);
-                    setPracticeStatus("thinking");
+                    }
                   }}
-                  onExit={() => setTab("review")}
+                  onExit={() => { practice.stop(); setTab("review"); }}
                 />
               </>
             )}
@@ -229,6 +210,8 @@ function App() {
         onClose={() => setDialog(null)}
         settings={settings}
         onSettings={setSettings}
+        accuracyModel={review?.accuracyModel}
+        accuracyVersion={review?.accuracyVersion}
         onImport={(selected) => {
           selectGame(selected);
           if (!parseGame(selected).moves.length) setTab("analysis");

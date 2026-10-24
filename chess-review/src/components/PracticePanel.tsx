@@ -6,6 +6,8 @@ export function PracticePanel({
   index,
   status,
   hint,
+  busy,
+  feedback,
   onHint,
   onSolution,
   onNext,
@@ -15,6 +17,8 @@ export function PracticePanel({
   index: number;
   status: "thinking" | "wrong" | "solved" | "revealed";
   hint: boolean;
+  busy: boolean;
+  feedback: string;
   onHint: () => void;
   onSolution: () => void;
   onNext: () => void;
@@ -56,12 +60,12 @@ export function PracticePanel({
       </p>
       {status === "wrong" && (
         <p className="practice-feedback wrong" role="status">
-          Try again. Find the engine’s first-choice move.
+          Try another move to preserve more of the position.
         </p>
       )}
       {status === "solved" && (
         <p className="practice-feedback solved" role="status">
-          <Check size={17} /> That’s the engine’s best move!
+          <Check size={17} /> A strong move. You preserved the position.
         </p>
       )}
       {status === "revealed" && (
@@ -69,6 +73,8 @@ export function PracticePanel({
           The best move is <strong>{move.bestMoveSan}</strong>.
         </p>
       )}
+      {busy && <p className="practice-feedback" role="status">Checking your move with Stockfish…</p>}
+      {feedback && <p className="practice-analysis-note">{feedback}</p>}
       {hint && status !== "solved" && (
         <p className="hint-message">
           <Lightbulb size={17} /> Look at the piece on{" "}

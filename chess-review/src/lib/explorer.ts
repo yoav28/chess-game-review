@@ -1,4 +1,4 @@
-import { Chess } from 'chess.js'
+import { createPosition, positionMoveUci, pgnVariant, resolveVariant, type ChessVariant } from './position'
 import type { GameRecord } from './game'
 
 export interface ExplorerMove {
@@ -22,17 +22,19 @@ export interface ExplorerProgress {
 }
 
 export interface ExplorerResult extends ExplorerProgress {
+  variant?: ChessVariant
   fen: string
   moves: ExplorerMove[]
 }
 
 export interface ExplorerOptions {
+  variant?: ChessVariant
   signal?: AbortSignal
   onProgress?: (progress: ExplorerProgress) => void
 }
 
 const positionKey = (fen: string) => fen.split(' ').slice(0, 4).join(' ')
-export const canonicalPosition = (fen: string): string => positionKey(new Chess(fen).fen())
+export const canonicalPosition = (fen: string, variant?: ChessVariant): string => positionKey(createPosition(fen, variant).fen())
 
 function checkAbort(signal?: AbortSignal) {
   if (signal?.aborted) throw new DOMException('Opening exploration cancelled.', 'AbortError')
@@ -75,7 +77,8 @@ function* mainline(pgn: string): Generator<string> {
 
 export async function exploreImportedGames(games: readonly GameRecord[], fen: string, options: ExplorerOptions = {}): Promise<ExplorerResult> {
   checkAbort(options.signal)
-  const target = canonicalPosition(fen)
+  const variant = resolveVariant(fen, options.variant)
+  const target = canonicalPosition(fen, variant)
   const progress: ExplorerProgress = { scanned: 0, total: games.length, standardGames: 0, skippedGames: 0, duplicateGames: 0, matchingGames: 0 }
   const totals = new Map<string, ExplorerMove & { ratingTotal: number; ratingCount: number }>()
   const seen = new Set<string>()
@@ -88,18 +91,20 @@ export async function exploreImportedGames(games: readonly GameRecord[], fen: st
     if (seen.has(id)) progress.duplicateGames += 1
     else {
       seen.add(id)
-      if (game.rules !== 'chess') progress.skippedGames += 1
+      if (game.rules !== variant) progress.skippedGames += 1
       else {
         const candidates = new Map<string, string>()
         let matches = false
         try {
           if (!game.pgn.trim()) throw new Error('Empty PGN.')
+          if (pgnVariant(game.pgn) === 'chess960' && variant !== 'chess960') throw new Error('Mismatched variant.')
           const setup = game.pgn.match(/^\s*\[FEN\s+"([^"\r\n]+)"\]/m)?.[1]
-          const board = setup ? new Chess(setup) : new Chess()
+          if (variant === 'chess960' && !setup) throw new Error('Chess960 requires its starting FEN.')
+          const board = createPosition(setup, variant)
           matches = positionKey(board.fen()) === target
           for (const san of mainline(game.pgn)) {
             const move = board.move(san)
-            if (positionKey(move.before) === target) candidates.set(`${move.from}${move.to}${move.promotion ?? ''}`, move.san)
+            if (positionKey(move.before) === target) candidates.set(positionMoveUci(move), move.san)
             if (positionKey(move.after) === target) matches = true
             if (performance.now() - sliceStarted >= 12) {
               options.onProgress?.({ ...progress })
@@ -136,6 +141,7 @@ export async function exploreImportedGames(games: readonly GameRecord[], fen: st
   checkAbort(options.signal)
   return {
     ...progress,
+    variant,
     fen: target,
     moves: [...totals.values()].map(({ ratingTotal, ratingCount, ...move }) => ({ ...move, averageRating: ratingCount ? Math.round(ratingTotal / ratingCount) : null }))
       .sort((a, b) => b.games - a.games || a.san.localeCompare(b.san)),

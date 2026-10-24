@@ -1,0 +1,25 @@
+.saved-reviews { padding: 23px 24px; }
+.saved-reviews > label { margin-top: 17px; font-size: 11px; }
+.saved-reviews input, .saved-reviews select { font-size: 12px; }
+.saved-reviews .report-caption .text-button { font-size: 11px; }
+.saved-history-note, .saved-status, .saved-trend { font-size: 11px; color: var(--muted); line-height: 1.8; margin-top: 13px; }
+.saved-player-summary { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-top: 21px; padding: 19px 0; }
+.saved-player-summary h3 { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.saved-player-summary > p { font-size: 11px; color: var(--muted); line-height: 1.8; margin-top: 10px; }
+.saved-player-summary h4 { font-size: 11px; font-weight: 500; margin: 17px 0 7px; }
+.saved-player-summary dl { margin: 14px 0 0; }
+.saved-player-summary dl > div { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 7px 0; }
+.saved-player-summary dt { font-size: 11px; color: var(--muted); }
+.saved-player-summary dd { margin: 0; text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
+.saved-player-summary dd span { display: block; font-size: 10px; color: var(--subtle); margin-top: 4px; }
+.saved-list-count { margin: 22px 0 9px; font-size: 10px; color: var(--subtle); }
+.saved-review-list { list-style: none; padding: 0; margin: 0 0 15px; }
+.saved-review-list li { border-bottom: 1px solid var(--border); }
+.saved-review-list button { display: flex; flex-direction: column; width: 100%; text-align: left; gap: 7px; padding: 15px 0; }
+.saved-review-list button:hover { background: var(--surface-high); }
+.saved-review-list strong { font-size: 12px; font-weight: 500; line-height: 1.7; overflow-wrap: anywhere; }
+.saved-review-list strong span { color: var(--subtle); font-weight: 400; }
+.saved-review-list button > span { font-size: 10px; color: var(--muted); line-height: 1.7; }
+.saved-history-method { font-size: 10px; color: var(--subtle); margin-top: 19px; line-height: 1.8; }
+.saved-history-method summary { cursor: pointer; }
+.saved-history-method p { margin-top: 9px; }

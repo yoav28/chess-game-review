@@ -20,9 +20,12 @@ import { evaluationLabel } from "./EvaluationGraph";
 import { CoachControls } from "./CoachControls";
 import { SkillBreakdown } from "./SkillBreakdown";
 import { ReviewStats } from "./ReviewStats";
+import { TrainingPlan } from "./TrainingPlan";
+import { coachText, type CoachDetail } from "../lib/coach";
 import { plainTextReport, reviewedPgn } from "../lib/report";
 import { downloadText } from "../lib/storage";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Settings } from "../lib/settings";
 
 type Props = {
   game: GameRecord;
@@ -34,7 +37,12 @@ type Props = {
   onStart: () => void;
   onCancel: () => void;
   onSelect: (ply: number) => void;
-  onPractice: () => void;
+  onPractice: (color?: 'all' | 'w' | 'b') => void;
+  onPracticePosition: (ply: number) => void;
+  onExplain: () => void;
+  preferredColor?: 'w' | 'b';
+  settings: Settings;
+  onSettings: (settings: Settings) => void;
   onBestLine: () => void;
   onMethod: () => void;
 };
@@ -50,13 +58,23 @@ export function ReviewPanel({
   onCancel,
   onSelect,
   onPractice,
+  onPracticePosition,
+  onExplain,
+  preferredColor,
+  settings,
+  onSettings,
   onBestLine,
   onMethod,
 }: Props) {
   const [shareNotice, setShareNotice] = useState("");
+  const defaultFocus = settings.highlight === 'all' || !preferredColor ? 'all' : settings.highlight === 'self' ? preferredColor : preferredColor === 'w' ? 'b' : 'w';
+  const [focusColor, setFocusColor] = useState<'all' | 'w' | 'b'>(defaultFocus);
+  const coachDetail = settings.coachDetail;
+  useEffect(() => setFocusColor(defaultFocus), [defaultFocus]);
+  const moments = review?.keyMoments.filter(ply => focusColor === 'all' || review.moves[ply - 1]?.color === focusColor) ?? [];
   const mistakes =
     review?.moves.filter((m) =>
-      ["inaccuracy", "mistake", "blunder", "missed"].includes(m.classification),
+      ["inaccuracy", "mistake", "blunder", "missed"].includes(m.classification) && (focusColor === 'all' || m.color === focusColor),
     ) ?? [];
   return (
     <div className="review-content">
@@ -105,7 +123,7 @@ export function ReviewPanel({
           <button
             className="primary full-width"
             onClick={onStart}
-            disabled={running || game.rules !== "chess"}
+            disabled={running || !['chess', 'chess960'].includes(game.rules)}
           >
             {running ? "Analyzing…" : "Review this game"}{" "}
             <ArrowRight size={17} />
@@ -123,6 +141,7 @@ export function ReviewPanel({
                 How it’s measured
               </button>
             </div>
+            <p className="fine-print">{review.accuracyVersion === 2 ? 'Win-chance accuracy · v2' : 'Legacy centipawn accuracy · v1. Review again to update.'}</p>
             <div className="accuracy-players">
               <div>
                 <span className="player-dot white" />
@@ -136,11 +155,15 @@ export function ReviewPanel({
               </div>
             </div>
           </div>
+          <div className="review-preferences"><label htmlFor="review-focus">Highlights for</label><select id="review-focus" value={focusColor} onChange={event => setFocusColor(event.target.value as 'all' | 'w' | 'b')}><option value="all">Both players</option><option value="w">White</option><option value="b">Black</option></select></div>
+          {settings.showCoachAvatar && <div className="coach-identity"><span aria-hidden="true">♞</span><span>Open File coach</span></div>}
           <CoachControls
             key={game.id}
             review={review}
             move={move}
             onSelect={onSelect}
+            filterColor={focusColor}
+            text={move ? coachText(move, coachDetail) : ''}
           />
           {move && (
             <section className="coach">
@@ -162,24 +185,20 @@ export function ReviewPanel({
                   </span>
                 </div>
               </div>
-              <p>{move.explanation}</p>
-              {move.bestMove && (
-                <button className="secondary full-width" onClick={onBestLine}>
-                  {move.bestMove === move.uci ? 'Explore the continuation' : `Show ${move.bestMoveSan}, the best move`}{" "}
-                  <ChevronRight size={16} />
-                </button>
-              )}
+              <label className="coach-detail">Explanation style<select aria-label="Explanation style" value={coachDetail} onChange={event => onSettings({ ...settings, coachDetail: event.target.value as CoachDetail })}><option value="detailed">Detailed</option><option value="concise">Concise</option></select></label>
+              <p>{coachText(move, coachDetail)}</p>
+              <div className="coach-actions"><button className="secondary" onClick={onExplain}><Lightbulb size={15} /> Explain move</button>{move.bestMove && <button className="text-button" onClick={onBestLine}>Analyze {move.bestMoveSan}<ChevronRight size={14} /></button>}</div>
             </section>
           )}
           <ReviewStats review={review} ply={move?.ply} onSelect={onSelect} />
-          <SkillBreakdown review={review} />
+          {settings.showSkills && <SkillBreakdown review={review} />}
           <section className="moments">
             <div className="report-caption">
               <h3>Key moments</h3>
-              <span>{review.keyMoments.length}</span>
+              <span>{moments.length}</span>
             </div>
-            {review.keyMoments.length ? (
-              review.keyMoments.map((ply) => {
+            {moments.length ? (
+              moments.map((ply) => {
                 const moment = review.moves[ply - 1];
                 return (
                   <button
@@ -205,16 +224,17 @@ export function ReviewPanel({
                 );
               })
             ) : (
-              <p className="muted">No major evaluation swings in this game.</p>
+              <p className="muted">No major evaluation swings for this selection.</p>
             )}
           </section>
           <button
             className="primary full-width practice-action"
-            onClick={onPractice}
+            onClick={() => onPractice(focusColor)}
             disabled={!mistakes.length}
           >
             <RotateCcw size={17} /> Practice {mistakes.length} missed moves
           </button>
+          {settings.showRecommendations && <TrainingPlan review={review} color={focusColor === 'all' ? preferredColor ?? 'w' : focusColor} onPractice={onPracticePosition} onSelect={onSelect} />}
           <div className="report-export">
             <button
               className="secondary"
@@ -260,10 +280,10 @@ export function ReviewPanel({
           </div>
         </>
       )}
-      {game.rules !== "chess" && (
+      {!['chess', 'chess960'].includes(game.rules) && (
         <p className="error-message">
           This is a {game.rules} game. Its PGN is available for export; this
-          engine reviews standard chess.
+          engine reviews standard chess and Chess960.
         </p>
       )}
       {!review && (

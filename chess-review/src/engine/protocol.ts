@@ -1,7 +1,7 @@
-import { Chess } from 'chess.js'
+import { createPosition, type ChessPosition, type ChessVariant } from '../lib/position'
 import type { AnalysisOptions, EngineLine, Evaluation } from './types'
 
-export function parseInfo(line: string, fen: string): EngineLine | null {
+export function parseInfo(line: string, fen: string, variant?: ChessVariant): EngineLine | null {
   const depth = line.match(/\bdepth (\d+)/)
   const score = line.match(/\bscore (cp|mate) (-?\d+)/)
   const pv = line.match(/\bpv (.+)$/)
@@ -19,7 +19,7 @@ export function parseInfo(line: string, fen: string): EngineLine | null {
     depth: Number(depth[1]),
     evaluation,
     pv: moves,
-    pvSan: variationToSan(fen, moves),
+    pvSan: variationToSan(fen, moves, variant),
   }
 }
 
@@ -35,18 +35,18 @@ export function completedLines(lines: EngineLine[], candidates: number): EngineL
   return partial === undefined ? [] : atDepth(partial)
 }
 
-export function boardWithHistory(fen: string, history?: AnalysisOptions['history']): Chess {
-  if (!history) return new Chess(fen)
-  const board = new Chess(history.initialFen)
+export function boardWithHistory(fen: string, history?: AnalysisOptions['history'], variant?: ChessVariant): ChessPosition {
+  if (!history) return createPosition(fen, variant)
+  const board = createPosition(history.initialFen, variant)
   for (const uci of history.moves) {
     board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
   }
-  if (board.fen() !== new Chess(fen).fen()) throw new Error('The supplied move history does not match this position.')
+  if (board.fen() !== createPosition(fen, variant).fen()) throw new Error('The supplied move history does not match this position.')
   return board
 }
 
-export function variationToSan(fen: string, moves: string[]): string[] {
-  const board = new Chess(fen)
+export function variationToSan(fen: string, moves: string[], variant?: ChessVariant): string[] {
+  const board = createPosition(fen, variant)
   const san: string[] = []
   for (const move of moves) {
     try {
@@ -59,7 +59,7 @@ export function variationToSan(fen: string, moves: string[]): string[] {
   return san
 }
 
-export function terminalEvaluation(board: Chess): Evaluation | null {
+export function terminalEvaluation(board: ChessPosition): Evaluation | null {
   if (board.isCheckmate()) return { cp: board.turn() === 'w' ? -100000 : 100000, mate: 0 }
   if (board.isDraw()) return { cp: 0, mate: null }
   return null

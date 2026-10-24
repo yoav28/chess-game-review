@@ -1,4 +1,5 @@
-import type { Chess, Color } from 'chess.js'
+import type { Color } from 'chess.js'
+import type { ChessPosition } from '../lib/position'
 import { formatClock, type GameRecord, type ParsedGame } from '../lib/game'
 import type { GameReview } from '../lib/review'
 
@@ -8,7 +9,7 @@ type PlayerBarProps = {
   parsed: ParsedGame
   ply: number
   review: GameReview | null
-  board: Chess
+  board: ChessPosition
   hideClock?: boolean
 }
 

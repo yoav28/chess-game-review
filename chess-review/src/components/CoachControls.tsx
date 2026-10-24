@@ -13,24 +13,29 @@ export function CoachControls({
   review,
   move,
   onSelect,
+  filterColor = 'all',
+  text,
 }: {
   review: GameReview;
   move?: MoveReview;
   onSelect: (ply: number) => void;
+  filterColor?: 'all' | 'w' | 'b';
+  text?: string;
 }) {
   const [guided, setGuided] = useState(false);
   const [pace, setPace] = useState("highlights");
   const [speaking, setSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceName, setVoiceName] = useState("");
+  const relevant = review.moves.filter(candidate => filterColor === 'all' || candidate.color === filterColor);
   const highlights = [...new Set([
-    1,
-    ...review.keyMoments,
-    ...review.moves.filter(candidate => ['brilliant', 'great'].includes(candidate.classification)).map(candidate => candidate.ply),
-    ...review.moves.filter(candidate => candidate.classification === 'book').slice(-1).map(candidate => candidate.ply),
-    review.moves.length,
-  ])].filter(ply => ply > 0).sort((a, b) => a - b);
-  const stops = pace === 'all' ? review.moves.map(candidate => candidate.ply) : highlights;
+    relevant[0]?.ply,
+    ...review.keyMoments.filter(ply => relevant.some(candidate => candidate.ply === ply)),
+    ...relevant.filter(candidate => ['brilliant', 'great'].includes(candidate.classification)).map(candidate => candidate.ply),
+    ...relevant.filter(candidate => candidate.classification === 'book').slice(-1).map(candidate => candidate.ply),
+    relevant.at(-1)?.ply,
+  ])].filter((ply): ply is number => ply !== undefined && ply > 0).sort((a, b) => a - b);
+  const stops = pace === 'all' ? relevant.map(candidate => candidate.ply) : highlights;
   const next = stops.find(ply => ply > (move?.ply ?? 0));
   const previous = [...stops].reverse().find(ply => ply < (move?.ply ?? 1));
   useEffect(() => {
@@ -63,7 +68,7 @@ export function CoachControls({
       voices.find((candidate) => candidate.name === voiceName) ??
       voices.find((candidate) => candidate.lang.startsWith("en")) ??
       voices[0];
-    const utterance = new SpeechSynthesisUtterance(move.explanation);
+    const utterance = new SpeechSynthesisUtterance(text ?? move.explanation);
     utterance.voice = voice;
     utterance.rate = 0.95;
     utterance.onend = () => setSpeaking(false);

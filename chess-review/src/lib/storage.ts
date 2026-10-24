@@ -44,6 +44,44 @@ export const saveLibrary = (username: string, games: GameRecord[]) => write('lib
 export const loadReview = (id: string) => read<GameReview>('reviews', id)
 export const saveReview = (id: string, review: GameReview) => write('reviews', id, review)
 
+export type SavedReview = { id: string; review: GameReview }
+
+function validReview(value: unknown): value is GameReview {
+  if (!value || typeof value !== 'object') return false
+  const review = value as Partial<GameReview>
+  return review.version === 1 && typeof review.pgn === 'string' && typeof review.initialFen === 'string'
+    && typeof review.white === 'string' && typeof review.black === 'string' && typeof review.result === 'string'
+    && typeof review.analyzedAt === 'string' && typeof review.engine === 'string' && typeof review.accuracyModel === 'string'
+    && Boolean(review.headers && typeof review.headers === 'object')
+    && [review.whiteAccuracy, review.blackAccuracy].every(accuracy => accuracy === null || typeof accuracy === 'number' && Number.isFinite(accuracy) && accuracy >= 0 && accuracy <= 100)
+    && Boolean(review.counts?.w && review.counts?.b && review.initialAnalysis?.evaluation)
+    && Array.isArray(review.phases) && Array.isArray(review.keyMoments) && Array.isArray(review.moves)
+    && review.moves.every(move => move && (move.color === 'w' || move.color === 'b')
+      && typeof move.san === 'string' && typeof move.beforeFen === 'string' && typeof move.afterFen === 'string'
+      && Number.isFinite(move.accuracy) && move.accuracy >= 0 && move.accuracy <= 100)
+}
+
+export async function loadSavedReviews(): Promise<SavedReview[]> {
+  const db = await open()
+  try {
+    return await new Promise((resolve, reject) => {
+      const entries: SavedReview[] = []
+      const transaction = db.transaction('reviews', 'readonly')
+      const request = transaction.objectStore('reviews').openCursor()
+      request.onsuccess = () => {
+        const cursor = request.result
+        if (!cursor) return
+        if (typeof cursor.key === 'string' && cursor.key && validReview(cursor.value)) entries.push({ id: cursor.key, review: cursor.value })
+        cursor.continue()
+      }
+      request.onerror = () => reject(request.error)
+      transaction.oncomplete = () => resolve(entries)
+      transaction.onerror = () => reject(transaction.error)
+      transaction.onabort = () => reject(transaction.error ?? new Error('Loading saved reviews was interrupted.'))
+    })
+  } finally { db.close() }
+}
+
 export function downloadText(text: string, name: string) {
   const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }))
   const link = document.createElement('a')

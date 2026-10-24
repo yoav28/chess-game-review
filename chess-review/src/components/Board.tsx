@@ -1,15 +1,20 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Chess } from 'chess.js'
+import { createPosition, type ChessVariant } from '../lib/position'
 import type { PieceSymbol, Square } from 'chess.js'
+import { classificationGlyph } from '../lib/classification'
+import { classificationLabels, type Classification } from '../lib/review'
 import './Board.css'
 
 type BoardProps = {
+  variant?: ChessVariant
   fen: string
   orientation: 'w' | 'b'
   lastMove?: { from: string; to: string }
   bestMove?: string
   showBestMove?: boolean
+  coachArrows?: { from: string; to: string }[]
+  classification?: { square: string; kind: Classification }
   onMove?: (uci: string) => void
   disabled?: boolean
   arrows?: boolean
@@ -34,8 +39,8 @@ function Piece({ type, color }: { type: PieceSymbol; color: 'w' | 'b' }) {
   )
 }
 
-export default function Board({ fen, orientation, lastMove, bestMove, showBestMove = false, onMove, disabled = false, arrows = true }: BoardProps) {
-  const chess = useMemo(() => new Chess(fen), [fen])
+export default function Board({ fen, variant, orientation, lastMove, bestMove, showBestMove = false, coachArrows = [], classification, onMove, disabled = false, arrows = true }: BoardProps) {
+  const chess = useMemo(() => createPosition(fen, variant), [fen, variant])
   const [selected, setSelected] = useState<Square | null>(null)
   const [promotion, setPromotion] = useState<Annotation | null>(null)
   const [annotations, setAnnotations] = useState<Annotation[]>([])
@@ -109,8 +114,9 @@ export default function Board({ fen, orientation, lastMove, bestMove, showBestMo
     return { x: (index % 8) * 100 + 50, y: Math.floor(index / 8) * 100 + 50 }
   }
 
-  const visibleArrows = annotations.filter(item => item.from !== item.to)
-  if (showBestMove && bestMove && /^[a-h][1-8][a-h][1-8]/.test(bestMove)) visibleArrows.push({ from: bestMove.slice(0, 2), to: bestMove.slice(2, 4) })
+  const visibleArrows: (Annotation & { kind: 'annotation' | 'best' | 'coach' })[] = annotations.filter(item => item.from !== item.to).map(item => ({ ...item, kind: 'annotation' }))
+  if (showBestMove && bestMove && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(bestMove)) visibleArrows.push({ from: bestMove.slice(0, 2), to: bestMove.slice(2, 4), kind: 'best' })
+  visibleArrows.push(...coachArrows.filter(item => /^[a-h][1-8]$/.test(item.from) && /^[a-h][1-8]$/.test(item.to) && item.from !== item.to).map(item => ({ ...item, kind: 'coach' as const })))
 
   return (
     <div className="review-board" onContextMenu={event => event.preventDefault()}>
@@ -121,6 +127,7 @@ export default function Board({ fen, orientation, lastMove, bestMove, showBestMo
           const legal = legalMoves.some(move => move.to === square)
           const checked = piece?.type === 'k' && piece.color === chess.turn() && chess.isCheck()
           const circled = annotations.some(item => item.from === square && item.to === square)
+          const badge = classification?.square === square && Object.hasOwn(classificationGlyph, classification.kind) ? classification.kind : null
           const classes = ['board-square', dark ? 'square-dark' : 'square-light', selected === square ? 'square-selected' : '', square === lastMove?.from || square === lastMove?.to ? 'square-last-move' : '', checked ? 'square-check' : '', legal ? piece ? 'square-capture' : 'square-legal' : '', circled ? 'square-circled' : ''].filter(Boolean).join(' ')
           return (
             <button
@@ -130,7 +137,7 @@ export default function Board({ fen, orientation, lastMove, bestMove, showBestMo
               role="gridcell"
               className={classes}
               tabIndex={focusIndex === index ? 0 : -1}
-              aria-label={`${square}${piece ? `, ${piece.color === 'w' ? 'white' : 'black'} ${pieceNames[piece.type]}` : ', empty'}${legal ? ', legal destination' : ''}${checked ? ', in check' : ''}`}
+              aria-label={`${square}${piece ? `, ${piece.color === 'w' ? 'white' : 'black'} ${pieceNames[piece.type]}` : ', empty'}${legal ? ', legal destination' : ''}${checked ? ', in check' : ''}${badge ? `, ${classificationLabels[badge]} move` : ''}`}
               aria-selected={selected === square}
               onFocus={() => setFocusIndex(index)}
               onKeyDown={event => moveFocus(event, index)}
@@ -152,6 +159,7 @@ export default function Board({ fen, orientation, lastMove, bestMove, showBestMo
               onDragEnd={() => { dragged.current = false }}
             >
               {piece && <Piece type={piece.type} color={piece.color} />}
+              {badge && <span className={`board-classification ${badge}`} aria-hidden="true">{classificationGlyph[badge]}</span>}
               {index % 8 === 0 && <span className="board-coordinate coordinate-rank" aria-hidden="true">{square[1]}</span>}
               {index >= 56 && <span className="board-coordinate coordinate-file" aria-hidden="true">{square[0]}</span>}
             </button>
@@ -160,12 +168,12 @@ export default function Board({ fen, orientation, lastMove, bestMove, showBestMo
       </div>
       {visibleArrows.length > 0 && (
         <svg className="board-arrows" viewBox="0 0 800 800" aria-hidden="true">
-          <defs><marker id={markerId} markerWidth="2.5" markerHeight="2.5" refX="1.2" refY="1.25" orient="auto"><path d="M0 0 2.5 1.25 0 2.5z" fill="currentColor" /></marker></defs>
+          <defs>{(['annotation', 'best', 'coach'] as const).map(kind => <marker key={kind} id={`${markerId}-${kind}`} className={`board-arrow-${kind}`} markerWidth="2.5" markerHeight="2.5" refX="1.2" refY="1.25" orient="auto"><path d="M0 0 2.5 1.25 0 2.5z" fill="currentColor" /></marker>)}</defs>
           {visibleArrows.map((arrow, index) => {
             const start = center(arrow.from)
             const end = center(arrow.to)
             const angle = Math.atan2(end.y - start.y, end.x - start.x)
-            return <line key={`${arrow.from}-${arrow.to}-${index}`} x1={start.x} y1={start.y} x2={end.x - Math.cos(angle) * 19} y2={end.y - Math.sin(angle) * 19} stroke="currentColor" strokeWidth="17" strokeLinecap="round" markerEnd={`url(#${markerId})`} />
+            return <line key={`${arrow.kind}-${arrow.from}-${arrow.to}-${index}`} className={`board-arrow-${arrow.kind}`} x1={start.x} y1={start.y} x2={end.x - Math.cos(angle) * 19} y2={end.y - Math.sin(angle) * 19} stroke="currentColor" strokeWidth={arrow.kind === 'coach' ? 11 : 17} strokeLinecap="round" markerEnd={`url(#${markerId}-${arrow.kind})`} />
           })}
         </svg>
       )}

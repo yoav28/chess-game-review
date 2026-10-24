@@ -1,10 +1,13 @@
 import { ChevronRight, LoaderCircle } from "lucide-react";
 import { OpeningExplorer } from "./OpeningExplorer";
+import { TablebasePanel } from "./TablebasePanel";
 import type { GameRecord } from "../lib/game";
+import type { ChessVariant } from "../lib/position";
 import type { PositionAnalysis } from "../engine/types";
 import { evaluationLabel } from "./EvaluationGraph";
 
 type Props = {
+  variant: ChessVariant;
   games: GameRecord[];
   onExploreMove: (uci: string) => void;
   onPlay: () => void;
@@ -20,6 +23,7 @@ type Props = {
 };
 
 export function AnalysisPanel({
+  variant,
   games,
   onExploreMove,
   onPlay,
@@ -103,7 +107,8 @@ export function AnalysisPanel({
           and drag to draw arrows.
         </p>
       </div>
-      <OpeningExplorer games={games} fen={fen} onMove={onExploreMove} />
+      <OpeningExplorer games={games} fen={fen} variant={variant} onMove={onExploreMove} />
+      <TablebasePanel fen={fen} disabled={variant !== 'chess'} onMove={onExploreMove} />
       <details className="position-details">
         <summary>Current position · FEN</summary>
         <code>{fen}</code>

@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Upload } from "lucide-react";
-import { Chess, validateFen } from "chess.js";
+import { createPosition, resolveVariant } from "../lib/position";
 import { gameFromPgn, type GameRecord } from "../lib/game";
+import { accuracySource } from "../lib/accuracy";
 
-export type Settings = {
-  depth: number;
-  timeMs: number;
-  showArrows: boolean;
-  sound: boolean;
-};
+import type { Settings } from "../lib/settings";
+import { ReviewSettings } from "./ReviewSettings";
+
+export type { Settings } from "../lib/settings";
 export type DialogName = "import" | "settings" | "method" | null;
 
 export function Dialogs({
@@ -17,12 +16,16 @@ export function Dialogs({
   settings,
   onSettings,
   onImport,
+  accuracyModel,
+  accuracyVersion,
 }: {
   dialog: DialogName;
   onClose: () => void;
   settings: Settings;
   onSettings: (settings: Settings) => void;
   onImport: (game: GameRecord) => void;
+  accuracyModel?: string;
+  accuracyVersion?: number;
 }) {
   const [pgn, setPgn] = useState("");
   const [error, setError] = useState("");
@@ -43,13 +46,9 @@ export function Dialogs({
         source.split(/\s+/)[0].split("/").length === 8 &&
         !source.startsWith("[")
       ) {
-        const valid = validateFen(source);
-        if (!valid.ok) throw new Error(valid.error);
-        const board = new Chess(source);
-        board.setHeader("Event", "Position analysis");
-        board.setHeader("White", "White");
-        board.setHeader("Black", "Black");
-        source = board.pgn();
+        const variant = resolveVariant(source);
+        const board = createPosition(source, variant);
+        source = `[Event "Position analysis"]\n[White "White"]\n[Black "Black"]\n[Result "*"]\n[SetUp "1"]\n[FEN "${board.fen()}"]${variant === 'chess960' ? '\n[Variant "Chess960"]' : ''}\n\n*`;
       }
       onImport(gameFromPgn(source));
       setPgn("");
@@ -129,93 +128,51 @@ export function Dialogs({
               </button>
             </div>
             <p className="fine-print">
-              Standard chess. For multiple games, paste one game at a time.
+              Standard chess and Chess960. For multiple games, paste one game at a time.
             </p>
           </>
         ) : dialog === "settings" ? (
-          <>
-            <label htmlFor="review-depth">
-              Maximum engine depth <strong>{settings.depth}</strong>
-            </label>
-            <input
-              id="review-depth"
-              type="range"
-              min="10"
-              max="22"
-              value={settings.depth}
-              onChange={(e) =>
-                onSettings({ ...settings, depth: Number(e.target.value) })
-              }
-            />
-            <label htmlFor="review-time">
-              Time per position <strong>{settings.timeMs / 1000}s</strong>
-            </label>
-            <select
-              id="review-time"
-              value={settings.timeMs}
-              onChange={(e) =>
-                onSettings({ ...settings, timeMs: Number(e.target.value) })
-              }
-            >
-              <option value="150">Quick · 0.15 seconds</option>
-              <option value="500">Balanced · 0.5 seconds</option>
-              <option value="1500">Deep · 1.5 seconds</option>
-              <option value="5000">Thorough · 5 seconds</option>
-            </select>
-            <p className="fine-print">
-              Analysis stops at the depth or time limit, whichever comes first.
-              More time can change move labels and scores.
-            </p>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={settings.showArrows}
-                onChange={(e) =>
-                  onSettings({ ...settings, showArrows: e.target.checked })
-                }
-              />{" "}
-              Show engine arrows
-            </label>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={settings.sound}
-                onChange={(e) =>
-                  onSettings({ ...settings, sound: e.target.checked })
-                }
-              />{" "}
-              Move sounds
-            </label>
-            <p className="fine-print">
-              Changes apply to the next review. Existing reviews remain saved.
-            </p>
-            <button className="primary full-width" onClick={onClose}>
-              Done
-            </button>
-          </>
+          <ReviewSettings settings={settings} onChange={onSettings} onDone={onClose} />
         ) : (
           <div className="method-copy">
             <p>
               Open File is an independent chess review app. Stockfish 19 Lite
               runs on your device; games come from Chess.com’s public archives.
             </p>
-            <h3>Accuracy and move labels</h3>
+            <h3>Win-chance accuracy · v2</h3>
             <p>
-              Our accuracy score is the average of 100 × e
-              <sup>−centipawn loss / 250</sup> for each player’s moves. It is a
-              separate metric from Chess.com’s proprietary score.
+              New reviews use Lichess’s published per-move formula. Win chance
+              = 100 / (1 + exp(−0.00368208 × centipawns)). Loss is the decrease in
+              that chance for the player who moved, measured in percentage points.
             </p>
             <p>
-              Move labels compare the played move with Stockfish’s first choice:
-              excellent (≤20 centipawns lost), good (≤60), inaccuracy (≤120),
-              mistake (≤250), and blunder (&gt;250). A lost winning advantage
-              can be a missed opportunity.
+              Move accuracy = clamp(103.1668 × exp(−0.04354 × loss) − 3.1669,
+              0, 100). Forced mates map to 100% or 0% by the winning side.
+              Engine-best and only legal moves have zero loss to avoid penalties
+              from search-depth noise.
             </p>
             <p>
-              Book moves match a small local opening reference. Great moves and
-              brilliant sacrifices use conservative engine and material
-              heuristics; they are not Chess.com’s definitions. A low analysis
-              budget may leave these labels unavailable.
+              Game and phase scores are our arithmetic mean of the player’s move
+              scores. Lichess uses a different, weighted whole-game calculation.
+              These are independent scores, separate from Chess.com’s formula.
+            </p>
+            <p><a href={accuracySource} target="_blank" rel="noreferrer">Published Lichess accuracy formula ↗</a></p>
+            {accuracyModel && <details><summary>Selected report’s saved scoring method{accuracyVersion === 2 ? ' · v2' : ' · legacy v1'}</summary><p>{accuracyModel}</p>{accuracyVersion !== 2 && <p>This saved report retains its original centipawn-based scores and labels. Use Review again to update it to win-chance accuracy.</p>}</details>}
+            <h3>Our move labels</h3>
+            <p>
+              New reviews use winning-chance loss: excellent (≤0.5 percentage
+              points), good (≤5), inaccuracy (≤10), mistake (≤20), and blunder
+              (&gt;20). A previously found mate falling below 90% winning chance,
+              or a chance of at least 60% falling to at most 50% with at least 10
+              points lost, can be a missed opportunity.
+            </p>
+            <p>
+              Book moves match exact prefixes of 3,865 legally validated lines
+              from the Lichess opening database, covering all 500 ECO codes.
+              Transposed move orders count only when explicitly registered.
+              Great moves and brilliant sacrifices use conservative engine and
+              material heuristics; they are not Chess.com’s definitions. A low
+              analysis budget may leave these labels unavailable.
             </p>
             <h3>Explanations and limitations</h3>
             <p>
@@ -224,8 +181,8 @@ export function Dialogs({
               engine results. Deeper analysis may find a different continuation.
             </p>
             <p>
-              Imported variants are retained, but this engine reviews standard
-              chess. Public archives contain completed games and may update with
+              This engine reviews standard chess and Chess960; other imported
+              variants remain available for PGN export. Public archives contain completed games and may update with
               a delay. Browser storage retains games and reviews on this device;
               clearing site data removes them.
             </p>
@@ -242,6 +199,7 @@ export function Dialogs({
             >
               Stockfish project ↗
             </a>
+            <p><a href="https://github.com/lichess-org/chess-openings/tree/a6189a30dc273ccb21fc2536a9a2fefd5592a67a" target="_blank" rel="noreferrer">Lichess opening data · CC0 1.0 ↗</a></p>
           </div>
         )}
       </section>

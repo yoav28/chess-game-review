@@ -43,7 +43,8 @@ export function useReview(game: GameRecord, depth: number, timeMs: number) {
     setRunning(true)
     setProgress({ completed: 0, total: 0, percent: 0 })
     try {
-      const report = await reviewGame(pgn, { depth, timeMs, signal: request.signal, onProgress: value => { if (isCurrent()) setProgress(value) } })
+      if (!['chess', 'chess960'].includes(game.rules)) throw new Error(`Review does not support the ${game.rules} variant.`)
+      const report = await reviewGame(pgn, { variant: game.rules as 'chess' | 'chess960', depth, timeMs, signal: request.signal, onProgress: value => { if (isCurrent()) setProgress(value) } })
       if (!isCurrent()) return
       setReview(report)
       await saveReview(id, report).catch(() => { if (isCurrent()) setCacheNotice('Review is ready. Browser storage is unavailable, so it will not be saved after you close this tab.') })

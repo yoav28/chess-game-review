@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { analyzePosition } from "../engine/stockfish";
 import type { AnalysisOptions, PositionAnalysis } from "../engine/types";
+import type { ChessVariant } from "../lib/position";
 
 type PositionAnalysisOptions = {
   tab: string;
@@ -10,10 +11,11 @@ type PositionAnalysisOptions = {
   settings: { depth: number; timeMs: number };
   parseError: string;
   analysisHistory: NonNullable<AnalysisOptions["history"]>;
+  variant: ChessVariant;
 };
 
 export function usePositionAnalysis({
-  tab, engineEnabled, running, fen, settings, parseError, analysisHistory,
+  tab, engineEnabled, running, fen, settings, parseError, analysisHistory, variant,
 }: PositionAnalysisOptions) {
   const [positionAnalysis, setPositionAnalysis] =
     useState<PositionAnalysis | null>(null);
@@ -36,6 +38,7 @@ export function usePositionAnalysis({
         multiPv: 3,
         signal: request.signal,
         history: analysisHistory,
+        variant,
       })
         .then((result) => {
           if (!request.signal.aborted) setPositionAnalysis(result);
@@ -60,6 +63,7 @@ export function usePositionAnalysis({
     settings.timeMs,
     parseError,
     analysisHistory,
+    variant,
   ]);
 
   return { positionAnalysis, engineBusy, engineError };

@@ -3,6 +3,7 @@ import test from 'node:test'
 import { Chess } from 'chess.js'
 import { createPlayPosition, initialPlayPositionState, positionOutcome, type PlayPositionState } from './play-position'
 import type { AnalysisOptions, PositionAnalysis } from '../engine/types'
+import { createPosition } from './position'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -25,7 +26,7 @@ function harness() {
   })
   function answer(index: number, uci: string) {
     const request = requests[index]
-    const board = new Chess(request.fen)
+    const board = createPosition(request.fen, request.options.variant)
     const san = board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] }).san
     request.response.resolve({
       fen: request.fen, bestMove: uci, bestMoveSan: san,
@@ -228,5 +229,37 @@ test('invalid FEN and mismatched histories fail visibly without starting an engi
   assert.equal(view.player.start(fen, 'w', { initialFen: fen, moves: ['e2e4'] }), false)
   assert.match(view.state.error, /does not match/)
   assert.equal(view.requests.length, 0)
+  view.player.dispose()
+})
+
+test('Chess960 play preserves rules, canonical castle history, physical highlighting and restart', async () => {
+  const view = harness()
+  const fen = '4k3/8/8/8/8/8/8/5K1R w H - 0 1'
+  assert.equal(view.player.start(fen, 'w', undefined, 'chess960'), true)
+  assert.equal(view.player.move('f1h1'), true)
+  assert.equal(view.state.variant, 'chess960')
+  assert.deepEqual(view.state.lastMove, { from: 'f1', to: 'g1' })
+  assert.equal(view.requests[0].options.variant, 'chess960')
+  assert.deepEqual(view.requests[0].options.history?.moves, ['f1h1'])
+  view.answer(0, 'e8d7')
+  await flush()
+  assert.deepEqual(view.state.historySans, ['O-O', 'Kd7'])
+  assert.equal(view.player.undo(), true)
+  assert.equal(view.state.fen, fen)
+  view.player.restart()
+  assert.equal(view.state.variant, 'chess960')
+  assert.equal(view.state.fen, fen)
+  view.player.dispose()
+})
+
+test('engine Chess960 castling moves the rook legally and highlights the physical king destination', async () => {
+  const view = harness()
+  assert.equal(view.player.start('5k1r/8/8/8/8/8/8/4K3 b h - 0 1', 'w', undefined, 'chess960'), true)
+  assert.equal(view.requests[0].options.variant, 'chess960')
+  view.answer(0, 'f8h8')
+  await flush()
+  assert.deepEqual(view.state.lastMove, { from: 'f8', to: 'g8' })
+  assert.equal(createPosition(view.state.fen, 'chess960').get('f8')?.type, 'r')
+  assert.equal(createPosition(view.state.fen, 'chess960').get('g8')?.type, 'k')
   view.player.dispose()
 })
