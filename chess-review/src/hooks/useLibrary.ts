@@ -201,7 +201,10 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
       callbacks.error('')
       callbacks.notice('')
       try {
-        const incoming = gamesFromPgnFile(text)
+        const parsed = gamesFromPgnFile(text)
+        const incoming = parsed.filter(game => [game.white.username, game.black.username].some(name => name.trim().toLowerCase() === user))
+        const unrelated = parsed.length - incoming.length
+        if (!incoming.length) throw new Error(`None of the ${parsed.length.toLocaleString()} PGN games names ${user} as a player.`)
         const existing = await (dependencies.loadPgnGames ?? loadPgnGames)(user).catch(() => undefined) ?? []
         const saved = mergeGames(existing, incoming)
         await (dependencies.savePgnGames ?? savePgnGames)(user, saved)
@@ -209,7 +212,7 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
         callbacks.username(user)
         callbacks.games(mergeGames(base, incoming))
         const added = saved.length - existing.length
-        callbacks.notice(`${added.toLocaleString()} PGN ${added === 1 ? 'game' : 'games'} added to ${user}${incoming.length - added ? ` · ${ (incoming.length - added).toLocaleString()} already saved` : ''}.`)
+        callbacks.notice(`${added.toLocaleString()} PGN ${added === 1 ? 'game' : 'games'} added to ${user}${incoming.length - added ? ` · ${(incoming.length - added).toLocaleString()} already saved` : ''}${unrelated ? ` · ${unrelated.toLocaleString()} unrelated ${unrelated === 1 ? 'game was' : 'games were'} skipped` : ''}.`)
       } catch (e) {
         callbacks.error((e as Error).message)
       }

@@ -28,7 +28,7 @@ Tests cover public archive import, cancellation and stale requests, standard, Ch
 
 ## Use the application
 
-Enter a Chess.com username in the library and choose **Import all games**. Search or filter by player, time control, result, or month. Select a game and start its review. Add a multi-game PGN export to include games outside public archives, or load one PGN game or a FEN position.
+Enter a Chess.com username in the library and choose **Import all games**. Search or filter by player, time control, result, or month. Select a game and start its review. Add a multi-game PGN export to include games outside public archives; only games listing that username as a player are added. You can also load one PGN game or a FEN position.
 
 The library counts saved reviews and can open the next unreviewed, supported game in sequence. After each review is saved, use the queue control to continue through the imported games.
 
