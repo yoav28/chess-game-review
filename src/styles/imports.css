@@ -1,0 +1,182 @@
+@import './settings.css';
+@import './games.css';
+
+.game-import {
+  color: #fff;
+}
+.import-tabs {
+  display: flex;
+  height: 52px;
+  border-bottom: 2px solid #3d3b38;
+}
+.import-tab {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: -2px;
+  padding: 10px 8px;
+  border-bottom: 3px solid transparent;
+  color: #aaa9a6;
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    color 120ms,
+    background 120ms;
+}
+.import-tab:hover {
+  color: #fff;
+  background: #2c2b27;
+}
+.import-tab[aria-selected='true'] {
+  border-color: #81b64c;
+  color: #fff;
+}
+.import-source-icon {
+  width: 22px;
+  height: 22px;
+}
+.import-source-panel {
+  padding: 24px 20px;
+}
+.import-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.import-label {
+  display: block;
+  color: #e7e6e5;
+  font-size: 14px;
+  font-weight: 700;
+}
+.import-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 12px;
+  border: 1px solid #4b4945;
+  border-radius: 5px;
+  outline: none;
+  background: #3a3935;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 120ms;
+}
+.import-input::placeholder {
+  color: #aaa9a6;
+  opacity: 1;
+}
+.import-input:focus {
+  border-color: #989795;
+}
+.import-input[aria-invalid='true'] {
+  border-color: #fa7462;
+}
+.import-pgn {
+  min-height: 166px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.chess-primary-button {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 0;
+  border-bottom: 4px solid #537f30;
+  border-radius: 6px;
+  background: #81b64c;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  text-shadow: 0 1px 1px #0005;
+  transition: background 120ms;
+}
+.chess-primary-button:hover:not(:disabled) {
+  background: #95c55b;
+}
+.chess-primary-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+.chess-secondary-button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 5px;
+  background: #454340;
+  color: #e7e6e5;
+  font-size: 14px;
+  font-weight: 700;
+}
+.chess-secondary-button:hover:not(:disabled) {
+  background: #53514e;
+}
+.import-error {
+  color: #fa7462;
+  font-size: 13px;
+}
+.recent-reviews {
+  margin-top: 8px;
+  border-top: 1px solid #3d3b38;
+}
+.recent-reviews h2 {
+  padding: 18px 20px 10px;
+  color: #b3b2b1;
+  font-size: 14px;
+  font-weight: 700;
+}
+.recent-review-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #3d3b38;
+}
+.recent-review-row:hover {
+  background: #343330;
+}
+.recent-review-link {
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+}
+.recent-review-link > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-review-link > span:first-child {
+  font-weight: 700;
+}
+.recent-review-link > span:last-child {
+  margin-top: 4px;
+  color: #b3b2b1;
+  font-size: 12px;
+}
+.recent-review-remove {
+  padding: 6px;
+  border-radius: 3px;
+  color: #999894;
+  font-size: 20px;
+}
+.recent-review-remove:hover {
+  color: #fff;
+  background: #454340;
+}
+.recent-review-note {
+  padding: 12px 20px;
+  color: #aaa9a6;
+  font-size: 11px;
+  line-height: 1.5;
+}
+@media (max-width: 480px) {
+  .import-source-panel {
+    padding: 20px 16px;
+  }
+}

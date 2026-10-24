@@ -16,6 +16,7 @@
   "dependencies": {
     "@dr.pogodin/react-helmet": "^3.0.4",
     "@heroui/react": "^2.8.4",
+    "@heroui/theme": "2.4.22",
     "@rollup/plugin-dsv": "^3.0.5",
     "@tailwindcss/vite": "^4.1.13",
     "@tanstack/react-query": "^5.51.24",

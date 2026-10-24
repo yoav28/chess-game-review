@@ -1,11 +1,8 @@
-import { Button, Card, CardBody, CardFooter, Textarea } from '@heroui/react';
-import { DevTool } from '@hookform/devtools';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import { useStageStore } from '../../stores/useStageStore';
-import cn from '../../utils/cn';
 
 import type { SubmitHandler } from 'react-hook-form';
 
@@ -17,12 +14,7 @@ export default function PGNForm() {
   const loadGame = useBoardStore(state => state.loadGame);
   const submitGame = useSelectGameStore(state => state.submitGame);
   const setStage = useStageStore(state => state.setStage);
-
-  const { handleSubmit, control, setError, formState } = useForm<Inputs>({
-    defaultValues: {
-      pgn: '',
-    },
-  });
+  const { handleSubmit, register, setError, formState, watch } = useForm<Inputs>({ defaultValues: { pgn: '' } });
 
   const onSubmit: SubmitHandler<Inputs> = (data) => {
     try {
@@ -31,61 +23,24 @@ export default function PGNForm() {
       setStage('loaded');
     }
     catch (error) {
-      const err = error as Error;
-
-      setError('pgn', {
-        type: 'pgn-parsing',
-        message: err.message,
-      });
+      setError('pgn', { type: 'pgn-parsing', message: (error as Error).message });
     }
   };
 
   return (
-    <Card
-      classNames={{
-        base: cn('rounded-small bg-content2'),
-        header: 'text-sm',
-        body: 'p-0',
-        footer: 'p-0 rounded-none',
-      }}
-      fullWidth
-      shadow="none"
-    >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardBody className="p-0 text-small text-default-400">
-          <Controller
-            control={control}
-            name="pgn"
-            render={({ field }) => (
-              <Textarea
-                classNames={{
-                  inputWrapper: 'rounded-none',
-                }}
-                errorMessage={formState.errors.pgn?.message}
-                isInvalid={Boolean(formState.errors.pgn)}
-                label="PGN"
-                maxRows={3}
-                minRows={1}
-                {...field}
-              />
-            )}
-          />
-        </CardBody>
-        <CardFooter>
-          <Button
-            className="font-semibold text-shadow-xs"
-            color="primary"
-            disableAnimation
-            fullWidth
-            isDisabled={!formState.isDirty || !formState.isValid}
-            radius="none"
-            type="submit"
-          >
-            Add Game
-          </Button>
-        </CardFooter>
-        {import.meta.env.PROD || <DevTool control={control} />}
-      </form>
-    </Card>
+    <form className="import-form" onSubmit={handleSubmit(onSubmit)}>
+      <label className="import-label" htmlFor="import-pgn">Load PGN</label>
+      <textarea
+        aria-describedby={formState.errors.pgn ? 'import-pgn-error' : undefined}
+        aria-invalid={Boolean(formState.errors.pgn)}
+        className="import-input import-pgn"
+        id="import-pgn"
+        placeholder="Paste a game in PGN format"
+        spellCheck={false}
+        {...register('pgn')}
+      />
+      {formState.errors.pgn && <p className="import-error" id="import-pgn-error" role="alert">{formState.errors.pgn.message}</p>}
+      <button className="chess-primary-button" disabled={!watch('pgn').trim()} type="submit">Load Game</button>
+    </form>
   );
 }

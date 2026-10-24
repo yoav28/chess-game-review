@@ -1,0 +1,263 @@
+@font-face {
+  font-family: 'Chess Sans';
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url('https://www.chess.com/bundles/web/fonts/chess-sans/ChessSans-Bold.19a3983f.woff2')
+    format('woff2');
+}
+
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui,
+    Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --sidebar-width: 170px;
+  --panel-width: clamp(
+    340px,
+    calc((100vw - var(--sidebar-width) - 32px) * 0.3915),
+    480px
+  );
+  --board-size: min(
+    calc(100dvh - 136px),
+    calc(100vw - var(--sidebar-width) - var(--panel-width) - 104px)
+  );
+}
+
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #302e2b;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui,
+    Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible {
+  outline: 2px solid #81b64c;
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #56534e transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: #56534e;
+  background-clip: padding-box;
+}
+
+.site-main {
+  min-height: 100dvh;
+  margin-left: var(--sidebar-width);
+  padding: 16px;
+}
+
+.game-workspace {
+  position: relative;
+  display: grid;
+  width: fit-content;
+  max-width: 100%;
+  grid-template-columns: calc(var(--board-size) + 40px) var(--panel-width);
+  align-items: start;
+  gap: 32px;
+  margin: 0 auto;
+}
+
+.game-workspace #Controls {
+  width: var(--panel-width);
+  height: calc(100dvh - 32px);
+}
+
+.board-tools {
+  position: absolute;
+  top: 0;
+  left: calc(var(--board-size) + 44px);
+  width: 24px;
+  height: 28px;
+}
+
+.board-tools > button {
+  width: 24px;
+  min-width: 24px;
+  height: 28px;
+  color: #ffffff80;
+  font-size: 20px;
+}
+
+.workspace-messages {
+  max-width: calc(var(--board-size) + var(--panel-width) + 72px);
+  margin: 0 auto;
+}
+
+.workspace-messages:not(:empty) {
+  margin-bottom: 12px;
+}
+
+.workspace-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 4px;
+  background: #262522;
+  color: #dedddc;
+}
+
+.review-panel-header h1,
+.chess-primary-button,
+.review-primary-button,
+.chess-settings-heading {
+  font-family:
+    'Chess Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+}
+
+.review-panel-header h1 img {
+  filter: grayscale(1);
+  opacity: 0.75;
+}
+
+@media (min-width: 900px) and (max-width: 1100px) {
+  :root {
+    --sidebar-width: 56px;
+  }
+
+  .site-logo {
+    height: 60px;
+    padding: 0 13px;
+    overflow: hidden;
+  }
+
+  .site-logo img {
+    width: 138px;
+    max-width: none;
+    flex-shrink: 0;
+  }
+
+  .site-navigation-link {
+    padding: 0 16px;
+  }
+
+  .site-navigation-link span,
+  .site-sidebar-bottom span,
+  .site-signup,
+  .site-login {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  :root {
+    --sidebar-width: 0px;
+    --board-size: min(calc(100vw - 24px - 40px), 620px);
+    --panel-width: calc(var(--board-size) + 40px);
+  }
+
+  .site-sidebar {
+    position: relative;
+    width: 100%;
+    height: 52px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .site-logo {
+    height: 52px;
+    padding: 0 12px;
+  }
+
+  .site-logo img {
+    width: 116px;
+    height: auto;
+  }
+
+  .site-navigation {
+    display: flex;
+  }
+
+  .site-navigation-link {
+    width: 40px;
+    height: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .site-navigation-link span,
+  .site-navigation-link:nth-child(n + 4),
+  .site-sidebar-bottom {
+    display: none;
+  }
+
+  .board-tools {
+    top: 0;
+    left: 0;
+  }
+
+  .site-main {
+    --board-size: min(calc(100cqw - 40px), 620px);
+    --panel-width: calc(var(--board-size) + 40px);
+    container-type: inline-size;
+    min-height: calc(100dvh - 52px);
+    margin-left: 0;
+    padding: 12px;
+  }
+
+  .game-workspace {
+    grid-template-columns: var(--panel-width);
+    gap: 16px;
+  }
+
+  .game-workspace #Controls {
+    min-height: 500px;
+    height: min(740px, 90dvh);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

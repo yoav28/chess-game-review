@@ -147,35 +147,32 @@ export default function PlayerBadge({ color }: {
   }, [currentMoveNum, color, timeControl, header, loser, loseBy, timestamps]);
 
   return (
-    <div className={`
-      ml-[30px] flex items-center justify-between gap-2
-      xs:ml-[42px]
-    `}
-    >
-      <div className="flex items-start gap-2">
-        <Icon
-          className={cn(`
-            text-2xl
-            xs:text-[40px]
-          `, color === 'b' && `bg-default-100 text-background`)}
-          icon="material-symbols:person"
-        />
-        <div>
-          <div className="flex items-center gap-1">
-            {title && (
-              <span className="rounded-sm bg-red-900 px-0.5 text-xs font-bold">
-                {title}
-              </span>
-            )}
-            <span className="text-sm">{name}</span>
+    <div className="board-player">
+      <div className="board-player-identity">
+        <span
+          aria-hidden="true"
+          className={cn('board-player-avatar', `
+            board-player-avatar-${color}
+          `)}
+        >
+          <svg fill="currentColor" viewBox="0 0 40 40">
+            <path d="M20 5c-4.2 0-7.4 3.2-7.4 7.5 0 3.3 1.4 5.5 3.4 7.5v4c-1.6 1.8-6.6 3.3-9.3 5.2-1.1.8-1.7 2-1.7 3.3V36h30v-3.5c0-1.3-.6-2.5-1.7-3.3-2.7-1.9-7.7-3.4-9.3-5.2v-4c2-2 3.4-4.2 3.4-7.5C27.4 8.2 24.2 5 20 5Z" />
+          </svg>
+        </span>
+        <div className="board-player-details">
+          <div className="board-player-name-line">
+            {title && <span className="board-player-title">{title}</span>}
+            <span className="board-player-name">{name}</span>
             <CountryFlag country={country || (color === 'w' ? header.WhiteCountry : header.BlackCountry)} />
             {rating && showRatings && (
-              <span className="ml-1 text-xs font-bold text-foreground-500">
+              <span className="board-player-rating">
+                (
                 {rating}
+                )
               </span>
             )}
           </div>
-          <div className="flex min-h-5 flex-wrap leading-none">
+          <div className="board-player-captured">
             {Object.entries(captured).map(([piece, number]) => (
               <CapturedGroup
                 color={color === 'w' ? 'b' : 'w'}
@@ -184,26 +181,18 @@ export default function PlayerBadge({ color }: {
                 piece={piece as Capturable}
               />
             ))}
-            {diff > 0 && <span className="ml-1 text-sm text-foreground-500">{`+${diff}`}</span>}
+            {diff > 0 && <span className="board-player-material">{`+${diff}`}</span>}
           </div>
         </div>
       </div>
       {timeLeft && (
         <div
-          className={cn(
-            `
-              flex min-w-20 items-center justify-between gap-1 rounded px-2 py-1
-              text-right font-medium tabular-nums
-              xs:min-w-32 xs:text-xl
-            `,
-            color === 'w'
-              ? 'bg-foreground text-foreground-50'
-              : `bg-default-100 text-foreground`,
-            color !== turn ? 'opacity-100' : 'opacity-40',
-          )}
+          className={cn('board-clock', `
+            board-clock-${color}
+          `, color !== turn && `board-clock-active`)}
         >
           {color !== turn && <Icon icon="material-symbols:timer-outline-rounded" />}
-          <span className="ml-auto">{timeLeft}</span>
+          <span>{timeLeft}</span>
         </div>
       )}
     </div>

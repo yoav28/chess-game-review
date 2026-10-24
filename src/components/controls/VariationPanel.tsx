@@ -6,13 +6,13 @@ export default function VariationPanel() {
   const { fen, moves, status, feedback, error, reset } = useVariationStore();
 
   if (!fen) {
-    return <p className="text-small text-foreground-500">Try an alternative: click or drag a piece on the board.</p>;
+    return <p className="review-variation-hint">Make a move to try an alternative.</p>;
   }
 
   return (
     <div
       aria-live="polite"
-      className="flex flex-col gap-2 border-b border-default-200 pb-3"
+      className="review-variation"
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-small font-bold">Alternative line</p>

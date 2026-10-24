@@ -1,9 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-
 @import 'tailwindcss';
+@import './styles/sidebar.css';
+@import './styles/shell.css';
+@import './styles/board.css';
+@import './styles/review.css';
+@import './styles/imports.css';
 @config "../tailwind.config.js";
 @plugin './hero.ts';
-@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@source '../node_modules/@heroui/theme/dist';
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
@@ -15,7 +18,6 @@
     border-color: var(--color-gray-200, currentcolor);
   }
 
-  /* https://tailwindcss.com/docs/upgrade-guide#buttons-use-the-default-cursor */
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;

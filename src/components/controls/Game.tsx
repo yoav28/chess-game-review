@@ -1,12 +1,9 @@
-import { Card, CardBody } from '@heroui/react';
-
 import Result from '../../icons/result/Result';
 import TimeClass from '../../icons/time-class/TimeClass';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useStageStore } from '../../stores/useStageStore';
-import cn from '../../utils/cn';
 import convertLichessTimeClass from '../../utils/convertLichessTimeClass';
 import { formatChessComTimeControl, formatLichessTimeControl } from '../../utils/formatTimeControl';
 import getChessComResult from '../../utils/getChessComResult';
@@ -60,63 +57,47 @@ export default function Game({ game }: { game: ChessComGame | LichessGame }) {
   const totalMoves = (game.pgn.match(totalMovesRegex) || []).length;
 
   return (
-    <Card
-      classNames={{
-        base: cn(`
-          border-default-300/50 bg-transparent text-sm
-          not-last:border-b
-          data-[hover=true]:bg-content4/20
-          dark:data-[hover=true]:bg-content4/20
-        `),
-        body: cn('flex-row items-center gap-3 py-3 pr-4 pl-2'),
-      }}
-      disableAnimation
-      fullWidth
-      isHoverable
-      isPressable
-      onPress={() => {
+    <button
+      className="game-list-row"
+      onClick={() => {
         setStage('loaded');
         loadGame(game.pgn);
         submitGame(game);
       }}
-      radius="none"
-      shadow="none"
+      type="button"
     >
-      <CardBody>
-        <div className="flex w-10 min-w-10 flex-col items-center gap-1" id="time-control">
-          <TimeClass className="size-5" timeClass={timeClass} />
-          <span className="text-xs text-nowrap text-foreground-500">
-            {timeControl}
-          </span>
-        </div>
-        <div className="flex min-w-0 flex-col gap-0.5" id="players-info">
-          <div className="flex items-center gap-2">
-            <span className="truncate">{wName}</span>
-            <CountryFlag country={wCountry} />
-            {showRatings && (
-              <span className="text-xs leading-4 font-bold text-foreground-500">
-                {wRating}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="truncate">{bName}</span>
-            <CountryFlag country={bCountry} />
-            {showRatings && (
-              <span className="text-xs leading-4 font-bold text-foreground-500">
-                {bRating}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className={`
-          ml-auto flex w-20 items-center justify-between gap-10 text-xs
-        `}
-        >
-          <span className="text-default-500">{totalMoves}</span>
-          <Result className="size-5" result={result} />
-        </div>
-      </CardBody>
-    </Card>
+      <span className="game-list-time">
+        <TimeClass className="size-5" timeClass={timeClass} />
+        <span>{timeControl}</span>
+      </span>
+      <span className="game-list-players">
+        <span className="game-list-player">
+          <span>{wName}</span>
+          <CountryFlag country={wCountry} />
+          {showRatings && (
+            <span className="game-list-rating">
+              (
+              {wRating}
+              )
+            </span>
+          )}
+        </span>
+        <span className="game-list-player">
+          <span>{bName}</span>
+          <CountryFlag country={bCountry} />
+          {showRatings && (
+            <span className="game-list-rating">
+              (
+              {bRating}
+              )
+            </span>
+          )}
+        </span>
+      </span>
+      <span className="game-list-result">
+        <span>{totalMoves}</span>
+        <Result className="size-5" result={result} />
+      </span>
+    </button>
   );
 }

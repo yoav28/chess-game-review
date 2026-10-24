@@ -1,10 +1,11 @@
 import { Button } from '@heroui/react';
-import { useEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import Board from './components/board/Board';
 import BatchProgress from './components/controls/BatchProgress';
 import Controls from './components/controls/Controls';
+import Settings from './components/controls/Settings';
+import Sidebar from './components/layout/Sidebar';
 import useBatchReview from './hooks/useBatchReview';
 import useReviewSession from './hooks/useReviewSession';
 
@@ -12,43 +13,30 @@ export default function App() {
   const { routeError, dismissRouteError } = useReviewSession();
   useBatchReview();
 
-  useEffect(() => {
-    const root = document.getElementById('root');
-    if (root)
-      root.role = 'presentation';
-  }, []);
-
   return (
     <ErrorBoundary FallbackComponent={Fallback}>
-      <div
-        className={`
-          mx-auto h-full overflow-scroll p-3
-          xs:p-6
-        `}
-        id="App"
-      >
-        <BatchProgress />
-        {routeError && (
-          <div className="mx-auto mb-4 flex max-w-[1146px] items-center gap-3" role="alert">
-            <p className="text-small">{routeError}</p>
-            <Button onPress={dismissRouteError} size="sm">Home</Button>
-          </div>
-        )}
-        <div className={`
-          relative mx-auto flex max-w-[642px] flex-col justify-center gap-6
-          lg:max-w-none lg:flex-row
-        `}
-        >
+      <Sidebar />
+      <main className="site-main" id="App">
+        <div className="workspace-messages">
+          <BatchProgress />
+          {routeError && (
+            <div className="workspace-error" role="alert">
+              <p>{routeError}</p>
+              <Button onPress={dismissRouteError} size="sm">Home</Button>
+            </div>
+          )}
+        </div>
+        <div className="game-workspace">
           <Board />
+          <div className="board-tools"><Settings /></div>
           <Controls />
         </div>
-      </div>
+      </main>
     </ErrorBoundary>
   );
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
-function Fallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => any }) {
+function Fallback({ error }: { error: Error }) {
   return (
     <div className="flex h-screen flex-col gap-2 p-8" role="alert">
       <p className="text-2xl">Something went wrong:</p>

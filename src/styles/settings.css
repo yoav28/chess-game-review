@@ -1,0 +1,88 @@
+.chess-settings {
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 300px;
+  max-height: min(680px, 80vh);
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid #454340;
+  border-radius: 5px;
+  background: #262522;
+  color: #fff;
+  box-shadow: 0 2px 8px #0005;
+}
+.chess-settings-body {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 18px;
+  padding: 20px;
+}
+.chess-settings-heading {
+  margin: -20px -20px 0;
+  padding: 15px 20px;
+  background: #21201d;
+  font-size: 18px;
+  font-weight: 800;
+}
+.chess-setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.chess-setting-field > span {
+  color: #e7e6e5;
+  font-size: 14px;
+  font-weight: 700;
+}
+.chess-setting-field > small {
+  color: #b3b2b1;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.chess-setting-field select {
+  height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #4b4945;
+  border-radius: 5px;
+  background: #3a3935;
+  color: #fff;
+  font-size: 14px;
+}
+.chess-setting-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.chess-setting-switch input {
+  width: 18px;
+  height: 18px;
+  accent-color: #81b64c;
+}
+.chess-settings-divider {
+  border-color: #454340;
+}
+.chess-batch-modal {
+  border-radius: 6px;
+  background: #262522;
+  color: #fff;
+}
+.chess-batch-modal header {
+  background: #21201d;
+  font-size: 22px;
+  font-weight: 800;
+}
+.chess-batch-description {
+  margin: 4px 0 8px;
+  color: #b3b2b1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.chess-batch-trigger {
+  width: 100%;
+  font-size: 16px;
+}

@@ -1,0 +1,220 @@
+.review-moves {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+.review-engine-header {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px;
+  color: #b3b2b1;
+  font-size: 11px;
+}
+.review-engine-header > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.review-engine-header svg {
+  font-size: 16px;
+}
+.review-feedback {
+  flex-shrink: 0;
+  padding: 8px 12px 10px;
+  border-top: 1px solid #ffffff12;
+}
+.review-variation-hint {
+  margin-bottom: 8px;
+  color: #b3b2b1;
+  font-size: 12px;
+}
+.review-variation {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+}
+.review-move-feedback {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.review-move-feedback > svg {
+  flex-shrink: 0;
+  width: 23px;
+  height: 23px;
+}
+.review-move-feedback > .review-evaluation {
+  margin-left: auto;
+}
+.review-engine-line {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  cursor: pointer;
+  list-style: none;
+}
+.review-engine-line::-webkit-details-marker {
+  display: none;
+}
+.review-engine-continuation {
+  padding: 4px 0 8px 55px;
+  color: #b3b2b1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.review-engine-variation[open] .review-engine-line-arrow {
+  transform: rotate(180deg);
+}
+.review-engine-line > svg {
+  width: 18px;
+  height: 18px;
+}
+.review-engine-line-moves {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-engine-line-arrow {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: #999896;
+}
+.review-evaluation {
+  min-width: 48px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  background: #f1f1ee;
+  color: #262522;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+.review-evaluation-black {
+  background: #454340;
+  color: #fff;
+}
+.review-opening {
+  display: flex;
+  min-height: 38px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #ffffff12;
+  border-bottom: 1px solid #ffffff12;
+  color: #b3b2b1;
+  font-size: 12px;
+}
+.review-opening > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-opening svg {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+.review-game-heading {
+  display: flex;
+  min-height: 38px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-bottom: 1px solid #ffffff12;
+  font-size: 13px;
+}
+.review-game-heading strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-game-heading strong span {
+  margin: 0 3px;
+  color: #b3b2b1;
+}
+.review-game-heading > span {
+  color: #b3b2b1;
+}
+.review-move-list {
+  flex: 1;
+  min-height: 75px;
+  overflow: auto;
+}
+.review-move-row {
+  display: grid;
+  min-height: 30px;
+  grid-template-columns: 40px 1fr 1fr;
+  padding: 0 12px;
+  align-items: center;
+}
+.review-move-row:nth-child(even) {
+  background: #292825;
+}
+.review-move-number {
+  color: #999896;
+  font-size: 12px;
+}
+.review-move-button {
+  justify-content: flex-start;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.review-move-button:hover {
+  background: #3c3a37;
+}
+.review-move-button[aria-current] {
+  background: #59564f;
+  color: #fff;
+}
+.review-move-button > svg {
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+}
+.review-game-result {
+  padding: 8px 12px;
+  color: #b3b2b1;
+  font-size: 13px;
+}
+.review-analysis-graph {
+  flex-shrink: 0;
+  margin: 8px 12px 0;
+}
+.review-eval-graph {
+  display: block;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.review-external-links {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  color: #999896;
+  font-size: 11px;
+}
+.review-external-links a {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.review-external-links a:hover {
+  color: #fff;
+}

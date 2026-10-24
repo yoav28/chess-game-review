@@ -14,7 +14,7 @@ export default function usePlayerCountry(site: Site | undefined, username: strin
         return null;
       const profile = await response.json();
 
-      return (site === 'chess.com' ? profile.country : profile.profile?.flag || profile.profile?.country) as string | null;
+      return (site === 'chess.com' ? profile.country : profile.profile?.flag || profile.profile?.country) as string | undefined ?? null;
     },
     enabled: !!site && !!username && !username.startsWith('lichess AI'),
     staleTime: 24 * 60 * 60 * 1000,

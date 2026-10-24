@@ -1,0 +1,57 @@
+.review-navigation {
+  flex-shrink: 0;
+  padding: 16px 8px 12px;
+  background: #21201d;
+}
+.review-navigation-moves {
+  display: flex;
+  gap: 7px;
+}
+.review-navigation-moves > button {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  border-radius: 7px;
+  background: #32312e;
+  color: #b3b2b1;
+  font-size: 29px;
+}
+.review-navigation-moves > button:hover {
+  background: #403e3b;
+  color: #fff;
+}
+.review-navigation-moves > button:disabled {
+  opacity: 0.35;
+}
+.review-navigation-actions {
+  display: flex;
+  min-height: 36px;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding-top: 7px;
+}
+.review-navigation-actions > button {
+  height: 28px;
+  background: transparent;
+  color: #b3b2b1;
+  font-size: 13px;
+  font-weight: 700;
+}
+.review-navigation-actions > button:first-child {
+  margin-right: auto;
+}
+.review-navigation-actions > button:last-child {
+  margin-left: auto;
+}
+.review-navigation-actions > button svg {
+  font-size: 20px;
+}
+@media (max-width: 1023px) {
+  .review-navigation {
+    padding-top: 10px;
+  }
+  .review-navigation-moves > button {
+    height: 42px;
+  }
+}

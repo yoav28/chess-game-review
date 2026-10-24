@@ -1,59 +1,53 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { Button } from '@heroui/react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import { createPortal } from 'react-dom';
-import { useMediaQuery } from 'react-responsive';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useBoardStore } from '../../stores/useBoardStore';
+import { useReviewViewStore } from '../../stores/useReviewViewStore';
 import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import { useStageStore } from '../../stores/useStageStore';
-import cn from '../../utils/cn';
+import { useVariationStore } from '../../stores/useVariationStore';
 import useNames from '../../utils/useNames';
 import Forms from './Forms';
 import GameNav from './GameNav';
 import Games from './Games';
 import Review from './Review';
 
+import '../../styles/review.css';
+
 export default function Controls() {
   const reset = useBoardStore(state => state.reset);
+  const { view, setView } = useReviewViewStore();
 
-  const {
-    stage,
-    setStage,
-    isLoaded,
-  } = useStageStore(useShallow(state => ({
+  const { stage, setStage, isLoaded, reviewFinished } = useStageStore(useShallow(state => ({
     stage: state.stage,
     setStage: state.setStage,
     isLoaded: state.computed.isLoaded,
+    reviewFinished: state.computed.reviewFinished,
   })));
 
-  const {
-    site,
-    resetSelectGameStore,
-  } = useSelectGameStore(useShallow(state => ({
+  const { site, resetSelectGameStore } = useSelectGameStore(useShallow(state => ({
     site: state.site,
     resetSelectGameStore: state.reset,
   })));
 
-  const isLg = useMediaQuery({
-    query: '(min-width: 1024px)',
-  });
-
   const [wName, bName] = useNames();
+  const isAnalysis = stage === 'review-moves' && view === 'analysis';
 
   function back() {
-    if (stage === 'select-month') {
+    if (stage === 'select-month' || stage === 'select-game') {
       resetSelectGameStore();
       setStage('home');
     }
-
-    else if (stage === 'select-game') {
-      resetSelectGameStore();
-      setStage('home');
+    else if (stage === 'review-moves') {
+      useVariationStore.getState().reset();
+      if (isAnalysis)
+        setView('review');
+      else
+        setStage('review-overview');
     }
-
-    else if (stage === 'loaded' || stage === 'reviewing' || stage === 'review-overview') {
+    else {
       reset();
 
       if (site) {
@@ -64,33 +58,20 @@ export default function Controls() {
         setStage('home');
       }
     }
-    else if (stage === 'review-moves') {
-      setStage('review-overview');
-    }
   }
 
   return (
-    <div
-      className={`
-        flex h-[500px] max-w-[642px] min-w-[310px] grow flex-col gap-4
-        backdrop-blur-sm
-        xs:h-[660px]
-        lg:mb-0 lg:h-auto lg:max-h-[696px] lg:w-auto lg:max-w-[480px]
-      `}
-      // max-h-[696px] is the height of sibling element <Board />
-      id="Controls"
-    >
+    <section className="review-panel" id="Controls">
       <Helmet>
-        <title>
-          {isLoaded
-            ? `${wName} vs. ${bName} | Game Review`
-            : 'Game Review'}
-        </title>
+        <title>{isLoaded ? `${wName} vs. ${bName} | Game Review` : 'Game Review'}</title>
       </Helmet>
-      <div className="grid grid-cols-[40px_1fr_40px] gap-1">
+      <header className="review-panel-header">
         <Button
           aria-label="Back"
-          className={cn('text-2xl', stage === 'home' && 'invisible')}
+          className={`
+            review-back
+            ${stage === 'home' ? 'invisible' : ''}
+          `}
           isIconOnly
           onPress={back}
           radius="sm"
@@ -99,25 +80,47 @@ export default function Controls() {
         >
           <Icon icon="material-symbols:chevron-left-rounded" />
         </Button>
-        <p
-          className={cn('flex w-full items-center justify-center font-bold', stage === 'home' && `
-            text-xl
-          `)}
-        >
-          {stage === 'home'
-            ? (
-                <>
-                  <img alt="" className="mr-1 size-5" src="/star.svg" />
-                  <span>Game Review</span>
-                </>
-              )
-            : stage === 'select-month' || stage === 'select-game' ? 'Recent games' : 'Review'}
-        </p>
-      </div>
+        <h1>
+          {isAnalysis ? <Icon icon="material-symbols:search-check-rounded" /> : <img alt="" src="/star.svg" />}
+          {stage === 'select-month' || stage === 'select-game' ? 'Recent Games' : isAnalysis ? 'Analysis' : 'Game Review'}
+        </h1>
+        {reviewFinished && (
+          <Button
+            aria-label={isAnalysis ? 'Game Review' : 'Analysis'}
+            className="review-header-analysis"
+            isIconOnly
+            onPress={() => {
+              useVariationStore.getState().reset();
+              setView(isAnalysis ? 'review' : 'analysis');
+              setStage('review-moves');
+            }}
+            radius="sm"
+            size="sm"
+            variant="light"
+          >
+            <Icon icon={isAnalysis ? 'material-symbols:stars-rounded' : 'material-symbols:search-check-rounded'} />
+          </Button>
+        )}
+      </header>
+      {isAnalysis && (
+        <nav aria-label="Review views" className="review-tabs">
+          <button
+            onClick={() => {
+              useVariationStore.getState().reset();
+              setView('review');
+            }}
+            type="button"
+          >
+            Review
+          </button>
+          <button aria-current={stage === 'review-moves' ? 'page' : undefined} onClick={() => setStage('review-moves')} type="button">Analysis</button>
+        </nav>
+      )}
       <div className={`
-        mb-32 grow overflow-scroll
-        xs:mb-16 xs:px-4
-        lg:mb-0
+        review-panel-content
+        ${stage === 'review-moves'
+? `review-panel-content-moves`
+: ''}
       `}
       >
         {stage === 'home'
@@ -126,7 +129,7 @@ export default function Controls() {
             ? <Games />
             : <Review />}
       </div>
-      {isLg ? <GameNav /> : createPortal(<GameNav />, document.getElementById('root')!)}
-    </div>
+      {stage === 'review-moves' && <GameNav />}
+    </section>
   );
 }

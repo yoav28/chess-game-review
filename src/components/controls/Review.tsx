@@ -80,23 +80,23 @@ export default function Review() {
   }, [stage, gameVersion, setStage]);
 
   return (
-    <div className="h-full" id="Review">
+    <div className="review-body" id="Review">
       {error && <p className="mb-3 text-small text-danger" role="alert">{error}</p>}
       {stage === 'loaded'
         ? (
             <Button
-              className="h-12 text-medium font-bold text-shadow-xs"
+              className="review-primary-button"
               color="primary"
               fullWidth
               onPress={review}
               radius="sm"
             >
-              Generate Review
+              Start Review
             </Button>
           )
         : stage === 'reviewing'
           ? (
-              <div className="flex flex-col gap-3">
+              <div className="review-progress">
                 <p className="text-small text-foreground-500">{isLoading ? 'Loading Stockfish…' : `Analyzing with Stockfish ${analysisModel === 'nnue' ? 'NNUE' : 'Classical'} at depth ${analysisDepth}`}</p>
                 <Progress aria-label="Review progress" showValueLabel size="lg" value={progress} />
                 <Button

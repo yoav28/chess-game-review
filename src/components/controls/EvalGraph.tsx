@@ -66,7 +66,7 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
 
     const xScale = useMemo(() =>
       scaleLinear({
-        domain: [0, cpObj.length - 1],
+        domain: [0, Math.max(1, cpObj.length - 1)],
         range: [0, width],
       }), [width]);
 
@@ -87,12 +87,16 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
     const bisectIndex = bisector<TooltipData, number>(d => d.i).left;
 
     function handleClick() {
-      toMove(tooltipData!.i);
+      if (!tooltipData)
+        return;
+      toMove(tooltipData.i);
       if (stage === 'review-overview')
         setStage('review-moves');
     }
 
     const handleTooltip = useCallback((event: React.TouchEvent<SVGRectElement> | React.MouseEvent<SVGRectElement>) => {
+      if (!cpObj.length)
+        return;
       const { x } = localPoint(event) || { x: 0 };
       const x0 = xScale.invert(x);
       const index = bisectIndex(cpObj, x0, 1);
@@ -117,27 +121,27 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
       <>
         <svg
           aria-label="Evaluation Graph"
-          className="overflow-hidden rounded-md"
+          className="review-eval-graph"
           height={graphH}
           width="100%"
         >
           <rect
-            fill="white"
+            fill="#f1f1ee"
             height={graphH}
             width={width}
             x={0}
             y={0}
           />
           <AreaClosed<{ val: string | number; i: number }>
-            className="fill-default-100"
             curve={curveMonotoneX}
             data={cpObj}
+            fill="#595854"
             id="area"
             x={d => xScale(getIndex(d))}
             y={d => yScale(getNumericValue(d))}
             yScale={yScale}
           />
-          <line className="stroke-default-500/50" id="x-axis" strokeWidth={2} x1="0" x2={width} y1="40" y2="40" />
+          <line id="x-axis" stroke="#9b9a96" strokeWidth={1} x1="0" x2={width} y1="40" y2="40" />
           <Bar
             className="cursor-pointer"
             fill="transparent"
@@ -200,7 +204,7 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
             <circle
               className={chooseFillColor(classHistory[currentMoveNum - 1])}
               cx={xScale(currentMoveNum)}
-              cy={yScale(getNumericValue(cpObj[currentMoveNum]))}
+              cy={cpObj[currentMoveNum] ? yScale(getNumericValue(cpObj[currentMoveNum])) : graphH / 2}
               pointerEvents="none"
               r={5}
             />
@@ -232,7 +236,7 @@ const EvalGraphNotResponsive = withTooltip<AreaProps, TooltipData>(
 
 export default function EvalGraph() {
   return (
-    <ParentSize style={{ width: 'auto', height: 'auto' }}>
+    <ParentSize style={{ width: '100%', height: 80 }}>
       {({ width, height }) => <EvalGraphNotResponsive height={height} width={width} />}
     </ParentSize>
   );

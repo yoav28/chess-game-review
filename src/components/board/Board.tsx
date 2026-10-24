@@ -22,6 +22,8 @@ import MoveInteraction from './MoveInteraction';
 import Pieces from './Pieces';
 import PlayerBadge from './PlayerBadge';
 
+import '../../styles/board.css';
+
 if (!import.meta.env.PROD) {
   mountStoreDevtool('selectGameStore', useSelectGameStore);
   mountStoreDevtool('boardStore', useBoardStore);
@@ -66,22 +68,13 @@ export default function Board() {
   }, [isLoaded]);
 
   return (
-    <div className="flex h-fit w-full max-w-[642px] flex-col gap-2" id="Board">
+    <div className="board-workspace" id="Board">
       <PlayerBadge color={isFlipped ? 'w' : 'b'} />
-      <div
-        className={`
-          flex gap-1.5
-          xs:gap-3
-        `}
-        id="Board&Bar"
-      >
+      <div className="board-with-evaluation" id="Board&Bar">
         <EvalBar />
         <div
           aria-label={interaction.enabled ? 'Chessboard. Use arrow keys and Enter to try alternative moves.' : 'Chessboard'}
-          className={`
-            group relative aspect-square w-[calc(100%-42px)] touch-none
-            outline-none
-          `}
+          className="group chessboard"
           id="actual-board"
           role={interaction.enabled ? 'application' : undefined}
           tabIndex={interaction.enabled ? 0 : undefined}
@@ -89,7 +82,7 @@ export default function Board() {
         >
           <img
             alt=""
-            className="absolute rounded"
+            className="board-squares"
             src={`/boards/${board}.png`}
           />
           {!variationFen && <Highlight />}

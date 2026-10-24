@@ -1,6 +1,4 @@
-import { Button, Input } from '@heroui/react';
-import { DevTool } from '@hookform/devtools';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 import useLocalStorage from '../../hooks/useLocalStorage';
 import { useSelectGameStore } from '../../stores/useSelectGameStore';
@@ -17,7 +15,7 @@ export default function ChessSiteForm({ site }: { site: Site }) {
   const submitUsername = useSelectGameStore(state => state.submitUsername);
   const setStage = useStageStore(state => state.setStage);
   const { item: lastUsername, set } = useLocalStorage(`${site}-username`);
-  const { handleSubmit, control, formState, watch } = useForm<Inputs>({ defaultValues: { username: lastUsername || '' } });
+  const { handleSubmit, register, watch } = useForm<Inputs>({ defaultValues: { username: lastUsername || '' } });
 
   const onSubmit: SubmitHandler<Inputs> = (data) => {
     submitUsername(data.username.trim(), site);
@@ -26,28 +24,22 @@ export default function ChessSiteForm({ site }: { site: Site }) {
   };
 
   return (
-    <form className="flex gap-1" onSubmit={handleSubmit(onSubmit)}>
-      <Controller
-        control={control}
-        name="username"
-        render={({ field }) => (
-          <Input
-            {...field}
-            label="Username"
-            size="sm"
-          />
-        )}
+    <form className="import-form" onSubmit={handleSubmit(onSubmit)}>
+      <label className="import-label" htmlFor="import-username">
+        {site === 'chess.com' ? 'Chess.com' : 'Lichess'}
+        {' '}
+        username
+      </label>
+      <input
+        autoCapitalize="none"
+        autoComplete="username"
+        className="import-input"
+        id="import-username"
+        placeholder="Enter username"
+        spellCheck={false}
+        {...register('username')}
       />
-      <Button
-        className="h-12 font-semibold text-shadow-xs"
-        color="primary"
-        isDisabled={watch('username').trim() === '' || !formState.isValid}
-        radius="sm"
-        type="submit"
-      >
-        Find games
-      </Button>
-      {import.meta.env.PROD || <DevTool control={control} />}
+      <button className="chess-primary-button" disabled={!watch('username').trim()} type="submit">Find Games</button>
     </form>
   );
 }

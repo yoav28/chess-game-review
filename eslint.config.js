@@ -1,3 +1,6 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import antfu from '@antfu/eslint-config';
 import { FlatCompat } from '@eslint/eslintrc';
 import pluginQuery from '@tanstack/eslint-plugin-query';
@@ -6,6 +9,13 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 
 const compat = new FlatCompat();
+const stylesPath = fileURLToPath(new URL('./src/styles/', import.meta.url));
+const dynamicClassFragments = ['board-player-avatar-', 'board-clock-', 'review-player-score-', 'review-player-avatar-'];
+
+const customClasses = [...new Set(readdirSync(stylesPath, { recursive: true })
+  .filter(path => String(path).endsWith('.css'))
+  .flatMap(path => [...readFileSync(`${stylesPath}/${path}`, 'utf8').matchAll(/([^{}]+)\{/g)]
+    .flatMap(([, selector]) => [...selector.matchAll(/\.([a-z_][\w-]*)/gi)].map(([, name]) => `^${name}$`))))];
 
 export default antfu(
   {
@@ -98,6 +108,9 @@ export default antfu(
     },
     rules: {
       ...eslintPluginBetterTailwindcss.configs['recommended-warn'].rules,
+      'better-tailwindcss/no-unregistered-classes': ['warn', {
+        ignore: [...customClasses, ...dynamicClassFragments.map(name => `^${name}$`)],
+      }],
     },
     settings: {
       'better-tailwindcss': {

@@ -1,7 +1,6 @@
 import { Button } from '@heroui/react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useMediaQuery } from 'react-responsive';
 import { useShallow } from 'zustand/react/shallow';
 
 import useReviewPlayback from '../../hooks/useReviewPlayback';
@@ -46,10 +45,6 @@ export default function GameNav() {
   );
 
   const history = currentGame.history({ verbose: true });
-
-  const isLg = useMediaQuery({
-    query: '(min-width: 1024px)',
-  });
 
   useHotkeys('right', () => {
     pausePlayback();
@@ -105,17 +100,10 @@ export default function GameNav() {
 
   return (
     <div
-      className={`
-        fixed bottom-3 left-1/2 z-10 mt-auto flex w-11/12 max-w-[642px]
-        -translate-x-2/4 flex-col flex-wrap justify-between gap-2 rounded-xl
-        bg-default-50/90 p-3 ring-1 ring-foreground-300 backdrop-blur-sm
-        xs:w-10/12 xs:flex-row
-        lg:static lg:w-auto lg:translate-x-0 lg:flex-col lg:bg-inherit lg:p-0
-        lg:ring-0
-      `}
+      className="review-navigation"
       id="GameNav"
     >
-      <div className="flex gap-1">
+      <div className="review-navigation-moves">
         <Button
           aria-label="First move"
           className="grow text-3xl"
@@ -128,7 +116,7 @@ export default function GameNav() {
             toFirstMove();
           }}
           radius="sm"
-          size={isLg ? 'md' : 'sm'}
+          size="md"
         >
           <Icon icon="material-symbols:first-page-rounded" />
         </Button>
@@ -144,7 +132,7 @@ export default function GameNav() {
             toPrevMove();
           }}
           radius="sm"
-          size={isLg ? 'md' : 'sm'}
+          size="md"
         >
           <Icon icon="material-symbols:chevron-left-rounded" />
         </Button>
@@ -155,7 +143,7 @@ export default function GameNav() {
           isIconOnly
           onPress={togglePlayback}
           radius="sm"
-          size={isLg ? 'md' : 'sm'}
+          size="md"
         >
           <Icon icon={isPlaying ? 'material-symbols:pause-rounded' : 'material-symbols:play-arrow-rounded'} />
         </Button>
@@ -177,7 +165,7 @@ export default function GameNav() {
             }
           }}
           radius="sm"
-          size={isLg ? 'md' : 'sm'}
+          size="md"
         >
           <Icon icon="material-symbols:chevron-right-rounded" />
         </Button>
@@ -199,12 +187,12 @@ export default function GameNav() {
             }
           }}
           radius="sm"
-          size={isLg ? 'md' : 'sm'}
+          size="md"
         >
           <Icon icon="material-symbols:last-page-rounded" />
         </Button>
       </div>
-      <div className="flex gap-1" id="minor-buttons">
+      <div className="review-navigation-actions" id="minor-buttons">
         <Button
           aria-label="Flip board"
           className="text-2xl"
@@ -223,7 +211,6 @@ export default function GameNav() {
           />
         </Button>
         <Button
-          color="danger"
           onPress={() => {
             reset();
             resetSelectGameStore();
@@ -232,7 +219,8 @@ export default function GameNav() {
           size="sm"
           variant="flat"
         >
-          Reset
+          <Icon icon="material-symbols:add-box-outline-rounded" />
+          New
         </Button>
         <Settings />
       </div>

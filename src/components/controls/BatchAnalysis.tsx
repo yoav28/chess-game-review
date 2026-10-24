@@ -1,4 +1,4 @@
-import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem } from '@heroui/react';
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/react';
 import { useEffect, useRef, useState } from 'react';
 
 import { fetchUserGames } from '../../queries/fetchUserGames';
@@ -67,42 +67,36 @@ export default function BatchAnalysis() {
 
   return (
     <>
-      <Button color="primary" onPress={() => setIsOpen(true)} radius="sm" variant="flat">
-        Analyze all my games
-      </Button>
-      <Modal isOpen={isOpen} onClose={close} radius="sm">
+      <button className="chess-primary-button chess-batch-trigger" onClick={() => setIsOpen(true)} type="button">
+        Analyze All My Games
+      </button>
+      <Modal className="chess-batch-modal" isOpen={isOpen} onClose={close} radius="sm">
         <ModalContent>
-          <ModalHeader>Analyze my games</ModalHeader>
+          <ModalHeader>Analyze My Games</ModalHeader>
           <ModalBody>
-            <p className="text-sm text-foreground-500">Games are analyzed one at a time. Keep this tab open; completed reviews are saved in this browser.</p>
-            <Select
-              disallowEmptySelection
-              isDisabled={isLoading}
-              label="Period"
-              onSelectionChange={keys => setPeriod(String(Array.from(keys)[0]))}
-              selectedKeys={[period]}
-            >
-              <SelectItem key="day">Last day</SelectItem>
-              <SelectItem key="week">Last week</SelectItem>
-              <SelectItem key="month">Last month</SelectItem>
-            </Select>
-            <Select
-              disallowEmptySelection
-              isDisabled={isLoading}
-              label="Game limit"
-              onSelectionChange={keys => setLimit(String(Array.from(keys)[0]))}
-              selectedKeys={[limit]}
-            >
-              <SelectItem key="10">10 games</SelectItem>
-              <SelectItem key="100">100 games</SelectItem>
-              <SelectItem key="1000">1000 games</SelectItem>
-              <SelectItem key="all">All games</SelectItem>
-            </Select>
-            {error && <p className="text-sm text-danger" role="alert">{error}</p>}
+            <p className="chess-batch-description">Keep this tab open while your games are analyzed. Completed reviews are saved in this browser.</p>
+            <label className="chess-setting-field">
+              <span>Period</span>
+              <select disabled={isLoading} onChange={event => setPeriod(event.target.value)} value={period}>
+                <option value="day">Last day</option>
+                <option value="week">Last week</option>
+                <option value="month">Last month</option>
+              </select>
+            </label>
+            <label className="chess-setting-field">
+              <span>Game limit</span>
+              <select disabled={isLoading} onChange={event => setLimit(event.target.value)} value={limit}>
+                <option value="10">10 games</option>
+                <option value="100">100 games</option>
+                <option value="1000">1000 games</option>
+                <option value="all">All games</option>
+              </select>
+            </label>
+            {error && <p className="import-error" role="alert">{error}</p>}
           </ModalBody>
           <ModalFooter>
-            <Button onPress={close} radius="sm" variant="light">Cancel</Button>
-            <Button color="primary" isLoading={isLoading} onPress={analyze} radius="sm">Analyze games</Button>
+            <button className="chess-secondary-button" onClick={close} type="button">Cancel</button>
+            <button className="chess-primary-button" disabled={isLoading} onClick={analyze} type="button">{isLoading ? 'Finding Games…' : 'Analyze Games'}</button>
           </ModalFooter>
         </ModalContent>
       </Modal>

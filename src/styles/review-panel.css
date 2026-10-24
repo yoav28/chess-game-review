@@ -1,0 +1,103 @@
+.review-panel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: #262522;
+  border-radius: 5px;
+  color: #fff;
+}
+.review-panel-header {
+  display: grid;
+  min-height: 48px;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  background: #21201d;
+}
+.review-panel-header h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.review-panel-header h1 img {
+  width: 22px;
+  height: 22px;
+}
+.review-back {
+  min-width: 32px;
+  color: #b3b2b1;
+  font-size: 25px;
+}
+.review-tabs {
+  display: flex;
+  min-height: 54px;
+  background: #21201d;
+}
+.review-tabs button {
+  flex: 1;
+  border-bottom: 3px solid transparent;
+  color: #b3b2b1;
+  font-size: 14px;
+  font-weight: 700;
+}
+.review-tabs button:hover {
+  background: #2c2b28;
+}
+.review-tabs button[aria-current] {
+  border-bottom-color: #81b64c;
+  color: #fff;
+  background: #262522;
+}
+.review-panel-content {
+  flex: 1;
+  min-height: 0;
+  padding: 22px 20px;
+  overflow: auto;
+}
+.review-panel-content-moves {
+  padding: 0;
+  overflow: hidden;
+}
+.review-body {
+  height: 100%;
+}
+.review-primary-button {
+  min-height: 48px;
+  height: 48px;
+  border-radius: 6px;
+  background: #81b64c;
+  box-shadow: 0 4px 0 #45752c;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  text-shadow: 0 1px 1px #0004;
+}
+.review-primary-button:hover {
+  background: #95c95e;
+}
+.review-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 0;
+  color: #b3b2b1;
+}
+.review-header-analysis {
+  color: #b3b2b1;
+  font-size: 22px;
+}
+@media (max-width: 1023px) {
+  .review-panel {
+    min-height: 480px;
+  }
+  .review-panel-content {
+    padding: 20px 16px;
+  }
+  .review-panel-content-moves {
+    min-height: 470px;
+    padding: 0;
+  }
+}

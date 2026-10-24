@@ -11,7 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        sans: ['-apple-system', 'BlinkMacSystemFont', ...defaultTheme.fontFamily.sans],
       },
       screens: {
         xs: '400px',
