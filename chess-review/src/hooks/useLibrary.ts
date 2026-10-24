@@ -66,6 +66,11 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
     }
     return [...byId.values()].sort((a, b) => b.endTime - a.endTime)
   }
+  const persistPartial = (request: NonNullable<typeof current>) => {
+    void saveCompleteLibrary(request.username, request.games, dependencies.save).catch(() => {
+      if (owns(request)) callbacks.notice('Loaded games remain available in this tab, but browser storage is unavailable.')
+    })
+  }
 
   async function loadSavedUser(raw: string) {
     let user: string
@@ -91,6 +96,7 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
     try { user = normalizeUsername(raw) } catch (e) { callbacks.error((e as Error).message); return }
     restoreSequence += 1
     rememberUsername(user)
+    if (current?.importing) persistPartial(current)
     current?.controller.abort()
     const request = { controller: new AbortController(), games: [] as GameRecord[], importing: true, username: user }
     current = request
@@ -120,6 +126,7 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
           if (!live(request)) return
           request.games = mergeGames(request.games, batch)
           callbacks.games(request.games)
+          persistPartial(request)
         },
       })
       if (!live(request)) return
@@ -134,7 +141,10 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
         if (live(request)) callbacks.notice('All games imported. Browser storage is unavailable; keep this tab open to retain them.')
       })
     } catch (e) {
-      if (live(request)) callbacks.error((e as Error).message)
+      if (live(request)) {
+        callbacks.error((e as Error).message)
+        persistPartial(request)
+      }
     } finally {
       request.importing = false
       if (owns(request)) callbacks.loading(false)
@@ -167,6 +177,7 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
     },
     cancel: () => {
       if (!active || !current?.importing || current.controller.signal.aborted) return
+      persistPartial(current)
       current.controller.abort()
       callbacks.loading(false)
       callbacks.notice(`Import stopped. ${current.games.length.toLocaleString()} loaded games remain available.`)
