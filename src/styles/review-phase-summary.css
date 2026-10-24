@@ -39,10 +39,17 @@
   color: #fff;
 }
 .review-phase-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #b3b2b1;
   font-size: 20px;
   font-weight: 700;
   text-align: center;
+}
+.review-phase-value svg {
+  width: 24px;
+  height: 24px;
 }
 .review-phase-value[data-color='0'] {
   grid-column: 2;

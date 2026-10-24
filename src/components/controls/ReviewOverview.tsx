@@ -116,7 +116,7 @@ export default function ReviewOverview() {
           <Icon icon={expanded ? 'material-symbols:keyboard-arrow-up-rounded' : 'material-symbols:keyboard-arrow-down-rounded'} />
         </button>
       </div>
-      <ReviewPhaseSummary header={header} />
+      <ReviewPhaseSummary />
     </div>
   );
 }

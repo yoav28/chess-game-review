@@ -39,3 +39,26 @@
   max-width: 130px;
   text-overflow: ellipsis;
 }
+.review-stat-detail {
+  display: block;
+  margin-top: 3px;
+  color: #b3b2b1;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.review-stat-detail > span {
+  display: block;
+}
+.review-stats-method {
+  padding-bottom: 16px;
+  color: #b3b2b1;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.review-stats-method summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.review-stats-method p {
+  margin-top: 8px;
+}

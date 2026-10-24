@@ -1,24 +1,29 @@
+import useAdvancedStats from '../../hooks/useAdvancedStats';
 import ReviewAllStats from './ReviewAllStats';
+import ReviewPhaseAssessment from './ReviewPhaseAssessment';
 
 import '../../styles/review-phase-summary.css';
 
-export default function ReviewPhaseSummary({ header }: { header: Record<string, string> }) {
+export default function ReviewPhaseSummary() {
+  const stats = useAdvancedStats();
+
   return (
     <div className="review-phase-summary">
       <div className="review-phase-row review-rating-row">
         <span className="review-phase-label">Game Rating</span>
         {['White', 'Black'].map((color, index) => {
-          const metadata = header[`${color}PerformanceRating`]?.trim();
-          const rating = metadata && Number.isFinite(Number(metadata)) ? metadata : null;
+          const { rating, ratingSource } = stats[index];
+          const estimated = ratingSource === 'estimate';
 
           return (
             <strong
-              aria-label={`${color} game rating${rating ? ` ${rating}` : ' unavailable'}`}
+              aria-label={`${color} ${estimated ? 'estimated ' : ''}game rating${rating === null ? ' unavailable' : ` ${rating}`}`}
               className="review-game-rating"
               data-color={index}
               key={color}
-              title={rating ? 'Performance rating from game metadata' : 'Performance rating is not available for this game.'}
+              title={ratingSource === 'metadata' ? 'Performance rating from game metadata' : estimated ? 'Approximate game rating based on decision accuracy and imported player rating. See View All Stats for the calculation.' : 'Requires analyzed moves and a player rating, or explicit performance-rating metadata.'}
             >
+              {estimated && '≈'}
               {rating ?? '—'}
             </strong>
           );
@@ -29,24 +34,12 @@ export default function ReviewPhaseSummary({ header }: { header: Record<string, 
         className="review-advanced-stats"
       >
         <h2 id="review-advanced-heading">Advanced Stats</h2>
-        {['Opening', 'Tactics', 'Strategy'].map(phase => (
+        {(['Opening', 'Tactics', 'Strategy'] as const).map(phase => (
           <div className="review-phase-row" key={phase}>
             <span className="review-phase-label">{phase}</span>
-            {['White', 'Black'].map((color, index) => {
-              const assessment = header[`${color}${phase}Assessment`];
-
-              return (
-                <span
-                  aria-label={`${color} ${phase.toLowerCase()} assessment ${assessment || 'unavailable'}`}
-                  className="review-phase-value"
-                  data-color={index}
-                  key={color}
-                  title={assessment ? 'Assessment from game metadata' : `${phase} assessment is not available for this game.`}
-                >
-                  {assessment || '—'}
-                </span>
-              );
-            })}
+            {['White', 'Black'].map((color, index) => (
+              <ReviewPhaseAssessment assessment={stats[index].phases[phase]} index={index} key={color} phase={phase} player={color} />
+            ))}
           </div>
         ))}
         <ReviewAllStats />
