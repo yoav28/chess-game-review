@@ -1,0 +1,6 @@
+.board-appearance-controls > label:not(.checkbox-label) { display: block; margin: 12px 0 6px; font-size: 12px; }
+.board-appearance-controls > select { width: 100%; }
+.appearance-preview { display: flex; margin: 12px 0; width: 112px; height: 56px; }
+.appearance-preview > span { display: flex; align-items: center; justify-content: center; width: 56px; background: var(--board-light); }
+.appearance-preview > span + span { background: var(--board-dark); }
+.board-appearance-controls .fine-print { font-size: 11px; line-height: 1.6; color: var(--muted); }

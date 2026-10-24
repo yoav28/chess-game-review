@@ -33,13 +33,13 @@
   touch-action: manipulation;
 }
 
-.board-square.square-light { background: #ede5d6; color: #637455; }
-.board-square.square-dark { background: #809176; color: #f4eddf; }
-.board-square.square-last-move.square-light { background: #ded99a; }
-.board-square.square-last-move.square-dark { background: #acb065; }
+.board-square.square-light { background: var(--board-light); color: var(--board-light-text); }
+.board-square.square-dark { background: var(--board-dark); color: var(--board-dark-text); }
+.board-square.square-last-move.square-light { background: var(--board-last-light); }
+.board-square.square-last-move.square-dark { background: var(--board-last-dark); }
 .board-square.square-selected.square-light,
-.board-square.square-selected.square-dark { background: #c4bd68; }
-.board-square.square-check { background: #c86a59; }
+.board-square.square-selected.square-dark { background: var(--board-selected); color: var(--board-light-text); }
+.board-square.square-check { background: #c86a59; color: #272016; }
 .board-square:focus-visible { outline: 3px solid #302e25; outline-offset: -3px; z-index: 2; }
 .board-square[draggable="true"] { cursor: grab; }
 .board-square[draggable="true"]:active { cursor: grabbing; }

@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { normalizeSettings, type Settings } from '../lib/settings'
 import { coachProfiles } from '../lib/coach'
+import { BoardAppearanceControls } from './BoardAppearanceControls'
 import './ReviewSettings.css'
 
 type ToggleKey = 'sound' | 'showClassifications' | 'autoplayExplanation' | 'showCoachAvatar' | 'showRecommendations' | 'showSkills' | 'showTimeSpent'
@@ -32,6 +33,7 @@ export function ReviewSettings({ settings, onChange, onDone }: { settings: Setti
     </fieldset>
     <fieldset>
       <legend>Board and moves</legend>
+      <BoardAppearanceControls value={settings} onChange={update} />
       <label htmlFor={`${id}-arrows`}>Arrows</label>
       <select id={`${id}-arrows`} value={settings.arrowMode} onChange={event => update({ arrowMode: event.target.value as Settings['arrowMode'] })}>
         <option value="best">Best move</option><option value="coach">Coach continuation</option><option value="both">Best move and coach</option><option value="none">None</option>

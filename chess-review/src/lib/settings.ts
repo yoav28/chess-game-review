@@ -1,6 +1,7 @@
 import type { CoachProfile } from './coach'
+import { defaultBoardAppearance, normalizeBoardAppearance, type BoardAppearance } from './board-appearance'
 
-export type Settings = {
+export type Settings = BoardAppearance & {
   depth: number
   timeMs: number
   analysisLines: number
@@ -19,6 +20,7 @@ export type Settings = {
 }
 
 export const defaultSettings: Settings = {
+  ...defaultBoardAppearance,
   depth: 16, timeMs: 500, analysisLines: 3, sound: false, arrowMode: 'best',
   showClassifications: true, autoplayExplanation: true, explanationDelayMs: 1300,
   showCoachAvatar: true, showRecommendations: true, showSkills: true,
@@ -39,6 +41,7 @@ export function normalizeSettings(value: unknown): Settings {
   const boolean = (key: keyof Settings) => typeof source[key] === 'boolean' ? source[key] as boolean : defaultSettings[key] as boolean
   const legacyArrows = typeof source.showArrows === 'boolean' ? source.showArrows ? 'best' : 'none' : defaultSettings.arrowMode
   return {
+    ...normalizeBoardAppearance(source),
     depth: bounded(source.depth, defaultSettings.depth, 10, 22),
     timeMs: bounded(source.timeMs, defaultSettings.timeMs, 150, 5000),
     analysisLines: bounded(source.analysisLines, defaultSettings.analysisLines, 1, 5),

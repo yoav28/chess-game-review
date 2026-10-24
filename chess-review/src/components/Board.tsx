@@ -1,10 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import type { KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent } from 'react'
 import { createPosition, type ChessVariant } from '../lib/position'
 import type { PieceSymbol, Square } from 'chess.js'
 import { classificationGlyph } from '../lib/classification'
 import { classificationLabels, type Classification } from '../lib/review'
 import { Piece } from './ChessPiece'
+import { useBoardAppearance } from './BoardAppearanceContext'
+import { boardAppearanceStyle } from '../lib/board-appearance'
 import './Board.css'
 export { Piece } from './ChessPiece'
 
@@ -28,6 +30,7 @@ const pieceNames: Record<PieceSymbol, string> = { p: 'pawn', n: 'knight', b: 'bi
 const files = 'abcdefgh'
 
 export default function Board({ fen, variant, orientation, lastMove, bestMove, showBestMove = false, coachArrows = [], threatArrow, classification, onMove, disabled = false, arrows = true }: BoardProps) {
+  const { appearance } = useBoardAppearance()
   const chess = useMemo(() => createPosition(fen, variant), [fen, variant])
   const [selected, setSelected] = useState<Square | null>(null)
   const [promotion, setPromotion] = useState<Annotation | null>(null)
@@ -110,7 +113,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
   if (threatArrow && /^[a-h][1-8]$/.test(threatArrow.from) && /^[a-h][1-8]$/.test(threatArrow.to) && threatArrow.from !== threatArrow.to) visibleArrows.push({ ...threatArrow, kind: 'threat' })
 
   return (
-    <div className="review-board" onContextMenu={event => event.preventDefault()}>
+    <div className="review-board" style={boardAppearanceStyle(appearance) as CSSProperties} onContextMenu={event => event.preventDefault()}>
       <div className="board-squares" role="grid" aria-label={`Chessboard, ${orientation === 'w' ? 'white' : 'black'} perspective. ${turnDescription} Use arrow keys to navigate, Enter to select a piece and destination.`}>
         {squares.map((square, index) => {
           const piece = chess.get(square)
@@ -149,10 +152,10 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
               }}
               onDragEnd={() => { dragged.current = false }}
             >
-              {piece && <Piece type={piece.type} color={piece.color} />}
+              {piece && <Piece type={piece.type} color={piece.color} set={appearance.pieceSet} />}
               {badge && <span className={`board-classification ${badge}`} aria-hidden="true">{classificationGlyph[badge]}</span>}
-              {index % 8 === 0 && <span className="board-coordinate coordinate-rank" aria-hidden="true">{square[1]}</span>}
-              {index >= 56 && <span className="board-coordinate coordinate-file" aria-hidden="true">{square[0]}</span>}
+              {appearance.coordinates && index % 8 === 0 && <span className="board-coordinate coordinate-rank" aria-hidden="true">{square[1]}</span>}
+              {appearance.coordinates && index >= 56 && <span className="board-coordinate coordinate-file" aria-hidden="true">{square[0]}</span>}
             </button>
           )
         })}
@@ -173,7 +176,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
           <div className="board-promotion" role="dialog" aria-modal="true" aria-label="Choose a promotion piece">
             <span>Promote pawn</span>
             <div className="board-promotion-options">
-              {(['q', 'r', 'b', 'n'] as const).map((type, index) => <button type="button" key={type} autoFocus={index === 0} aria-label={`Promote to ${pieceNames[type]}`} onClick={() => { onMove?.(`${promotion.from}${promotion.to}${type}`); setSelected(null); setPromotion(null) }}><Piece type={type} color={chess.turn()} /></button>)}
+              {(['q', 'r', 'b', 'n'] as const).map((type, index) => <button type="button" key={type} autoFocus={index === 0} aria-label={`Promote to ${pieceNames[type]}`} onClick={() => { onMove?.(`${promotion.from}${promotion.to}${type}`); setSelected(null); setPromotion(null) }}><Piece type={type} color={chess.turn()} set={appearance.pieceSet} /></button>)}
             </div>
             <button type="button" className="board-promotion-cancel" onClick={() => setPromotion(null)}>Cancel</button>
           </div>

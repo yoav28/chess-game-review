@@ -1,13 +1,15 @@
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import { createPosition, type ChessVariant } from './position'
 import { pieceArtwork } from './piece-artwork'
+import { boardThemes, normalizeBoardAppearance, type BoardTheme, type PieceSet } from './board-appearance'
 
-let prepared: Promise<Map<string, HTMLImageElement>> | undefined
+const prepared = new Map<PieceSet, Promise<Map<string, HTMLImageElement>>>()
 
-export function loadReviewPieceImages(makeSvg?: (type: PieceSymbol, color: Color) => string): Promise<Map<string, HTMLImageElement>> {
-  if (!makeSvg && prepared) return prepared
+export function loadReviewPieceImages(makeSvg?: (type: PieceSymbol, color: Color) => string, set: PieceSet = 'classic'): Promise<Map<string, HTMLImageElement>> {
+  const key = normalizeBoardAppearance({ pieceSet: set }).pieceSet
+  if (!makeSvg && prepared.has(key)) return prepared.get(key)!
   const pending = (async () => {
-    const artwork = makeSvg ? null : await pieceArtwork()
+    const artwork = makeSvg ? null : await pieceArtwork(key)
     const images = new Map<string, HTMLImageElement>()
     await Promise.all((['w', 'b'] as Color[]).flatMap(color => (['p', 'n', 'b', 'r', 'q', 'k'] as PieceSymbol[]).map(async type => {
       const image = new Image()
@@ -21,12 +23,13 @@ export function loadReviewPieceImages(makeSvg?: (type: PieceSymbol, color: Color
     })))
     return images
   })()
-  if (!makeSvg) prepared = pending.catch(error => { prepared = undefined; throw error })
-  return makeSvg ? pending : prepared!
+  if (!makeSvg) prepared.set(key, pending.catch(error => { prepared.delete(key); throw error }))
+  return makeSvg ? pending : prepared.get(key)!
 }
 
-export function drawReviewBoard(context: CanvasRenderingContext2D, position: { fen: string; variant?: ChessVariant; orientation?: Color; lastMove?: { from: string; to: string } }, images: Map<string, HTMLImageElement>, options: { x?: number; y?: number; size?: number; coordinates?: boolean } = {}) {
+export function drawReviewBoard(context: CanvasRenderingContext2D, position: { fen: string; variant?: ChessVariant; orientation?: Color; lastMove?: { from: string; to: string } }, images: Map<string, HTMLImageElement>, options: { x?: number; y?: number; size?: number; coordinates?: boolean; boardTheme?: BoardTheme } = {}) {
   const board = createPosition(position.fen, position.variant)
+  const theme = boardThemes[normalizeBoardAppearance(options).boardTheme]
   const size = options.size ?? 640
   const step = size / 8
   const files = 'abcdefgh'
@@ -38,10 +41,10 @@ export function drawReviewBoard(context: CanvasRenderingContext2D, position: { f
     const x = (options.x ?? 0) + index % 8 * step
     const y = (options.y ?? 0) + Math.floor(index / 8) * step
     const dark = (file + rank) % 2 === 0
-    context.fillStyle = dark ? '#809176' : '#ede5d6'
+    context.fillStyle = dark ? theme.dark : theme.light
     context.fillRect(x, y, step, step)
     if ([position.lastMove?.from, position.lastMove?.to].includes(square)) {
-      context.globalAlpha = 0.65; context.fillStyle = '#c6c36f'; context.fillRect(x, y, step, step); context.globalAlpha = 1
+      context.fillStyle = dark ? theme.lastDark : theme.lastLight; context.fillRect(x, y, step, step)
     }
     const piece = board.get(square)
     if (piece) {
@@ -50,7 +53,7 @@ export function drawReviewBoard(context: CanvasRenderingContext2D, position: { f
       context.drawImage(image, x + step * 0.04, y + step * 0.04, step * 0.92, step * 0.92)
     }
     if (options.coordinates !== false) {
-      context.fillStyle = dark ? '#ede5d6' : '#45523b'
+      context.fillStyle = dark ? theme.darkText : theme.lightText
       context.font = `${Math.max(10, step * 0.175)}px system-ui, sans-serif`
       if (index % 8 === 0) context.fillText(String(rank), x + 4, y + step * 0.22)
       if (Math.floor(index / 8) === 7) context.fillText(files[file], x + step * 0.81, y + step * 0.94)

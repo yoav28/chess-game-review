@@ -3,6 +3,7 @@ import type { GameReview } from './review'
 import { parsePgn } from './game'
 import { drawReviewBoard, loadReviewPieceImages } from './review-board-image'
 import { createPosition } from './position'
+import { normalizeBoardAppearance, type BoardAppearance } from './board-appearance'
 
 export function reviewAnimationFrames(review: GameReview, options: { from?: number; to?: number; delayMs?: number } = {}) {
   const parsed = parsePgn(review.pgn, review.variant)
@@ -20,12 +21,13 @@ export function reviewAnimationFrames(review: GameReview, options: { from?: numb
   })
 }
 
-export async function createReviewAnimation(review: GameReview, options: { from?: number; to?: number; delayMs?: number; orientation?: Color; signal?: AbortSignal; onProgress?: (done: number, total: number) => void } = {}): Promise<Blob> {
+export async function createReviewAnimation(review: GameReview, options: Partial<BoardAppearance> & { from?: number; to?: number; delayMs?: number; orientation?: Color; signal?: AbortSignal; onProgress?: (done: number, total: number) => void } = {}): Promise<Blob> {
   const frames = reviewAnimationFrames(review, options)
   const { signal } = options
   const abort = () => { if (signal?.aborted) throw new DOMException('Animation export cancelled.', 'AbortError') }
   abort()
-  const [{ GIFEncoder, quantize, applyPalette }, pieces] = await Promise.all([import('gifenc'), loadReviewPieceImages()])
+  const appearance = normalizeBoardAppearance(options)
+  const [{ GIFEncoder, quantize, applyPalette }, pieces] = await Promise.all([import('gifenc'), loadReviewPieceImages(undefined, appearance.pieceSet)])
   abort()
   const canvas = document.createElement('canvas')
   canvas.width = 720; canvas.height = 790
@@ -38,7 +40,7 @@ export async function createReviewAnimation(review: GameReview, options: { from?
     context.fillStyle = '#eeeede'; context.font = '18px system-ui, sans-serif'
     const title = `${review.white} vs ${review.black}${review.variant === 'threecheck' ? ' · Three-check' : ''}`
     context.fillText(title.length > 65 ? `${title.slice(0, 62)}…` : title, 40, 32, 640)
-    drawReviewBoard(context, { fen: frame.fen, variant: review.variant, orientation: options.orientation, lastMove: frame.lastMove }, pieces, { x: 40, y: 50, size: 640 })
+    drawReviewBoard(context, { fen: frame.fen, variant: review.variant, orientation: options.orientation, lastMove: frame.lastMove }, pieces, { x: 40, y: 50, size: 640, ...appearance })
     context.fillStyle = '#bdd09b'; context.font = '20px system-ui, sans-serif'
     context.fillText(`${frame.label} · ${frame.ply}/${review.moves.length}`, 40, 726, 640)
     context.fillStyle = '#a5a99d'; context.font = '14px system-ui, sans-serif'

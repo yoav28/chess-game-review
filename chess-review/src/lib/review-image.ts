@@ -4,8 +4,9 @@ import { classificationLabels, type Classification, type GameReview } from './re
 import { createPosition } from './position'
 import { variantLabel } from './variants'
 import { drawReviewBoard, loadReviewPieceImages } from './review-board-image'
+import { normalizeBoardAppearance, type BoardAppearance } from './board-appearance'
 
-export type ReviewImageOptions = {
+export type ReviewImageOptions = Partial<BoardAppearance> & {
   ply?: number
   orientation?: Color
   pieceSvg?: (piece: PieceSymbol, color: Color) => string
@@ -69,7 +70,8 @@ function fitText(context: CanvasRenderingContext2D, content: string, x: number, 
 export async function createReviewImage(review: GameReview, options: ReviewImageOptions = {}): Promise<Blob> {
   if (typeof document === 'undefined') throw new Error('PNG export needs a browser with Canvas support.')
   const data = reviewImageData(review, options)
-  const images = await loadReviewPieceImages(options.pieceSvg)
+  const appearance = normalizeBoardAppearance(options)
+  const images = await loadReviewPieceImages(options.pieceSvg, appearance.pieceSet)
   const canvas = document.createElement('canvas')
   canvas.width = 1600
   canvas.height = 1000
@@ -82,7 +84,7 @@ export async function createReviewImage(review: GameReview, options: ReviewImage
   fitText(context, `${data.white}  vs  ${data.black}`, 64, 123, 1472, 44)
   fitText(context, `Recorded result: ${data.result}`, 64, 163, 1200, 23, colors.muted)
   fitText(context, data.positionLabel, 64, 204, 640, 20)
-  drawReviewBoard(context, { fen: data.fen, variant: review.variant, orientation: data.orientation, lastMove: data.move ? { from: data.move.from, to: data.move.kingTo ?? data.move.to } : undefined }, images, { x: 64, y: 220, size: 640 })
+  drawReviewBoard(context, { fen: data.fen, variant: review.variant, orientation: data.orientation, lastMove: data.move ? { from: data.move.from, to: data.move.kingTo ?? data.move.to } : undefined }, images, { x: 64, y: 220, size: 640, ...appearance })
   fitText(context, 'White accuracy', 760, 225, 340, 21, colors.muted)
   fitText(context, 'Black accuracy', 1150, 225, 340, 21, colors.muted)
   fitText(context, data.whiteAccuracy, 760, 286, 340, 47, colors.accent)

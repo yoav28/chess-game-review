@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import type { Color } from 'chess.js'
 import type { GameReview } from '../lib/review'
 import { reviewImageFilename } from '../lib/review-image'
+import { useBoardAppearance } from './BoardAppearanceContext'
 
 export function ReviewAnimationExport({ review, orientation }: { review: GameReview; orientation: Color }) {
+  const { appearance } = useBoardAppearance()
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [notice, setNotice] = useState('')
   const request = useRef<AbortController | null>(null)
-  useEffect(() => { request.current?.abort(); request.current = null; setProgress(null); setNotice(''); return () => { request.current?.abort(); request.current = null } }, [review, orientation])
+  useEffect(() => { request.current?.abort(); request.current = null; setProgress(null); setNotice(''); return () => { request.current?.abort(); request.current = null } }, [review, orientation, appearance.boardTheme, appearance.pieceSet, appearance.coordinates])
   async function download() {
     request.current?.abort()
     const controller = new AbortController()
@@ -16,7 +18,7 @@ export function ReviewAnimationExport({ review, orientation }: { review: GameRev
     try {
       const { createReviewAnimation } = await import('../lib/review-animation')
       if (controller.signal.aborted) return
-      const blob = await createReviewAnimation(review, { orientation, signal: controller.signal, onProgress: (done, total) => { if (request.current === controller) setProgress({ done, total }) } })
+      const blob = await createReviewAnimation(review, { orientation, ...appearance, signal: controller.signal, onProgress: (done, total) => { if (request.current === controller) setProgress({ done, total }) } })
       if (request.current !== controller || controller.signal.aborted) return
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a'); link.href = url; link.download = reviewImageFilename(review).replace(/\.png$/, '.gif'); link.click()

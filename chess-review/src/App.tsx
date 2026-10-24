@@ -14,6 +14,8 @@ import { Dialogs } from "./components/Dialogs";
 import { demoGame } from "./lib/demo";
 import { parseGame } from "./lib/game";
 import { useWorkspace } from "./hooks/useWorkspace";
+import { BoardAppearanceContext } from "./components/BoardAppearanceContext";
+import { normalizeSettings } from "./lib/settings";
 
 function App() {
   const {
@@ -37,6 +39,7 @@ function App() {
   } = useWorkspace();
 
   return (
+    <BoardAppearanceContext.Provider value={{ appearance: settings, onChange: patch => setSettings(normalizeSettings({ ...settings, ...patch })) }}>
     <div className="app-shell">
       <AppHeader onImport={() => setDialog("import")} onSettings={() => setDialog("settings")} />
       <div className="workspace">
@@ -229,6 +232,7 @@ function App() {
         </div>
       )}
     </div>
+    </BoardAppearanceContext.Provider>
   );
 }
 

@@ -57,3 +57,12 @@ test('empty, invalid and inaccessible local storage yield independent safe defau
   } }), { ...defaultSettings, depth: 21, arrowMode: 'none', showSkills: false })
   assert.deepEqual(readSettings({ getItem: () => '{"coachProfile":"supportive","analysisLines":5}' }), { ...defaultSettings, coachProfile: 'supportive', analysisLines: 5 })
 })
+
+test('board appearance survives storage while older settings retain the original board', () => {
+  const settings = readSettings({ getItem: () => '{"boardTheme":"walnut","pieceSet":"letters","coordinates":false,"depth":19}' })
+  assert.equal(settings.boardTheme, 'walnut')
+  assert.equal(settings.pieceSet, 'letters')
+  assert.equal(settings.coordinates, false)
+  assert.equal(settings.depth, 19)
+  assert.deepEqual(normalizeSettings({ boardTheme: 'unknown', pieceSet: '__proto__', coordinates: 'false' }), defaultSettings)
+})

@@ -3,21 +3,23 @@ import type { Color } from 'chess.js'
 import type { GameReview } from '../lib/review'
 import { createReviewImage, reviewImageFilename } from '../lib/review-image'
 import './ReviewImageExport.css'
+import { useBoardAppearance } from './BoardAppearanceContext'
 
 export function ReviewImageExport({ review, ply, orientation = 'w' }: { review: GameReview; ply?: number; orientation?: Color }) {
+  const { appearance } = useBoardAppearance()
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [selected, setSelected] = useState(true)
   const generation = useRef(0)
-  useEffect(() => { generation.current++; setBusy(false); setNotice(''); setError(''); return () => { generation.current++ } }, [review, ply, orientation, selected])
+  useEffect(() => { generation.current++; setBusy(false); setNotice(''); setError(''); return () => { generation.current++ } }, [review, ply, orientation, selected, appearance.boardTheme, appearance.pieceSet, appearance.coordinates])
   async function download() {
     const current = ++generation.current
     setBusy(true)
     setNotice('')
     setError('')
     try {
-      const blob = await createReviewImage(review, { ply: selected ? ply : undefined, orientation })
+      const blob = await createReviewImage(review, { ply: selected ? ply : undefined, orientation, ...appearance })
       if (generation.current !== current) return
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
