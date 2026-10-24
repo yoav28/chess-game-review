@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import type { GameReview, MoveReview } from "../lib/review";
+import { coachProfiles, type CoachProfile } from "../lib/coach";
 
 export function CoachControls({
   review,
@@ -15,18 +16,21 @@ export function CoachControls({
   onSelect,
   filterColor = 'all',
   text,
+  profile = 'clear',
 }: {
   review: GameReview;
   move?: MoveReview;
   onSelect: (ply: number) => void;
   filterColor?: 'all' | 'w' | 'b';
   text?: string;
+  profile?: CoachProfile;
 }) {
   const [guided, setGuided] = useState(false);
   const [pace, setPace] = useState("highlights");
   const [speaking, setSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceName, setVoiceName] = useState("");
+  const narration = useRef<SpeechSynthesisUtterance | null>(null);
   const relevant = review.moves.filter(candidate => filterColor === 'all' || candidate.color === filterColor);
   const highlights = [...new Set([
     relevant[0]?.ply,
@@ -50,16 +54,19 @@ export function CoachControls({
     window.speechSynthesis.addEventListener("voiceschanged", update);
     return () => {
       window.speechSynthesis.removeEventListener("voiceschanged", update);
+      narration.current = null;
       window.speechSynthesis.cancel();
     };
   }, []);
   useEffect(() => {
+    narration.current = null;
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setSpeaking(false);
-  }, [move?.ply]);
+  }, [move?.ply, text, profile, voiceName]);
   function readMove() {
     if (!move || !voices.length) return;
     if (speaking) {
+      narration.current = null;
       window.speechSynthesis.cancel();
       setSpeaking(false);
       return;
@@ -69,10 +76,18 @@ export function CoachControls({
       voices.find((candidate) => candidate.lang.startsWith("en")) ??
       voices[0];
     const utterance = new SpeechSynthesisUtterance(text ?? move.explanation);
+    const presentation = coachProfiles[profile] ?? coachProfiles.clear;
     utterance.voice = voice;
-    utterance.rate = 0.95;
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
+    utterance.rate = presentation.speechRate;
+    utterance.pitch = presentation.speechPitch;
+    const finish = () => {
+      if (narration.current !== utterance) return;
+      narration.current = null;
+      setSpeaking(false);
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    narration.current = utterance;
     setSpeaking(true);
     window.speechSynthesis.speak(utterance);
   }

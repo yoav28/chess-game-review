@@ -55,6 +55,7 @@ export function SavedReviewsPanel({ onOpen, refreshKey }: { onOpen: (entry: Save
       {summary && <section className="saved-player-summary" aria-label={`${summary.player} saved review statistics`}>
         <h3>{summary.player}</h3>
         <p>Statistics use {summary.modelLabel}.{summary.excludedReviews > 0 ? ` ${summary.excludedReviews} older-model ${summary.excludedReviews === 1 ? 'review is' : 'reviews are'} excluded from these statistics and ${summary.excludedReviews === 1 ? 'remains' : 'remain'} available below.` : ' All statistics below use this model.'}</p>
+        {summary.excludedDuplicates > 0 && <p>{summary.excludedDuplicates} duplicate {summary.excludedDuplicates === 1 ? 'report is' : 'reports are'} omitted from statistics. All saved copies remain available below.</p>}
         <p>{summary.games} reviewed games · {summary.wins} wins · {summary.draws} draws · {summary.losses} losses{summary.unfinished ? ` · ${summary.unfinished} other results` : ''}</p>
         <dl>
           {[{ label: 'Overall move accuracy', score: summary.overall }, ...summary.categories].map(category => <div key={category.label}>
@@ -72,6 +73,7 @@ export function SavedReviewsPanel({ onOpen, refreshKey }: { onOpen: (entry: Save
           <span>{entry.review.result} · {dateText(entry)}</span>
           <span>Accuracy · White {entry.review.whiteAccuracy?.toFixed(1) ?? '—'} · Black {entry.review.blackAccuracy?.toFixed(1) ?? '—'}</span>
           <span>{accuracyModelLabel(reviewAccuracyVersion(entry.review))}{entry.review.variant === 'chess960' ? ' · Chess960' : ''}</span>
+          {entry.review.importedAt && <span>Imported review file</span>}
         </button>
       </li>)}</ul>
       {!visible.length && <p className="saved-status">No saved reviews match this player.</p>}

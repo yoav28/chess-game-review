@@ -1,6 +1,9 @@
+import type { CoachProfile } from './coach'
+
 export type Settings = {
   depth: number
   timeMs: number
+  analysisLines: number
   sound: boolean
   arrowMode: 'best' | 'coach' | 'both' | 'none'
   showClassifications: boolean
@@ -12,13 +15,14 @@ export type Settings = {
   showTimeSpent: boolean
   highlight: 'all' | 'self' | 'opponent'
   coachDetail: 'concise' | 'detailed'
+  coachProfile: CoachProfile
 }
 
 export const defaultSettings: Settings = {
-  depth: 16, timeMs: 500, sound: false, arrowMode: 'best',
+  depth: 16, timeMs: 500, analysisLines: 3, sound: false, arrowMode: 'best',
   showClassifications: true, autoplayExplanation: true, explanationDelayMs: 1300,
   showCoachAvatar: true, showRecommendations: true, showSkills: true,
-  showTimeSpent: true, highlight: 'all', coachDetail: 'detailed',
+  showTimeSpent: true, highlight: 'all', coachDetail: 'detailed', coachProfile: 'clear',
 }
 
 function bounded(value: unknown, fallback: number, minimum: number, maximum: number): number {
@@ -37,6 +41,7 @@ export function normalizeSettings(value: unknown): Settings {
   return {
     depth: bounded(source.depth, defaultSettings.depth, 10, 22),
     timeMs: bounded(source.timeMs, defaultSettings.timeMs, 150, 5000),
+    analysisLines: bounded(source.analysisLines, defaultSettings.analysisLines, 1, 5),
     sound: boolean('sound'),
     arrowMode: choice(source.arrowMode, ['best', 'coach', 'both', 'none'], legacyArrows),
     showClassifications: boolean('showClassifications'),
@@ -48,6 +53,7 @@ export function normalizeSettings(value: unknown): Settings {
     showTimeSpent: boolean('showTimeSpent'),
     highlight: choice(source.highlight, ['all', 'self', 'opponent'], defaultSettings.highlight),
     coachDetail: choice(source.coachDetail, ['concise', 'detailed'], defaultSettings.coachDetail),
+    coachProfile: choice(source.coachProfile, ['clear', 'supportive', 'analyst'], defaultSettings.coachProfile),
   }
 }
 

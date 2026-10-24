@@ -1,6 +1,7 @@
 import { ChevronRight, LoaderCircle } from "lucide-react";
 import { OpeningExplorer } from "./OpeningExplorer";
 import { TablebasePanel } from "./TablebasePanel";
+import { MasterExplorer } from "./MasterExplorer";
 import type { GameRecord } from "../lib/game";
 import type { ChessVariant } from "../lib/position";
 import type { PositionAnalysis } from "../engine/types";
@@ -96,7 +97,7 @@ export function AnalysisPanel({
         </div>
       ) : (
         <p className="engine-empty">
-          Turn on the engine to explore three candidate lines.
+          Turn on the engine to explore candidate lines.
         </p>
       )}
       <div className="analysis-tip">
@@ -108,6 +109,7 @@ export function AnalysisPanel({
         </p>
       </div>
       <OpeningExplorer games={games} fen={fen} variant={variant} onMove={onExploreMove} />
+      <MasterExplorer fen={fen} variant={variant} onMove={onExploreMove} />
       <TablebasePanel fen={fen} disabled={variant !== 'chess'} onMove={onExploreMove} />
       <details className="position-details">
         <summary>Current position · FEN</summary>

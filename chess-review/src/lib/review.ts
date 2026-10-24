@@ -87,6 +87,7 @@ export type GameReview = {
   accuracyVersion?: 2
   coachMethod?: string
   analyzedAt: string
+  importedAt?: string
 }
 
 export const classificationLabels: Record<Classification, string> = {

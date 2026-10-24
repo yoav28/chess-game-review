@@ -22,7 +22,7 @@ npm run build
 npm run preview
 ```
 
-Tests cover public archive import, cancellation and stale requests, standard and Chess960 legality, actual bundled-engine analysis, scoring, explanations, practice, training, historical model separation, tablebase responses, opening-data integrity, and exports. `build` typechecks the app, copies engine assets, and produces `chess-review/dist/`. `preview` serves that production build locally.
+Tests cover public archive import, cancellation and stale requests, standard and Chess960 legality, actual bundled-engine analysis, scoring, explanations, practice, training, historical model separation and duplicate suppression, portable-report validation, masters/tablebase responses, opening-data integrity, and exports. `build` typechecks the app, copies engine assets, and produces `chess-review/dist/`. `preview` serves that production build locally.
 
 ## Use the application
 
@@ -33,17 +33,17 @@ The application provides:
 - Full-game Stockfish review with progress, cancellation, adjustable depth/time, per-player accuracy, classifications, key moments, and opening/middlegame/endgame reports.
 - Standard chess and Chess960 replay, review, variations, engine continuation, and reviewed PGN export. Chess960 uses king-to-rook engine UCI for castling while showing the physical king/rook destinations correctly.
 - Board clocks, estimated time spent where sufficient PGN clock/control data exists, promotion choices, orientation and keyboard controls, right-click arrows/circles, and classification highlights.
-- Evaluation bar/graph, three candidate lines, playable variations, and return to the recorded game.
-- Guided review and independent animated explanations showing the played move, alternative, and legal engine continuation, with pause/step/replay and reduced-motion behavior. Optional speech uses local browser voices.
+- Evaluation bar/graph, one to five configurable candidate lines, playable variations, and return to the recorded game.
+- Guided review and independent animated explanations showing the played move, alternative, and legal engine continuation, with pause/step/replay and reduced-motion behavior. Clear, Supportive, and Analyst presentation profiles change the original explanation/narration style; Analyst includes recorded search details. Optional speech uses local browser voices.
 - Retry practice with hints and solutions. The saved first choice is accepted immediately; other legal moves receive fresh engine comparison and can pass within the documented tolerance while preserving a found mate.
 - A personal training list based on actual reviewed errors, with board-derived themes, hints, and links back to each position for review or practice.
-- Opening, tactics, strategy, and endgame move-accuracy summaries with sample counts.
+- A factual overview of the recorded result, error counts, largest loss, and replayable opening/last-book position, plus opening, tactics, strategy, and endgame move-accuracy summaries with sample counts.
 - **Saved** history with player search, reopening, per-player/category/time-group statistics, and a recent-versus-earlier comparison when enough dated reviews share the same scoring model.
-- Opening names and Book-prefix matching from 3,865 legally validated Lichess lines spanning all 500 ECO codes, plus a separate explorer based on the imported library.
+- Opening names and Book-prefix matching from 3,865 legally validated Lichess lines spanning all 500 ECO codes, plus a position explorer based on the imported library. An optional online Lichess masters panel is integrated, but anonymous live requests returned HTTP 401 in this environment; a successful masters fetch remains unverified.
 - Play a position against Stockfish, choose a side, undo a turn, and restart the continuation.
 - Optional seven-piece standard-chess Syzygy lookup through Lichess, with legal moves, outcome categories, and fifty-move-rule-aware DTZ information.
-- Settings for engine budget, arrow mode, classification display, player highlights, time spent, sound, explanation pace/autoplay/detail, coach avatar, skill breakdown, and recommendations.
-- Original PGN, annotated PGN, and text-report exports; browser-local libraries, reviews, and settings.
+- Settings for engine budget, one to five analysis lines, arrow mode, classification display, player highlights, time spent, sound, explanation pace/autoplay/detail/profile, coach avatar, skill breakdown, and recommendations.
+- Original PGN, annotated PGN, and text-report exports, plus complete-review JSON download/import that preserves the existing scores and engine lines without reanalysis. Imported reports remain labeled as file-provided. Libraries, reports, and settings are browser-local.
 
 ## Public archives and local data
 
@@ -53,7 +53,7 @@ The importer requests Chess.com’s public archive index and every returned mont
 
 A complete saved library loads during the next import while every archive is checked for updates. Partial batches remain usable after a stopped or failed import, but only a completed import replaces the last complete saved library. IndexedDB stores libraries/reviews; localStorage stores settings. Storage failures are shown, and clearing site data removes local records.
 
-Engine analysis runs locally in a Web Worker. Importing sends the username to Chess.com’s public API. Optional tablebase probing sends the selected position’s full FEN to `tablebase.lichess.ovh` only when requested, without credentials; it does not upload a username or game history. Voice playback offers only voices reported as local by the browser.
+Engine analysis runs locally in a Web Worker. Importing sends the username to Chess.com’s public API. Optional tablebase probing sends the selected position’s full FEN to `tablebase.lichess.ovh` only when requested, without credentials; it does not upload a username or game history. The optional masters panel sends the selected standard-chess FEN to `explorer.lichess.org` only after **Load masters**, also without credentials. Voice playback offers only voices reported as local by the browser.
 
 ## Methods and limits
 
@@ -66,13 +66,15 @@ Move accuracy = clamp(103.1668 × exp(-0.04354 × winning-chance loss) - 3.1669,
 
 Loss is measured in percentage points from the mover’s perspective. Forced mates map to 100% or 0%; recorded best moves and only legal moves receive zero loss to reduce search-noise penalties. Game, phase, and category scores average the applicable move scores. This arithmetic mean differs from Lichess’s weighted game score and from Chess.com’s proprietary accuracy. Brilliant/Great, phase boundaries, category definitions, key-moment thresholds, and training themes remain independent heuristics affected by the engine budget.
 
-Older saved reviews retain their original centipawn-based scores. History selects each player’s newest available accuracy model and excludes older models from its statistics and trends; all saved games remain reopenable. Trends require at least four scored, game-dated reviews and a distinct recent/earlier date boundary. Category scores and trends are not calibrated player ratings. Elo or single-game rating prediction is not implemented.
+Older saved reviews retain their original centipawn-based scores. History counts an exact PGN/variant once for statistics, preferring the newer model, then a local-generated report, then the latest analysis. It selects each player’s newest available accuracy model and reports older-model and duplicate exclusions separately; all saved copies remain reopenable. Trends require at least four scored, game-dated reviews and a distinct recent/earlier date boundary. Category scores and trends are not calibrated player ratings. Elo or single-game rating prediction is not implemented.
 
-Opening data is pinned to [lichess-org/chess-openings commit `a6189a3`](https://github.com/lichess-org/chess-openings/tree/a6189a30dc273ccb21fc2536a9a2fefd5592a67a), dedicated to the public domain under CC0 1.0. The [local provenance](chess-review/src/data/openings/provenance.json) records source hashes and generation checks. Book means an exact registered move prefix, not proof of move quality; transposed orders must be explicitly present in that dataset. The separate explorer scans imported games, not a global masters database.
+Opening data is pinned to [lichess-org/chess-openings commit `a6189a3`](https://github.com/lichess-org/chess-openings/tree/a6189a30dc273ccb21fc2536a9a2fefd5592a67a), dedicated to the public domain under CC0 1.0. The [local provenance](chess-review/src/data/openings/provenance.json) records source hashes and generation checks. Book means an exact registered move prefix, not proof of move quality; transposed orders must be explicitly present in that dataset. The local explorer scans imported games. The separate optional masters client follows the [official Lichess API schema](https://github.com/lichess-org/api) and [opening-explorer service documentation](https://github.com/lichess-org/lila-openingexplorer). It validates returned moves/counts/example-game metadata and has cancellation, bounded caching, and actionable service errors. Both inspected live explorer hosts denied anonymous access with HTTP 401, so successful online data retrieval is not claimed.
 
 Tablebase lookup follows the [Lichess HTTP API](https://github.com/lichess-org/lila-tablebase#http-api), supports standard positions with at most seven pieces and no castling rights, and remains optional. DTZ is not mate distance; cursed wins/blessed losses and uncertain outcomes stay explicit. FEN alone does not supply repetition history. Service availability, CORS, rate limits, and table coverage can affect lookup.
 
-Full Chess.com parity has not been established. Proprietary scoring and Game Rating, coach personalities/media, complete explanation-theme coverage, cloud accounts/synchronization, shared analysis rooms, Chess.com training integration, and every account/experiment branch remain gaps. The [REA feature/evidence ledger](docs/chess-com-review-research.md) separates observed source behavior from the independent implementation.
+Complete-review files use a versioned Open File JSON envelope and validate PGN/history, legal standard/Chess960 best/PV moves, metadata, numeric bounds, and summary consistency. Files are limited to 12 MB, 2,000 game plies, and 20,000 recorded continuation moves; importing does not authenticate the author or engine scores, and the imported-report notice survives saving/reopening. The app does not upload these files or create a public hosted share link.
+
+Full Chess.com parity has not been established. Proprietary scoring and Game Rating, coach personalities/media, complete explanation-theme coverage, cloud accounts/synchronization, shared analysis rooms, alternate proprietary engines and thread/unlimited-time controls, Chess.com training integration, and every account/experiment branch remain gaps. The [empirical rating pilot](docs/rating-pilot.md) analyzed 230 games but failed its release gates (held-out error 349.48 rating points); it remains research, with no user-facing rating estimate. The [REA feature/evidence ledger](docs/chess-com-review-research.md) separates observed source behavior from the independent implementation.
 
 ## Architecture
 
@@ -89,8 +91,8 @@ Paths below are relative to `chess-review/`.
 | `src/lib/openings.ts`, `src/data/openings/` | Generated opening trie, pinned source facts, CC0 dedication, and provenance. |
 | `src/lib/insights.ts`, `explanation.ts`, `explanation-playback.ts` | Position facts and cancellable explanation playback. |
 | `src/lib/practice.ts`, `training.ts`, `history.ts` | Attempt grading, actual-error exercises, and compatible saved-review statistics. |
-| `src/lib/explorer.ts`, `play-position.ts`, `tablebase.ts` | Imported-library exploration, engine continuation, and optional tablebase client. |
-| `src/lib/report.ts`, `storage.ts`, `settings.ts` | Exports, IndexedDB, and validated preferences. |
+| `src/lib/explorer.ts`, `master-explorer.ts`, `play-position.ts`, `tablebase.ts` | Local-library/optional online exploration, engine continuation, and optional tablebase client. |
+| `src/lib/report.ts`, `review-transfer.ts`, `review-transfer-validation.ts`, `storage.ts`, `settings.ts` | Text/PGN and validated complete-report transfer, IndexedDB, and preferences. |
 | `scripts/copy-engine.mjs`, `update-openings.mjs` | Engine distribution and reproducible opening-data generation. |
 
 The application source and SVG artwork are independently written. Captured Chess.com source/assets and coach media are not copied into the app. Public game PGNs use the public API; the separate open-source engine, Chess960 rules library, and opening-data sources are identified here.

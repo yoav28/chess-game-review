@@ -1,0 +1,9 @@
+.review-share { padding: 21px 0; border-top: 1px solid var(--border); }
+.inspector-body > .review-share { padding: 22px 24px; }
+.review-share h3 { font-size: 12px; font-weight: 500; margin-bottom: 10px; }
+.review-share > p { font-size: 11px; line-height: 1.8; color: var(--muted); }
+.review-share-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 14px 0 11px; }
+.review-share-actions button { font-size: 11px; min-height: 33px; }
+.review-share .fine-print { font-size: 10px; color: var(--subtle); }
+.review-share .review-share-notice { margin-top: 11px; color: var(--accent); }
+.review-share .error-message { margin-top: 11px; }

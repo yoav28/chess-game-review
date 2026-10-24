@@ -21,6 +21,8 @@ import { CoachControls } from "./CoachControls";
 import { SkillBreakdown } from "./SkillBreakdown";
 import { ReviewStats } from "./ReviewStats";
 import { TrainingPlan } from "./TrainingPlan";
+import { ReviewOverview } from "./ReviewOverview";
+import { ReviewShare } from "./ReviewShare";
 import { coachText, type CoachDetail } from "../lib/coach";
 import { plainTextReport, reviewedPgn } from "../lib/report";
 import { downloadText } from "../lib/storage";
@@ -45,6 +47,7 @@ type Props = {
   onSettings: (settings: Settings) => void;
   onBestLine: () => void;
   onMethod: () => void;
+  onImportReport: (review: GameReview) => void;
 };
 
 export function ReviewPanel({
@@ -65,6 +68,7 @@ export function ReviewPanel({
   onSettings,
   onBestLine,
   onMethod,
+  onImportReport,
 }: Props) {
   const [shareNotice, setShareNotice] = useState("");
   const defaultFocus = settings.highlight === 'all' || !preferredColor ? 'all' : settings.highlight === 'self' ? preferredColor : preferredColor === 'w' ? 'b' : 'w';
@@ -134,6 +138,7 @@ export function ReviewPanel({
         </div>
       ) : (
         <>
+          {review.importedAt && <p className="fine-print" role="note">Imported report. Scores and explanations came from the file; no engine analysis was rerun here. Use Review again to calculate a new report.</p>}
           <div className="accuracy-report">
             <div className="report-caption">
               <h2>Accuracy</h2>
@@ -155,6 +160,7 @@ export function ReviewPanel({
               </div>
             </div>
           </div>
+          <ReviewOverview review={review} onSelect={onSelect} />
           <div className="review-preferences"><label htmlFor="review-focus">Highlights for</label><select id="review-focus" value={focusColor} onChange={event => setFocusColor(event.target.value as 'all' | 'w' | 'b')}><option value="all">Both players</option><option value="w">White</option><option value="b">Black</option></select></div>
           {settings.showCoachAvatar && <div className="coach-identity"><span aria-hidden="true">♞</span><span>Open File coach</span></div>}
           <CoachControls
@@ -163,7 +169,8 @@ export function ReviewPanel({
             move={move}
             onSelect={onSelect}
             filterColor={focusColor}
-            text={move ? coachText(move, coachDetail) : ''}
+            text={move ? coachText(move, coachDetail, settings.coachProfile) : ''}
+            profile={settings.coachProfile}
           />
           {move && (
             <section className="coach">
@@ -186,7 +193,7 @@ export function ReviewPanel({
                 </div>
               </div>
               <label className="coach-detail">Explanation style<select aria-label="Explanation style" value={coachDetail} onChange={event => onSettings({ ...settings, coachDetail: event.target.value as CoachDetail })}><option value="detailed">Detailed</option><option value="concise">Concise</option></select></label>
-              <p>{coachText(move, coachDetail)}</p>
+              <p>{coachText(move, coachDetail, settings.coachProfile)}</p>
               <div className="coach-actions"><button className="secondary" onClick={onExplain}><Lightbulb size={15} /> Explain move</button>{move.bestMove && <button className="text-button" onClick={onBestLine}>Analyze {move.bestMoveSan}<ChevronRight size={14} /></button>}</div>
             </section>
           )}
@@ -268,6 +275,7 @@ export function ReviewPanel({
               {shareNotice}
             </p>
           )}
+          <ReviewShare review={review} onImport={onImportReport} />
           <div className="review-footer">
             <span>{review.engine}</span>
             <button

@@ -10,6 +10,7 @@ export type PlayerHistory = {
   accuracyVersion: number
   modelLabel: string
   excludedReviews: number
+  excludedDuplicates: number
   games: number
   wins: number
   draws: number
@@ -21,7 +22,7 @@ export type PlayerHistory = {
   trend: { recent: HistoryScore; earlier: HistoryScore; delta: number } | null
 }
 
-export const historyMethod = 'Saved reviews on this browser only. Player statistics use that player’s newest available accuracy model; legacy centipawn scores are never pooled with win-chance scores. Accuracy pools actual move scores, with move and game sample counts. Opening and Endgame use recorded phases; Tactics includes captures, checks, and promotions; Strategy includes quiet middlegame moves. Categories can overlap. Time groups estimate duration as base + 40 increments and separate Chess960. Trend compares equally sized recent and preceding groups (up to five games each), requires at least four scored games in the same model with valid PGN dates and a distinct date boundary, and uses game dates rather than review dates. Different review depths can affect comparisons. These scores are not ratings.'
+export const historyMethod = 'Saved reviews on this browser only. Statistics count each exact PGN and variant once, preferring the newest accuracy model, then a locally generated report over an imported report, then the latest analysis date. Duplicate rows remain reopenable. Player statistics use that player’s newest available accuracy model; legacy centipawn scores are never pooled with win-chance scores. Accuracy pools actual move scores, with move and game sample counts. Opening and Endgame use recorded phases; Tactics includes captures, checks, and promotions; Strategy includes quiet middlegame moves. Categories can overlap. Time groups estimate duration as base + 40 increments and separate Chess960. Trend compares equally sized recent and preceding groups (up to five games each), requires at least four scored games in the same model with valid PGN dates and a distinct date boundary, and uses game dates rather than review dates. Different review depths can affect comparisons. These scores are not ratings.'
 
 const normalize = (name: string) => name.trim().toLocaleLowerCase()
 const round = (value: number) => Math.round(value * 10) / 10
@@ -89,9 +90,23 @@ export function historyTimeClass(control?: string): string {
   return seconds < 180 ? 'Bullet' : seconds < 600 ? 'Blitz' : 'Rapid'
 }
 
-function timeGroup(review: GameReview): string {
-  const variant = review.variant ?? (/^(?:Chess960|Fischerandom|Fischer Random|Freestyle)$/i.test(review.headers.Variant ?? '') ? 'chess960' : 'chess')
-  return `${historyTimeClass(review.headers.TimeControl)}${variant === 'chess960' ? ' · Chess960' : ''}`
+const reviewVariant = (review: GameReview) => review.variant ?? (/^(?:Chess960|Fischerandom|Fischer Random|Freestyle)$/i.test(review.headers.Variant ?? '') ? 'chess960' : 'chess')
+const timeGroup = (review: GameReview) => `${historyTimeClass(review.headers.TimeControl)}${reviewVariant(review) === 'chess960' ? ' · Chess960' : ''}`
+
+function uniqueStatisticReviews(entries: SavedReview[]): SavedReview[] {
+  const unique = new Map<string, SavedReview>()
+  for (const entry of entries) {
+    const key = `${reviewVariant(entry.review)}\u0000${entry.review.pgn}`
+    const previous = unique.get(key)
+    if (!previous) { unique.set(key, entry); continue }
+    const versionDifference = reviewAccuracyVersion(entry.review) - reviewAccuracyVersion(previous.review)
+    const localDifference = Number(entry.review.importedAt === undefined) - Number(previous.review.importedAt === undefined)
+    const timestamp = Date.parse(entry.review.analyzedAt)
+    const previousTimestamp = Date.parse(previous.review.analyzedAt)
+    if (versionDifference > 0 || versionDifference === 0 && (localDifference > 0
+      || localDifference === 0 && Number.isFinite(timestamp) && (!Number.isFinite(previousTimestamp) || timestamp > previousTimestamp))) unique.set(key, entry)
+  }
+  return [...unique.values()]
 }
 
 function playerMoves(review: GameReview, player: string): MoveReview[] {
@@ -109,8 +124,9 @@ function score(groups: MoveReview[][]): HistoryScore {
 export function playerHistory(entries: SavedReview[], playerName: string): PlayerHistory {
   const player = normalize(playerName)
   const allGames = sortedSavedReviews(entries).filter(({ review }) => [normalize(review.white), normalize(review.black)].includes(player))
-  const accuracyVersion = allGames.reduce((latest, { review }) => Math.max(latest, reviewAccuracyVersion(review)), 1)
-  const games = allGames.filter(({ review }) => reviewAccuracyVersion(review) === accuracyVersion)
+  const distinctGames = uniqueStatisticReviews(allGames)
+  const accuracyVersion = distinctGames.reduce((latest, { review }) => Math.max(latest, reviewAccuracyVersion(review)), 1)
+  const games = distinctGames.filter(({ review }) => reviewAccuracyVersion(review) === accuracyVersion)
   const groups = games.map(({ review }) => playerMoves(review, player))
   const result = { wins: 0, draws: 0, losses: 0, unfinished: 0 }
   for (const { review } of games) {
@@ -139,5 +155,6 @@ export function playerHistory(entries: SavedReview[], playerName: string): Playe
       trend = { recent, earlier, delta: round(recent.accuracy! - earlier.accuracy!) }
     }
   }
-  return { player: playerName.trim(), accuracyVersion, modelLabel: accuracyModelLabel(accuracyVersion), excludedReviews: allGames.length - games.length, games: games.length, ...result, overall: score(groups), categories, controls, trend }
+  return { player: playerName.trim(), accuracyVersion, modelLabel: accuracyModelLabel(accuracyVersion), excludedReviews: distinctGames.length - games.length,
+    excludedDuplicates: allGames.length - distinctGames.length, games: games.length, ...result, overall: score(groups), categories, controls, trend }
 }

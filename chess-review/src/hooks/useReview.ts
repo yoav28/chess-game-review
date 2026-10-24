@@ -4,7 +4,7 @@ import { reviewGame, type GameReview } from '../lib/review'
 import type { ReviewProgress } from '../engine/types'
 import { loadReview, saveReview } from '../lib/storage'
 
-export function useReview(game: GameRecord, depth: number, timeMs: number) {
+export function useReview(game: GameRecord, depth: number, timeMs: number, restored?: GameReview) {
   const [review, setReview] = useState<GameReview | null>(null)
   const [progress, setProgress] = useState<ReviewProgress | null>(null)
   const [running, setRunning] = useState(false)
@@ -18,17 +18,17 @@ export function useReview(game: GameRecord, depth: number, timeMs: number) {
   useEffect(() => {
     controller.current?.abort()
     setRunning(false)
-    setReview(null)
+    setReview(restored?.pgn === game.pgn ? restored : null)
     setProgress(null)
     setError('')
     setCacheNotice('')
     const version = ++generation.current
     let active = true
-    loadReview(game.id).then(saved => {
+    if (!restored || restored.pgn !== game.pgn) loadReview(game.id).then(saved => {
       if (active && generation.current === version && current.current.id === game.id && current.current.pgn === game.pgn && saved?.pgn === game.pgn && saved.version === 1) setReview(saved)
     }).catch(() => {})
     return () => { active = false; generation.current++; controller.current?.abort() }
-  }, [game.id, game.pgn])
+  }, [game.id, game.pgn, restored])
 
   async function start() {
     controller.current?.abort()

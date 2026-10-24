@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { normalizeSettings, type Settings } from '../lib/settings'
+import { coachProfiles } from '../lib/coach'
 import './ReviewSettings.css'
 
 type ToggleKey = 'sound' | 'showClassifications' | 'autoplayExplanation' | 'showCoachAvatar' | 'showRecommendations' | 'showSkills' | 'showTimeSpent'
@@ -23,6 +24,10 @@ export function ReviewSettings({ settings, onChange, onDone }: { settings: Setti
         <option value="1500">Deep · 1.5 seconds</option>
         <option value="5000">Thorough · 5 seconds</option>
       </select>
+      <label htmlFor={`${id}-lines`}>Analysis lines</label>
+      <select id={`${id}-lines`} value={settings.analysisLines} onChange={event => update({ analysisLines: Number(event.target.value) })}>
+        {[1, 2, 3, 4, 5].map(count => <option key={count} value={count}>{count} {count === 1 ? 'line' : 'lines'}</option>)}
+      </select>
       <p className="fine-print">Analysis stops at the depth or time limit. These limits apply to the next review; saved reviews stay available.</p>
     </fieldset>
     <fieldset>
@@ -42,6 +47,11 @@ export function ReviewSettings({ settings, onChange, onDone }: { settings: Setti
     </fieldset>
     <fieldset>
       <legend>Coach</legend>
+      <label htmlFor={`${id}-profile`}>Presentation</label>
+      <select id={`${id}-profile`} value={settings.coachProfile} onChange={event => update({ coachProfile: event.target.value as Settings['coachProfile'] })}>
+        {Object.entries(coachProfiles).map(([profile, presentation]) => <option key={profile} value={profile}>{presentation.label}</option>)}
+      </select>
+      <p className="fine-print">{coachProfiles[settings.coachProfile].description} Local narration uses this profile’s pace and pitch.</p>
       <label htmlFor={`${id}-detail`}>Explanation detail</label>
       <select id={`${id}-detail`} value={settings.coachDetail} onChange={event => update({ coachDetail: event.target.value as Settings['coachDetail'] })}>
         <option value="concise">Concise</option><option value="detailed">Detailed</option>

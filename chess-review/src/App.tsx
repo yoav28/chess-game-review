@@ -7,6 +7,7 @@ import { AnalysisPanel } from "./components/AnalysisPanel";
 import { PlayPositionPanel } from "./components/PlayPositionPanel";
 import { ExplanationPanel } from "./components/ExplanationPanel";
 import { SavedReviewsPanel } from "./components/SavedReviewsPanel";
+import { ReviewShare } from "./components/ReviewShare";
 import { WorkspaceTabs } from "./components/WorkspaceTabs";
 import { PracticePanel } from "./components/PracticePanel";
 import { Dialogs } from "./components/Dialogs";
@@ -31,7 +32,7 @@ function App() {
     boardMove, beginPractice, bestLine, copyPosition,
     play, startPlay, stopPlay,
     explanation, explainCurrent, practicePosition,
-    openSaved,
+    openSaved, importReport,
     practice, variant, boardBestMove, showBestArrow, boardCoachArrows, classificationMark,
   } = useWorkspace();
 
@@ -127,11 +128,12 @@ function App() {
                 preferredColor={game.white.username.toLowerCase() === library.username ? 'w' : game.black.username.toLowerCase() === library.username ? 'b' : undefined}
                 onBestLine={bestLine}
                 onMethod={() => setDialog("method")}
+                onImportReport={importReport}
                 settings={settings}
                 onSettings={setSettings}
               />
             ) : tab === "history" ? (
-              <SavedReviewsPanel onOpen={openSaved} refreshKey={review?.analyzedAt} />
+              <><ReviewShare review={review} onImport={importReport} /><SavedReviewsPanel onOpen={openSaved} refreshKey={review?.analyzedAt} /></>
             ) : tab === "analysis" && play.active ? (
               <PlayPositionPanel play={play} onExit={stopPlay} />
             ) : tab === "analysis" ? (

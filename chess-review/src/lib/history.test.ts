@@ -86,7 +86,7 @@ test('duplicate ids retain the most recently analyzed review and never inflate h
 test('time grouping uses only supported PGN time-control facts and treats staged controls as other', () => {
   assert.deepEqual(['60', '120+1', '180', '300+5', '600', '1/86400', '40/7200:3600', '-', undefined, '0', '0+5'].map(historyTimeClass),
     ['Bullet', 'Bullet', 'Blitz', 'Blitz', 'Rapid', 'Daily', 'Unspecified / other', 'Unspecified / other', 'Unspecified / other', 'Unspecified / other', 'Blitz'])
-  const a = fixture('a'); const b = fixture('b')
+  const a = fixture('a'); const b = fixture('b', '2026.10.02')
   b.review.headers.TimeControl = '600'
   assert.deepEqual(playerHistory([a, b], 'Ada').controls.map(group => [group.label, group.score.games]), [['Blitz', 1], ['Rapid', 1]])
 })
@@ -147,9 +147,70 @@ test('time-control statistics keep Chess960 separate without relabeling standard
   const standard = fixture('standard')
   const chess960 = fixture('960')
   chess960.review.variant = 'chess960'
-  const tagged960 = fixture('tagged-960')
+  const tagged960 = fixture('tagged-960', '2026.10.02')
   tagged960.review.variant = undefined
   tagged960.review.headers.Variant = 'Chess960'
   const summary = playerHistory([standard, chess960, tagged960], 'Ada')
   assert.deepEqual(summary.controls.map(category => [category.label, category.score.games]), [['Blitz', 1], ['Blitz · Chess960', 2]])
+})
+
+test('statistics prefer a local report over a newer imported copy of the same PGN and model without hiding either saved row', () => {
+  const local = fixture('api-game', '2026.10.01', 75)
+  const imported = structuredClone(local)
+  imported.id = 'imported-game'
+  imported.review.importedAt = '2026-10-24T15:00:00Z'
+  imported.review.analyzedAt = '2027-01-01T00:00:00Z'
+  imported.review.moves.forEach(move => { if (move.color === 'w') move.accuracy = 10 })
+  const entries = [imported, local]
+  const summary = playerHistory(entries, 'Ada')
+  assert.deepEqual(summary.overall, { accuracy: 75, moves: 2, games: 1 })
+  assert.equal(summary.excludedDuplicates, 1)
+  assert.equal(summary.excludedReviews, 0)
+  assert.equal(summary.games, 1)
+  assert.equal(sortedSavedReviews(entries).length, 2)
+})
+
+test('newer accuracy models outrank local provenance and older-model exclusions never include duplicate copies', () => {
+  const local = fixture('local-old', '2026.10.01', 10)
+  const imported = structuredClone(local)
+  imported.id = 'imported-new'
+  imported.review.accuracyVersion = 2
+  imported.review.importedAt = '2026-10-24T15:00:00Z'
+  imported.review.moves.forEach(move => { if (move.color === 'w') move.accuracy = 90 })
+  const otherLegacyGame = fixture('other-game', '2026.10.02', 0)
+  const summary = playerHistory([local, imported, otherLegacyGame], 'Ada')
+  assert.equal(summary.accuracyVersion, 2)
+  assert.equal(summary.overall.accuracy, 90)
+  assert.equal(summary.excludedDuplicates, 1)
+  assert.equal(summary.excludedReviews, 1)
+  assert.equal(summary.games, 1)
+})
+
+test('latest valid analysis date breaks ties only after model and provenance, while variant keeps games distinct', () => {
+  const early = fixture('early', '2026.10.01', 20)
+  early.review.analyzedAt = '2026-10-01T00:00:00Z'
+  const later = fixture('later', '2026.10.01', 85)
+  assert.equal(playerHistory([early, later], 'Ada').overall.accuracy, 85)
+  early.review.importedAt = '2026-10-24T15:00:00Z'
+  later.review.importedAt = '2026-10-24T15:00:00Z'
+  assert.equal(playerHistory([early, later], 'Ada').overall.accuracy, 85)
+  early.review.analyzedAt = 'invalid'
+  assert.equal(playerHistory([early, later], 'Ada').overall.accuracy, 85)
+  const differentVariant = structuredClone(later)
+  differentVariant.id = '960'
+  differentVariant.review.variant = 'chess960'
+  const summary = playerHistory([later, differentVariant], 'Ada')
+  assert.equal(summary.games, 2)
+  assert.equal(summary.excludedDuplicates, 0)
+})
+
+test('importing two duplicate reports cannot create a four-game trend or inflate category samples', () => {
+  const games = [fixture('first', '2026.10.01', 40), fixture('second', '2026.10.02', 80)]
+  const copies = structuredClone(games).map(entry => ({ id: `imported-${entry.id}`, review: { ...entry.review, importedAt: '2026-10-24T15:00:00Z' } }))
+  const summary = playerHistory([...games, ...copies], 'Ada')
+  assert.equal(summary.excludedDuplicates, 2)
+  assert.equal(summary.trend, null)
+  assert.deepEqual(summary.overall, { accuracy: 60, moves: 4, games: 2 })
+  assert.deepEqual(summary.categories.find(category => category.label === 'Opening')?.score, summary.overall)
+  assert.equal(summary.controls[0].score.games, 2)
 })

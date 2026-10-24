@@ -4,7 +4,8 @@ import { readSettings, type Settings } from "../lib/settings";
 import { createPosition } from "../lib/position";
 import { demoGame } from "../lib/demo";
 import { gameFromPgn, parseGame, type GameRecord } from "../lib/game";
-import type { SavedReview } from "../lib/storage";
+import { saveReview, type SavedReview } from "../lib/storage";
+import type { GameReview } from "../lib/review";
 import { useLibrary } from "./useLibrary";
 import { useReview } from "./useReview";
 import { usePositionAnalysis } from "./usePositionAnalysis";
@@ -19,6 +20,7 @@ type WorkspaceTab = "review" | "analysis" | "practice" | "history";
 export function useWorkspace() {
   const library = useLibrary();
   const [game, setGame] = useState<GameRecord>(demoGame);
+  const [transferredReview, setTransferredReview] = useState<SavedReview | null>(null);
   const [ply, setPly] = useState(18);
   const [orientation, setOrientation] = useState<"w" | "b">("w");
   const [tab, setTab] = useState<WorkspaceTab>("review");
@@ -40,7 +42,7 @@ export function useWorkspace() {
     }
   }, [game]);
   const { review, progress, running, error, cacheNotice, start, cancel } =
-    useReview(game, settings.depth, settings.timeMs);
+    useReview(game, settings.depth, settings.timeMs, transferredReview?.id === game.id ? transferredReview.review : undefined);
   const practice = usePracticeReview(review, settings.depth, settings.timeMs);
   const { practiceIndex, practiceColor, practiceStatus, hint, practiceFen, retryMoves, retry, practiceBusy, practiceFeedback } = practice;
   const variant = parsed.variant ?? 'chess';
@@ -199,6 +201,7 @@ export function useWorkspace() {
     play.stop();
     explanation.stop();
     practice.stop();
+    setTransferredReview(null);
     setGame(selected);
     setPly(0);
     setVariation([]);
@@ -212,6 +215,14 @@ export function useWorkspace() {
   function openSaved(entry: SavedReview) {
     try { selectGame({ ...gameFromPgn(entry.review.pgn), id: entry.id }); }
     catch { setToast('This saved game could not be read. Try reviewing the original game again.'); }
+  }
+
+  function importReport(report: GameReview) {
+    const selected = gameFromPgn(report.pgn);
+    selected.id = `report-${selected.id}-${report.analyzedAt}`;
+    selectGame(selected);
+    setTransferredReview({ id: selected.id, review: report });
+    void saveReview(selected.id, report).catch(() => setToast('The imported review is open, but browser storage could not save it. Keep the review file to reopen it later.'));
   }
 
   function playSound() {
@@ -313,7 +324,7 @@ export function useWorkspace() {
     boardMove, beginPractice, bestLine, copyPosition,
     play, startPlay, stopPlay,
     explanation, explainCurrent, practicePosition,
-    openSaved,
+    openSaved, importReport,
     practice, variant,
     boardBestMove, showBestArrow, boardCoachArrows, classificationMark,
   };

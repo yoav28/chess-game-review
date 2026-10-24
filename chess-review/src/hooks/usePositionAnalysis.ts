@@ -8,7 +8,7 @@ type PositionAnalysisOptions = {
   engineEnabled: boolean;
   running: boolean;
   fen: string;
-  settings: { depth: number; timeMs: number };
+  settings: { depth: number; timeMs: number; analysisLines: number };
   parseError: string;
   analysisHistory: NonNullable<AnalysisOptions["history"]>;
   variant: ChessVariant;
@@ -35,7 +35,7 @@ export function usePositionAnalysis({
       analyzePosition(fen, {
         depth: settings.depth,
         timeMs: Math.max(500, settings.timeMs),
-        multiPv: 3,
+        multiPv: settings.analysisLines,
         signal: request.signal,
         history: analysisHistory,
         variant,
@@ -61,6 +61,7 @@ export function usePositionAnalysis({
     fen,
     settings.depth,
     settings.timeMs,
+    settings.analysisLines,
     parseError,
     analysisHistory,
     variant,
