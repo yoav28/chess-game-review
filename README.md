@@ -26,6 +26,8 @@ Inspired by [wintrcat](https://www.youtube.com/watch?v=N6dIEzA--7Y).
 
 Settings select the bundled Stockfish engine's NNUE or classical evaluation, search depth (8–24), and review playback interval. Analysis runs locally in the browser. Higher depths can take substantially longer, especially when reviewing many games. Reviews stored in browser storage stay on that browser and device.
 
+The interface uses local copies of Chess.com's public board, player artwork, fonts, and navigation symbols. The default coach portrait follows the image in the [official Game Review guide](https://support.chess.com/en/articles/8584089-how-does-game-review-work).
+
 Entering a Chess.com or Lichess username opens the latest 100 standard games. Analyze all my games can review the last day, week, or month, limited to 10, 100, 1000, or all matching games. Keep the tab open while the queue runs; stopping cancels the current analysis and keeps completed reviews. The browser keeps up to 100 recent games and their completed reviews, evicting older entries when storage fills.
 
 Reviews use `/{id}/review?move={x}`, where `move` counts half-moves from the starting position. Refresh and browser navigation restore saved reviews at that move. These URLs require the game to be saved in the same browser. During review, click or drag pieces to explore legal alternatives, choose promotions, and see engine feedback without changing the original game. Play advances every second by default; change the interval in Settings.

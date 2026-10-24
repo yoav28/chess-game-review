@@ -1,30 +1,107 @@
-.chess-settings {
-  align-items: stretch;
-  justify-content: flex-start;
-  width: 300px;
-  max-height: min(680px, 80vh);
-  padding: 0;
-  overflow-y: auto;
+.chess-settings-overlay {
+  align-items: flex-start;
+  padding: 24px 16px;
+}
+.chess-settings-backdrop {
+  background: #000b;
+  backdrop-filter: none;
+}
+.chess-settings-dialog {
+  width: 460px;
+  max-width: 100%;
+  min-height: min(600px, calc(100dvh - 48px));
+  max-height: calc(100dvh - 48px);
+  margin: 0;
+  overflow: hidden;
   border: 1px solid #454340;
-  border-radius: 5px;
+  border-radius: 10px;
   background: #262522;
-  color: #fff;
+  color: #dededc;
   box-shadow: 0 2px 8px #0005;
 }
-.chess-settings-body {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  flex-shrink: 0;
-  gap: 18px;
-  padding: 20px;
-}
-.chess-settings-heading {
-  margin: -20px -20px 0;
-  padding: 15px 20px;
+.chess-settings-header {
+  height: 48px;
+  min-height: 48px;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid #3d3b38;
   background: #21201d;
   font-size: 18px;
   font-weight: 800;
+}
+.chess-settings-dialog .chess-settings-close {
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  color: #b3b2b1;
+  font-size: 22px;
+}
+.chess-settings-tabs {
+  display: flex;
+  height: 56px;
+  min-height: 56px;
+  background: #21201d;
+}
+.chess-settings-tabs button {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #b3b2b1;
+  font-size: 12px;
+  font-weight: 700;
+}
+.chess-settings-tabs button:hover,
+.chess-settings-tabs button[aria-selected='true'] {
+  background: #262522;
+  color: #fff;
+}
+.chess-settings-tabs .navigation-icon {
+  width: 20px;
+  height: 20px;
+}
+.chess-settings-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 0 16px 24px;
+}
+.chess-settings-panel h3 {
+  margin: 18px 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.chess-settings-panel .chess-setting-field,
+.chess-settings-toggle-row {
+  display: grid;
+  min-height: 44px;
+  grid-template-columns: 40% minmax(0, 1fr);
+  align-items: center;
+  gap: 0;
+}
+.chess-settings-panel .chess-setting-field > span,
+.chess-settings-toggle-row > span {
+  color: #dededc;
+  font-size: 14px;
+  font-weight: 400;
+}
+.chess-settings-panel .chess-setting-field select {
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  background: #3a3935;
+  color: #b3b2b1;
+}
+.chess-settings-toggle-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: #81b64c;
 }
 .chess-setting-field {
   display: flex;
@@ -49,22 +126,6 @@
   background: #3a3935;
   color: #fff;
   font-size: 14px;
-}
-.chess-setting-switch {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 14px;
-  font-weight: 700;
-}
-.chess-setting-switch input {
-  width: 18px;
-  height: 18px;
-  accent-color: #81b64c;
-}
-.chess-settings-divider {
-  border-color: #454340;
 }
 .chess-batch-modal {
   border-radius: 6px;

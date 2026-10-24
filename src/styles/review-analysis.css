@@ -6,7 +6,7 @@
 }
 .review-engine-header {
   display: flex;
-  min-height: 42px;
+  min-height: 53px;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -24,8 +24,11 @@
   font-size: 16px;
 }
 .review-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex-shrink: 0;
-  padding: 8px 12px 10px;
+  padding: 8px 12px;
   border-top: 1px solid #ffffff12;
 }
 .review-variation-hint {
@@ -56,7 +59,7 @@
 }
 .review-engine-line {
   display: flex;
-  min-height: 28px;
+  min-height: 24px;
   align-items: center;
   gap: 7px;
   font-size: 14px;
@@ -127,7 +130,7 @@
 }
 .review-game-heading {
   display: flex;
-  min-height: 38px;
+  min-height: 40px;
   flex-shrink: 0;
   align-items: center;
   gap: 6px;
@@ -180,6 +183,15 @@
 }
 .review-move-button[aria-current] {
   background: #59564f;
+  color: #fff;
+}
+
+.review-analysis-mode .review-move-button {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.review-analysis-mode .review-move-button[aria-current] {
   color: #fff;
 }
 .review-move-button > svg {

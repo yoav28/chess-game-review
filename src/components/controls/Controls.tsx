@@ -9,6 +9,8 @@ import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import { useStageStore } from '../../stores/useStageStore';
 import { useVariationStore } from '../../stores/useVariationStore';
 import useNames from '../../utils/useNames';
+import NavigationIcon from '../NavigationIcon';
+import AnalysisTabs from './AnalysisTabs';
 import Forms from './Forms';
 import GameNav from './GameNav';
 import Games from './Games';
@@ -81,7 +83,7 @@ export default function Controls() {
           <Icon icon="material-symbols:chevron-left-rounded" />
         </Button>
         <h1>
-          {isAnalysis ? <Icon icon="material-symbols:search-check-rounded" /> : <img alt="" src="/star.svg" />}
+          {isAnalysis ? <NavigationIcon name="analysis" /> : <img alt="" src="/star.svg" />}
           {stage === 'select-month' || stage === 'select-game' ? 'Recent Games' : isAnalysis ? 'Analysis' : 'Game Review'}
         </h1>
         {reviewFinished && (
@@ -98,24 +100,11 @@ export default function Controls() {
             size="sm"
             variant="light"
           >
-            <Icon icon={isAnalysis ? 'material-symbols:stars-rounded' : 'material-symbols:search-check-rounded'} />
+            {isAnalysis ? <Icon icon="material-symbols:stars-rounded" /> : <NavigationIcon name="analysis" />}
           </Button>
         )}
       </header>
-      {isAnalysis && (
-        <nav aria-label="Review views" className="review-tabs">
-          <button
-            onClick={() => {
-              useVariationStore.getState().reset();
-              setView('review');
-            }}
-            type="button"
-          >
-            Review
-          </button>
-          <button aria-current={stage === 'review-moves' ? 'page' : undefined} onClick={() => setStage('review-moves')} type="button">Analysis</button>
-        </nav>
-      )}
+      {isAnalysis && <AnalysisTabs />}
       <div className={`
         review-panel-content
         ${stage === 'review-moves'

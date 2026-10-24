@@ -19,8 +19,10 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 20px;
+  color: rgba(255, 255, 255, 0.85);
 }
 .review-panel-header h1 img {
   width: 22px;
@@ -30,26 +32,6 @@
   min-width: 32px;
   color: #b3b2b1;
   font-size: 25px;
-}
-.review-tabs {
-  display: flex;
-  min-height: 54px;
-  background: #21201d;
-}
-.review-tabs button {
-  flex: 1;
-  border-bottom: 3px solid transparent;
-  color: #b3b2b1;
-  font-size: 14px;
-  font-weight: 700;
-}
-.review-tabs button:hover {
-  background: #2c2b28;
-}
-.review-tabs button[aria-current] {
-  border-bottom-color: #81b64c;
-  color: #fff;
-  background: #262522;
 }
 .review-panel-content {
   flex: 1;

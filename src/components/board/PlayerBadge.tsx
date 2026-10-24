@@ -149,16 +149,13 @@ export default function PlayerBadge({ color }: {
   return (
     <div className="board-player">
       <div className="board-player-identity">
-        <span
-          aria-hidden="true"
-          className={cn('board-player-avatar', `
-            board-player-avatar-${color}
-          `)}
-        >
-          <svg fill="currentColor" viewBox="0 0 40 40">
-            <path d="M20 5c-4.2 0-7.4 3.2-7.4 7.5 0 3.3 1.4 5.5 3.4 7.5v4c-1.6 1.8-6.6 3.3-9.3 5.2-1.1.8-1.7 2-1.7 3.3V36h30v-3.5c0-1.3-.6-2.5-1.7-3.3-2.7-1.9-7.7-3.4-9.3-5.2v-4c2-2 3.4-4.2 3.4-7.5C27.4 8.2 24.2 5 20 5Z" />
-          </svg>
-        </span>
+        <img
+          alt=""
+          className="board-player-avatar"
+          height={40}
+          src={`/players/${color === 'w' ? 'white' : 'black'}.png`}
+          width={40}
+        />
         <div className="board-player-details">
           <div className="board-player-name-line">
             {title && <span className="board-player-title">{title}</span>}

@@ -7,6 +7,7 @@ import useReviewPlayback from '../../hooks/useReviewPlayback';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import { useStageStore } from '../../stores/useStageStore';
+import NavigationIcon from '../NavigationIcon';
 import Settings from './Settings';
 
 export default function GameNav() {
@@ -118,7 +119,7 @@ export default function GameNav() {
           radius="sm"
           size="md"
         >
-          <Icon icon="material-symbols:first-page-rounded" />
+          <NavigationIcon name="first" />
         </Button>
         <Button
           aria-label="Previous move"
@@ -134,7 +135,7 @@ export default function GameNav() {
           radius="sm"
           size="md"
         >
-          <Icon icon="material-symbols:chevron-left-rounded" />
+          <NavigationIcon name="previous" />
         </Button>
         <Button
           aria-label={isPlaying ? 'Pause review' : 'Play review'}
@@ -167,7 +168,7 @@ export default function GameNav() {
           radius="sm"
           size="md"
         >
-          <Icon icon="material-symbols:chevron-right-rounded" />
+          <NavigationIcon name="next" />
         </Button>
         <Button
           aria-label="Final move"
@@ -189,7 +190,7 @@ export default function GameNav() {
           radius="sm"
           size="md"
         >
-          <Icon icon="material-symbols:last-page-rounded" />
+          <NavigationIcon name="last" />
         </Button>
       </div>
       <div className="review-navigation-actions" id="minor-buttons">

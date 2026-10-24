@@ -1,0 +1,29 @@
+@font-face {
+  font-family: 'Chess V3';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/chess-glyphs.woff2') format('woff2');
+}
+
+.move-notation {
+  white-space: nowrap;
+}
+
+.move-notation-piece {
+  display: inline-block;
+  margin: -3px 1px 0 0;
+  font-family: 'Chess V3', sans-serif;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 23px;
+  vertical-align: baseline;
+}
+
+.review-engine-line .move-notation-piece,
+.review-engine-continuation .move-notation-piece,
+.review-step-title .move-notation-piece {
+  margin-top: -2px;
+  font-size: 20px;
+  line-height: 20px;
+}

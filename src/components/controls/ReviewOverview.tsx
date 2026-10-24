@@ -2,6 +2,7 @@ import { Button } from '@heroui/react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { useMemo, useState } from 'react';
 
+import Miss from '../../icons/move-classifications/Miss';
 import MoveClassification from '../../icons/move-classifications/MoveClassification';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useEvalStore } from '../../stores/useEvalStore';
@@ -13,6 +14,7 @@ import cn from '../../utils/cn';
 import useNames from '../../utils/useNames';
 import EvalGraph from './EvalGraph';
 import ReviewCoach from './ReviewCoach';
+import ReviewPhaseSummary from './ReviewPhaseSummary';
 
 import type { Classification } from '../../utils/classify';
 
@@ -25,6 +27,7 @@ export default function ReviewOverview() {
   const classHistory = useEvalStore(state => state.classHistory);
   const currentGame = useBoardStore(state => state.currentGame);
   const setStage = useStageStore(state => state.setStage);
+  const header = currentGame.header();
 
   const record = useMemo(() => {
     const history = currentGame.history({ verbose: true });
@@ -54,7 +57,9 @@ export default function ReviewOverview() {
   const tacticalFinds = record.brilliant[tacticalSide] + record.great[tacticalSide];
   const errors = record.mistake[0] + record.mistake[1] + record.blunder[0] + record.blunder[1];
   const summary = tacticalFinds > 0 ? `${tacticalSide === 0 ? 'White' : 'Black'} found ${tacticalFinds === 1 ? 'a great tactical move' : `${tacticalFinds} great tactical moves`} this game.` : errors > 0 ? 'There are some key moments to learn from in this game.' : 'A well-played game! Let’s take a closer look.';
-  const primaryClasses = ['brilliant', 'great', 'best', 'inaccuracy', 'mistake', 'blunder'];
+  const visibleClasses: (Classification | 'miss')[] = ['brilliant', 'great', 'best', 'mistake', 'miss', 'blunder'];
+  if (expanded)
+    visibleClasses.push('excellent', 'good', 'book', 'inaccuracy');
 
   return (
     <div className="review-overview" id="ReviewOverview">
@@ -71,15 +76,14 @@ export default function ReviewOverview() {
             key={index}
           >
             <p className="review-player-name">{name}</p>
-            <span
-              aria-hidden="true"
-              className={`
-                review-player-avatar
-                review-player-avatar-${index}
-              `}
-            >
-              <svg fill="currentColor" viewBox="0 0 40 40"><path d="M20 5c-4.2 0-7.4 3.2-7.4 7.5 0 3.3 1.4 5.5 3.4 7.5v4c-1.6 1.8-6.6 3.3-9.3 5.2-1.1.8-1.7 2-1.7 3.3V36h30v-3.5c0-1.3-.6-2.5-1.7-3.3-2.7-1.9-7.7-3.4-9.3-5.2v-4c2-2 3.4-4.2 3.4-7.5C27.4 8.2 24.2 5 20 5Z" /></svg>
-            </span>
+            <img
+              alt=""
+              className="review-player-avatar"
+              data-winner={(index === 0 && header.Result === '1-0') || (index === 1 && header.Result === '0-1') || undefined}
+              height={48}
+              src={`/players/${index === 0 ? 'white' : 'black'}.png`}
+              width={48}
+            />
           </div>
         ))}
         <span className="review-comparison-label review-accuracy-label">Accuracy</span>
@@ -87,15 +91,16 @@ export default function ReviewOverview() {
         <strong className="review-accuracy review-accuracy-black">{accuracy[1]}</strong>
       </div>
       <div className="review-classifications">
-        {Object.entries(record).filter(([classification]) => expanded || primaryClasses.includes(classification)).map(([classification, counts]) => {
-          const cl = classification as Classification;
+        {visibleClasses.map((classification) => {
+          const counts = classification === 'miss' ? ['—', '—'] : record[classification as Exclude<Classification, 'forced'>];
+          const countColor = classification === 'miss' ? 'review-classification-miss' : chooseTextColor(classification);
 
           return (
-            <div className="review-classification-row" key={cl}>
-              <span className="review-classification-label">{capitalize(cl)}</span>
-              <span className={cn('review-classification-count', chooseTextColor(cl))}>{counts[0]}</span>
-              <MoveClassification classification={cl} />
-              <span className={cn('review-classification-count', chooseTextColor(cl))}>{counts[1]}</span>
+            <div className="review-classification-row" key={classification} title={classification === 'miss' ? 'Miss classification is not available from this engine.' : undefined}>
+              <span className="review-classification-label">{capitalize(classification)}</span>
+              <span className={cn('review-classification-count', countColor)}>{counts[0]}</span>
+              {classification === 'miss' ? <Miss /> : <MoveClassification classification={classification} />}
+              <span className={cn('review-classification-count', countColor)}>{counts[1]}</span>
             </div>
           );
         })}
@@ -109,6 +114,7 @@ export default function ReviewOverview() {
           <Icon icon={expanded ? 'material-symbols:keyboard-arrow-up-rounded' : 'material-symbols:keyboard-arrow-down-rounded'} />
         </button>
       </div>
+      <ReviewPhaseSummary header={header} />
       <Button
         className="review-primary-button"
         color="primary"

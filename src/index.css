@@ -3,6 +3,7 @@
 @import './styles/shell.css';
 @import './styles/board.css';
 @import './styles/review.css';
+@import './styles/notation.css';
 @import './styles/imports.css';
 @config "../tailwind.config.js";
 @plugin './hero.ts';

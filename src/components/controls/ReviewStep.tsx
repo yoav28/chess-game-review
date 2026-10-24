@@ -9,6 +9,7 @@ import { useStageStore } from '../../stores/useStageStore';
 import { useVariationStore } from '../../stores/useVariationStore';
 import lanToSan from '../../utils/lanToSan';
 import ReviewCoach from './ReviewCoach';
+import SanMove from './SanMove';
 import VariationPanel from './VariationPanel';
 
 import '../../styles/review-step.css';
@@ -61,7 +62,16 @@ export default function ReviewStep() {
               <>
                 <div className="review-step-title">
                   {move && <MoveClassification classification={classification} />}
-                  <strong>{title}</strong>
+                  <strong>
+                    {move
+                      ? (
+                          <>
+                            <SanMove color={move.color} san={move.san} />
+                            {title.slice(move.san.length)}
+                          </>
+                        )
+                      : title}
+                  </strong>
                   <span className={`
                     review-evaluation
                     ${evaluation.startsWith('-')

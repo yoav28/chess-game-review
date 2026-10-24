@@ -1,86 +1,40 @@
-import { SQUARES } from 'chess.js';
-import { Chess, type Square } from 'chess.js';
-
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
-import cn from '../../utils/cn';
-import translatePiece from '../../utils/translatePiece';
 
-function Coor({ square }: { square: Square }) {
-  const color = new Chess().squareColor(square)!;
-  const isFlipped = useBoardStore(state => state.isFlipped);
-  const isFirstCol = square.includes(isFlipped ? 'h' : 'a');
-  const isFirstRow = square.includes(isFlipped ? '8' : '1');
-  const cornerSquare = isFlipped ? 'h8' : 'a1';
-  const isCorner = square === cornerSquare;
-  const [x, y] = translatePiece(square, isFlipped);
-  const board = useSettingsStore(state => state.settings.board);
+const rankPositions = [3.5, 15.75, 28.25, 40.75, 53.25, 65.75, 78.25, 90.75];
+const filePositions = [10, 22.5, 35, 47.5, 60, 72.5, 85, 97.5];
+const files = 'abcdefgh';
 
-  function chooseTextColorFromTheme(color: 'light' | 'dark') {
-    if (board === 'green') {
-      return color === 'light' ? 'text-dark-green' : 'text-light-green';
-    }
-    else if (board === 'brown') {
-      return color === 'light' ? 'text-dark-brown' : 'text-light-brown';
-    }
-    else {
-      return color === 'light' ? 'text-dark-ice' : 'text-light-ice';
-    }
-  }
-
-  const file = (
-    <span
-      className={cn(
-        `
-          absolute right-0.5 bottom-0.5 text-[2vw] font-semibold select-none
-          xs:right-1
-          sm:text-sm
-        `,
-        chooseTextColorFromTheme(color),
-      )}
-    >
-      {square[0]}
-    </span>
-  );
-
-  const rank = (
-    <span
-      className={cn(
-        `
-          absolute top-0.5 left-0.5 text-[2vw] font-semibold select-none
-          xs:top-1 xs:left-1
-          sm:text-sm
-        `,
-        chooseTextColorFromTheme(color),
-      )}
-    >
-      {square[1]}
-    </span>
-  );
-
-  if (isCorner || isFirstCol || isFirstRow) {
-    return (
-      <div
-        className="absolute size-[12.5%]"
-        style={{ transform: `translate(${x}%, ${y}%)` }}
-      >
-        {isCorner
-          ? (
-              <>
-                {file}
-                {rank}
-              </>
-            )
-          : isFirstRow ? file : isFirstCol ? rank : null}
-      </div>
-    );
-  }
-}
+const colors = {
+  green: { light: '#ebecd0', dark: '#739552' },
+  brown: { light: '#edd6b0', dark: '#b88762' },
+  ice: { light: '#c5d5dc', dark: '#7a9db2' },
+};
 
 export default function Coors() {
+  const isFlipped = useBoardStore(state => state.isFlipped);
+  const board = useSettingsStore(state => state.settings.board);
+  const palette = colors[board];
+
   return (
-    <div className="absolute aspect-square w-full" id="coors">
-      {SQUARES.map(square => <Coor key={square} square={square} />)}
-    </div>
+    <svg
+      aria-hidden="true"
+      className="board-coordinates"
+      fontSize={2.8}
+      fontWeight={600}
+      id="coors"
+      viewBox="0 0 100 100"
+    >
+      {rankPositions.map((y, index) => (
+        <text fill={index % 2 === 0 ? palette.dark : palette.light} key={`rank-${index}`} x={0.75} y={y}>
+          {isFlipped ? index + 1 : 8 - index}
+        </text>
+      ))}
+      {filePositions.map((x, index) => (
+        <text fill={index % 2 === 0 ? palette.light : palette.dark} key={`file-${index}`} x={x} y={99}>
+          {files[isFlipped ? 7 - index : index]}
+        </text>
+      ))}
+    </svg>
   );
 }

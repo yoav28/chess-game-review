@@ -1,0 +1,35 @@
+.analysis-tabs {
+  display: grid;
+  height: 56px;
+  min-height: 56px;
+  flex-shrink: 0;
+  grid-template-columns: repeat(3, 1fr);
+  background: transparent;
+}
+.analysis-tabs > button,
+.analysis-tabs > a {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 4px;
+  background: rgba(0, 0, 0, 0.14);
+  color: #b3b2b1;
+  font-size: 12px;
+  line-height: 13.2px;
+}
+.analysis-tabs > [aria-current] {
+  background: transparent;
+  color: #fff;
+}
+.analysis-tabs > button:hover,
+.analysis-tabs > a:hover {
+  color: #fff;
+}
+.analysis-tabs > button:focus-visible,
+.analysis-tabs > a:focus-visible {
+  outline: 2px solid #81b64c;
+  outline-offset: -2px;
+}
