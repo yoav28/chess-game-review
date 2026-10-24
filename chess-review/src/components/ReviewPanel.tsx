@@ -41,6 +41,7 @@ type Props = {
   onStart: () => void;
   onCancel: () => void;
   onSelect: (ply: number) => void;
+  onExploreOpening: (ply: number) => void;
   onPractice: (color?: 'all' | 'w' | 'b') => void;
   onPracticePosition: (ply: number) => void;
   onExplain: () => void;
@@ -65,6 +66,7 @@ export function ReviewPanel({
   onStart,
   onCancel,
   onSelect,
+  onExploreOpening,
   onPractice,
   onPracticePosition,
   onExplain,
@@ -166,7 +168,7 @@ export function ReviewPanel({
               </div>
             </div>
           </div>
-          <ReviewOverview review={review} games={games} username={username} onSelect={onSelect} />
+          <ReviewOverview review={review} games={games} username={username} onSelect={onSelect} onExploreOpening={onExploreOpening} />
           <div className="review-preferences"><label htmlFor="review-focus">Highlights for</label><select id="review-focus" value={focusColor} onChange={event => setFocusColor(event.target.value as 'all' | 'w' | 'b')}><option value="all">Both players</option><option value="w">White</option><option value="b">Black</option></select></div>
           {settings.showCoachAvatar && <div className="coach-identity"><span aria-hidden="true">♞</span><span>Open File coach</span></div>}
           <CoachControls

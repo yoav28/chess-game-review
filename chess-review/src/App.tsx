@@ -128,6 +128,7 @@ function App() {
                 onStart={start}
                 onCancel={cancel}
                 onSelect={navigate}
+                onExploreOpening={ply => { setPly(ply); setVariation([]); setPlaying(false); setTab("analysis"); }}
                 onPractice={beginPractice}
                 onPracticePosition={practicePosition}
                 onExplain={explainCurrent}
