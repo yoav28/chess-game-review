@@ -18,6 +18,15 @@ import { bestMoveArrow, continuationArrows, physicalMove } from "../lib/board-vi
 import { browserThreadLimit } from '../engine/search-options'
 
 type WorkspaceTab = "review" | "analysis" | "practice" | "history";
+const lastGameKey = (username: string) => `open-file-last-game:${username}`
+
+function readLastGame(username: string): string {
+  try { return localStorage.getItem(lastGameKey(username)) ?? '' } catch { return '' }
+}
+
+function writeLastGame(username: string, gameId: string) {
+  try { localStorage.setItem(lastGameKey(username), gameId) } catch {}
+}
 
 export function useWorkspace() {
   const library = useLibrary();
@@ -36,6 +45,7 @@ export function useWorkspace() {
   const [engineEnabled, setEngineEnabled] = useState(true);
   const [toast, setToast] = useState("");
   const audio = useRef<AudioContext | null>(null);
+  const restoredUsername = useRef('')
   const parsed = useMemo(() => {
     try {
       return { ...parseGame(game), error: "" };
@@ -212,10 +222,20 @@ export function useWorkspace() {
     setVariation([]);
     setPlaying(false);
     setTab("review");
+    if (library.username && library.games.some(candidate => candidate.id === selected.id)) writeLastGame(library.username, selected.id)
     setOrientation(
       selected.black.username.toLowerCase() === library.username ? "b" : "w",
     );
   }
+
+  useEffect(() => {
+    if (!library.username || !library.games.length) return
+    if (restoredUsername.current === library.username && game.id !== demoGame.id) return
+    restoredUsername.current = library.username
+    const lastId = readLastGame(library.username)
+    const selected = library.games.find(candidate => candidate.id === lastId || candidate.url === lastId) ?? library.games[0]
+    if (selected && game.id !== selected.id) selectGame(selected)
+  }, [game.id, library.games, library.username])
 
   function openSaved(entry: SavedReview) {
     try { selectGame({ ...gameFromPgn(entry.review.pgn), id: entry.id }); }
