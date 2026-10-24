@@ -1,0 +1,109 @@
+.review-move-list {
+  flex: 1;
+  min-height: 75px;
+  overflow: auto;
+}
+.review-move-row {
+  display: grid;
+  min-height: 30px;
+  grid-template-columns: 26px 100px minmax(0, 1fr);
+  align-items: center;
+  padding: 0 12px;
+  background: #262522;
+}
+.review-move-row[data-has-times] {
+  grid-template-columns: 26px 100px minmax(0, 1fr) 66px;
+}
+.review-move-row:nth-child(even) {
+  background: #2a2926;
+}
+.review-move-number {
+  color: #999896;
+  font-size: 14px;
+  font-weight: 700;
+}
+.review-move-button {
+  display: flex;
+  min-width: 0;
+  height: 30px;
+  align-items: center;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+.review-move-button:not([data-classification]) {
+  color: #c5c4c2;
+}
+.review-move-badge {
+  display: flex;
+  width: 17px;
+  flex: 0 0 17px;
+  align-items: center;
+  justify-content: center;
+}
+.review-move-badge svg {
+  width: 17px;
+  height: 17px;
+}
+.review-move-button .move-notation {
+  min-width: 0;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.review-move-button:hover .move-notation {
+  background: #454440;
+}
+.review-move-button[aria-current] .move-notation {
+  background: #55544f;
+  box-shadow: 0 3px 0 #45443f;
+  color: #fff;
+}
+.review-move-times {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.review-move-time {
+  display: flex;
+  min-height: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  color: #999896;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.review-move-time-bar {
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: #dededd;
+}
+.review-move-time[data-color='black'] .review-move-time-bar {
+  background: #595855;
+}
+.review-move-time-value {
+  width: 25px;
+  flex-shrink: 0;
+}
+.review-game-result {
+  padding: 8px 12px;
+  color: #b3b2b1;
+  font-size: 13px;
+}
+@media (max-width: 380px) {
+  .review-move-row,
+  .review-move-row[data-has-times] {
+    padding: 0 8px;
+    grid-template-columns: 24px 92px minmax(0, 1fr);
+  }
+  .review-move-row[data-has-times] {
+    grid-template-columns: 24px 92px minmax(0, 1fr) 58px;
+  }
+}

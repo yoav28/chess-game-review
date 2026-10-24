@@ -1,25 +1,17 @@
-import { Button } from '@heroui/react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import MoveClassification from '../../icons/move-classifications/MoveClassification';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useEvalStore } from '../../stores/useEvalStore';
 import { useReviewViewStore } from '../../stores/useReviewViewStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useVariationStore } from '../../stores/useVariationStore';
-import { chooseTextColor } from '../../utils/chooseColorFromClassification';
-import cn from '../../utils/cn';
-import getMoveRows from '../../utils/getMoveRows';
 import useNames from '../../utils/useNames';
 import EvalGraph from './EvalGraph';
 import PrincipalVariation from './PrincipalVariation';
+import ReviewMoveList from './ReviewMoveList';
 import ReviewStep from './ReviewStep';
-import SanMove from './SanMove';
 import VariationPanel from './VariationPanel';
-
-import type { Move } from 'chess.js';
 
 export default function ReviewMoves() {
   const view = useReviewViewStore(state => state.view);
@@ -44,9 +36,7 @@ export default function ReviewMoves() {
 
   return (
     <div
-      className={cn('review-moves', view === 'analysis' && `
-        review-analysis-mode
-      `)}
+      className="review-moves"
       id="ReviewMoves"
     >
       {view === 'review'
@@ -109,19 +99,7 @@ export default function ReviewMoves() {
         </strong>
         <span>{currentGame.header().Result}</span>
       </div>
-      <div aria-label="Game moves" className="review-move-list" role="list">
-        {getMoveRows(history).map(row => (
-          <div className="review-move-row" key={row.number} role="listitem">
-            <span className="review-move-number">
-              {row.number}
-              .
-            </span>
-            {row.white ? <MoveButton move={row.white.move} moveIndex={row.white.index} /> : <span />}
-            {row.black ? <MoveButton move={row.black.move} moveIndex={row.black.index} /> : <span />}
-          </div>
-        ))}
-        <p className="review-game-result">{currentGame.header().Result}</p>
-      </div>
+      <ReviewMoveList />
       {view === 'review' && (
         <>
           <div className="review-analysis-graph"><EvalGraph /></div>
@@ -138,37 +116,5 @@ export default function ReviewMoves() {
         </>
       )}
     </div>
-  );
-}
-
-function MoveButton({ moveIndex, move }: { moveIndex: number; move: Move }) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const view = useReviewViewStore(state => state.view);
-  const currentMoveNum = useBoardStore(state => state.currentMoveNum);
-  const toMove = useBoardStore(state => state.toMove);
-  const classification = useEvalStore(state => state.classHistory[moveIndex]);
-  const realIndex = moveIndex + 1;
-  const showClassification = ['brilliant', 'great', 'inaccuracy', 'mistake', 'blunder'].includes(classification);
-
-  useEffect(() => {
-    if (currentMoveNum === realIndex)
-      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [currentMoveNum, realIndex]);
-
-  return (
-    <Button
-      aria-current={currentMoveNum === realIndex ? 'step' : undefined}
-      aria-label={`${move.san}${showClassification ? ` (${classification})` : ''}`}
-      className={cn('review-move-button', view === 'review' && chooseTextColor(classification))}
-      disableAnimation
-      onPress={() => toMove(realIndex)}
-      radius="sm"
-      ref={ref}
-      size="sm"
-      variant="light"
-    >
-      <SanMove color={move.color} san={move.san} />
-      {showClassification && <MoveClassification classification={classification} />}
-    </Button>
   );
 }

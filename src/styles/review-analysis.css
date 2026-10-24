@@ -150,60 +150,6 @@
 .review-game-heading > span {
   color: #b3b2b1;
 }
-.review-move-list {
-  flex: 1;
-  min-height: 75px;
-  overflow: auto;
-}
-.review-move-row {
-  display: grid;
-  min-height: 30px;
-  grid-template-columns: 40px 1fr 1fr;
-  padding: 0 12px;
-  align-items: center;
-}
-.review-move-row:nth-child(even) {
-  background: #292825;
-}
-.review-move-number {
-  color: #999896;
-  font-size: 12px;
-}
-.review-move-button {
-  justify-content: flex-start;
-  min-width: 0;
-  height: 30px;
-  padding: 0 10px;
-  border-radius: 3px;
-  font-size: 14px;
-  font-weight: 700;
-}
-.review-move-button:hover {
-  background: #3c3a37;
-}
-.review-move-button[aria-current] {
-  background: #59564f;
-  color: #fff;
-}
-
-.review-analysis-mode .review-move-button {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
-}
-
-.review-analysis-mode .review-move-button[aria-current] {
-  color: #fff;
-}
-.review-move-button > svg {
-  width: 18px;
-  height: 18px;
-  margin-left: auto;
-}
-.review-game-result {
-  padding: 8px 12px;
-  color: #b3b2b1;
-  font-size: 13px;
-}
 .review-analysis-graph {
   flex-shrink: 0;
   margin: 8px 12px 0;
