@@ -9,6 +9,7 @@ interface ChessComPlayer {
   '@id': string;
   'username': string;
   'uuid': string;
+  'country'?: string;
 }
 
 export interface ChessComGame {
@@ -54,6 +55,8 @@ export interface LichessPlayer {
   user: {
     name: string;
     id: string;
+    country?: string;
+    flag?: string;
   };
   rating: number;
   ratingDiff: number;

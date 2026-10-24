@@ -43,6 +43,8 @@ export default function Highlight() {
       return null;
     const history = currentGame.history({ verbose: true });
     const currentMove = history[currentMoveNum - 1];
+    if (!currentMove)
+      return null;
     const [xFrom, yFrom] = translatePiece(currentMove.from, isFlipped);
     const [xTo, yTo] = translatePiece(currentMove.to, isFlipped);
     const classification = classHistory[currentMoveNum - 1];
@@ -59,7 +61,7 @@ export default function Highlight() {
         />
       </>
     );
-  }, [currentMoveNum, isFlipped]);
+  }, [currentMoveNum, isFlipped, currentGame, classHistory]);
 
   return (
     <div className="absolute size-full" id="highlight">

@@ -19,10 +19,14 @@ export default function ReviewOverview() {
   const toNextMove = useBoardStore(state => state.toNextMove);
   const accuracy = useEvalStore(state => state.accuracy);
   const classHistory = useEvalStore(state => state.classHistory);
+  const currentGame = useBoardStore(state => state.currentGame);
+  const history = currentGame.history({ verbose: true });
 
   const record = useMemo(() => {
     // [white, black]
     const record = {
+      brilliant: [0, 0],
+      great: [0, 0],
       best: [0, 0],
       excellent: [0, 0],
       good: [0, 0],
@@ -36,7 +40,7 @@ export default function ReviewOverview() {
     for (let i = 0; i < classHistory.length; i++) {
       const cl = classHistory[i];
 
-      if (i % 2 === 0) {
+      if (history[i]?.color === 'w') {
         record[cl] = [
           record[cl][0] + 1,
           record[cl][1],
@@ -51,7 +55,7 @@ export default function ReviewOverview() {
     }
 
     return record;
-  }, [classHistory]);
+  }, [classHistory, currentGame]);
 
   const setStage = useStageStore(state => state.setStage);
 

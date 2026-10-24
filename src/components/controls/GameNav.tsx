@@ -4,12 +4,15 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { useMediaQuery } from 'react-responsive';
 import { useShallow } from 'zustand/react/shallow';
 
+import useReviewPlayback from '../../hooks/useReviewPlayback';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import { useStageStore } from '../../stores/useStageStore';
 import Settings from './Settings';
 
 export default function GameNav() {
+  const { isPlaying, togglePlayback, pausePlayback } = useReviewPlayback();
+
   const {
     currentGame,
     currentMoveNum,
@@ -49,6 +52,8 @@ export default function GameNav() {
   });
 
   useHotkeys('right', () => {
+    pausePlayback();
+
     if (
       history.length === 0
       || currentMoveNum === history.length
@@ -65,18 +70,22 @@ export default function GameNav() {
   });
 
   useHotkeys('left', () => {
+    pausePlayback();
     if (history.length === 0 || currentMoveNum === 0 || !reviewFinished)
       return;
     toPrevMove();
   });
 
   useHotkeys('up', () => {
+    pausePlayback();
     if (history.length === 0 || currentMoveNum === 0 || !reviewFinished)
       return;
     toFirstMove();
   });
 
   useHotkeys('down', () => {
+    pausePlayback();
+
     if (
       history.length === 0
       || currentMoveNum === history.length
@@ -114,7 +123,10 @@ export default function GameNav() {
             history.length === 0 || currentMoveNum === 0 || !reviewFinished
           }
           isIconOnly
-          onPress={toFirstMove}
+          onPress={() => {
+            pausePlayback();
+            toFirstMove();
+          }}
           radius="sm"
           size={isLg ? 'md' : 'sm'}
         >
@@ -127,11 +139,25 @@ export default function GameNav() {
             history.length === 0 || currentMoveNum === 0 || !reviewFinished
           }
           isIconOnly
-          onPress={toPrevMove}
+          onPress={() => {
+            pausePlayback();
+            toPrevMove();
+          }}
           radius="sm"
           size={isLg ? 'md' : 'sm'}
         >
           <Icon icon="material-symbols:chevron-left-rounded" />
+        </Button>
+        <Button
+          aria-label={isPlaying ? 'Pause review' : 'Play review'}
+          className="grow text-3xl"
+          isDisabled={!reviewFinished || history.length === 0}
+          isIconOnly
+          onPress={togglePlayback}
+          radius="sm"
+          size={isLg ? 'md' : 'sm'}
+        >
+          <Icon icon={isPlaying ? 'material-symbols:pause-rounded' : 'material-symbols:play-arrow-rounded'} />
         </Button>
         <Button
           aria-label="Next move"
@@ -143,6 +169,7 @@ export default function GameNav() {
           }
           isIconOnly
           onPress={() => {
+            pausePlayback();
             toNextMove();
 
             if (stage === 'review-overview' && currentMoveNum === 0) {
@@ -164,6 +191,7 @@ export default function GameNav() {
           }
           isIconOnly
           onPress={() => {
+            pausePlayback();
             toFinalMove();
 
             if (stage === 'review-overview' && currentMoveNum === 0) {

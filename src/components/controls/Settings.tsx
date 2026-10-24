@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import capitalize from '../../utils/capitalize';
+import AnalysisSettings from './AnalysisSettings';
 
 import type { Board, Pieces } from '../../stores/useSettingsStore';
 
@@ -16,7 +17,7 @@ export default function Settings() {
 
   return (
     <Popover
-      classNames={{ content: 'w-52' }}
+      classNames={{ content: 'w-64' }}
       isOpen={isOpen}
       onOpenChange={open => setIsOpen(open)}
       placement="top-end"
@@ -96,6 +97,7 @@ export default function Settings() {
               </SelectItem>
             ))}
           </Select>
+          <AnalysisSettings />
         </div>
       </PopoverContent>
     </Popover>

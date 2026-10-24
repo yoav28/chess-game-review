@@ -34,8 +34,8 @@ export default function useLoser() {
 
   // determine further loseBy if site is Chess.com or Lichess
   if (header.Site) {
-    if (header.Site.includes('Chess.com')) {
-      const termination = header.Termination;
+    if (header.Site.includes('Chess.com') && header.Termination) {
+      const termination = header.Termination ?? '';
 
       if (termination.includes('checkmate')) {
         loseBy = 'checkmate';
@@ -51,9 +51,9 @@ export default function useLoser() {
         loseBy = 'abandoned';
       }
     }
-    else if (header.Site.includes('lichess.org')) {
+    else if (header.Site.includes('lichess.org') && currentGame.getComments().length > 0) {
       const comments = currentGame.getComments();
-      const termination = comments[comments.length - 1].comment;
+      const termination = comments.at(-1)?.comment ?? '';
 
       if (termination.includes('checkmate')) {
         loseBy = 'checkmate';

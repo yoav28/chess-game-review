@@ -4,6 +4,7 @@ import { useBoardStore } from '../../stores/useBoardStore';
 import { useEvalStore } from '../../stores/useEvalStore';
 import { useManualHighlightStore } from '../../stores/useManualHighlightStore';
 import { useStageStore } from '../../stores/useStageStore';
+import { useVariationStore } from '../../stores/useVariationStore';
 import getArrow from '../../utils/getArrow';
 import Arrow from './Arrow';
 
@@ -29,9 +30,10 @@ export default function Arrows() {
   // bestMove arrow
   const reviewFinished = useStageStore(state => state.computed.reviewFinished);
   const best3MovesWithClass = useEvalStore(state => state.best3MovesWithClass);
+  const variationFen = useVariationStore(state => state.fen);
 
   const bestMoveArrow = useMemo(() => {
-    if (!reviewFinished) {
+    if (!reviewFinished || variationFen) {
       return null;
     }
 
@@ -39,10 +41,10 @@ export default function Arrows() {
       return null;
     }
 
-    const bestMove = best3MovesWithClass[currentMoveNum - 1][0];
+    const bestMove = best3MovesWithClass[currentMoveNum - 1]?.[0];
 
-    return bestMove.pv;
-  }, [reviewFinished, currentMoveNum, best3MovesWithClass]);
+    return bestMove?.pv;
+  }, [reviewFinished, currentMoveNum, best3MovesWithClass, variationFen]);
 
   useEffect(() => {
     if (svgRef.current) {

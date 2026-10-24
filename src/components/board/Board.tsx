@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { mountStoreDevtool } from 'simple-zustand-devtools';
 import { useShallow } from 'zustand/react/shallow';
 
+import useBoardInteraction from '../../hooks/useBoardInteraction';
 import useSoundFx from '../../hooks/useSoundFx';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useEvalStore } from '../../stores/useEvalStore';
@@ -10,12 +11,14 @@ import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useStageStore } from '../../stores/useStageStore';
 import { useStockfishOutputStore } from '../../stores/useStockfishOutputStore';
+import { useVariationStore } from '../../stores/useVariationStore';
 import Arrows from './Arrows';
 import Coors from './Coors';
 import EndgameBadges from './EndgameBadges';
 import EvalBar from './EvalBar';
 import Highlight from './Highlight';
 import MoveClassificationBadges from './MoveClassificationBadges';
+import MoveInteraction from './MoveInteraction';
 import Pieces from './Pieces';
 import PlayerBadge from './PlayerBadge';
 
@@ -31,6 +34,8 @@ if (!import.meta.env.PROD) {
 
 export default function Board() {
   useSoundFx();
+  const interaction = useBoardInteraction();
+  const variationFen = useVariationStore(state => state.fen);
 
   const {
     currentGame,
@@ -71,18 +76,29 @@ export default function Board() {
         id="Board&Bar"
       >
         <EvalBar />
-        <div className="relative aspect-square w-[calc(100%-42px)]" id="actual-board">
+        <div
+          aria-label={interaction.enabled ? 'Chessboard. Use arrow keys and Enter to try alternative moves.' : 'Chessboard'}
+          className={`
+            group relative aspect-square w-[calc(100%-42px)] touch-none
+            outline-none
+          `}
+          id="actual-board"
+          role={interaction.enabled ? 'application' : undefined}
+          tabIndex={interaction.enabled ? 0 : undefined}
+          {...interaction.handlers}
+        >
           <img
             alt=""
             className="absolute rounded"
             src={`/boards/${board}.png`}
           />
-          <Highlight />
+          {!variationFen && <Highlight />}
           <Coors />
           <Pieces />
           <Arrows />
-          <MoveClassificationBadges />
-          <EndgameBadges />
+          {!variationFen && <MoveClassificationBadges />}
+          {!variationFen && <EndgameBadges />}
+          <MoveInteraction interaction={interaction} />
         </div>
       </div>
       <PlayerBadge color={isFlipped ? 'b' : 'w'} />

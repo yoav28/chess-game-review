@@ -1,21 +1,24 @@
 import { Button } from '@heroui/react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import { DEFAULT_POSITION } from 'chess.js';
 import { useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import MoveClassification from '../../icons/move-classifications/MoveClassification';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { formatCp, useEvalStore } from '../../stores/useEvalStore';
+import { useVariationStore } from '../../stores/useVariationStore';
 import { chooseTextColor } from '../../utils/chooseColorFromClassification';
 import cn from '../../utils/cn';
+import getMoveRows from '../../utils/getMoveRows';
 import lanToSan from '../../utils/lanToSan';
-import makePair from '../../utils/makePair';
 import EvalGraph from './EvalGraph';
+import VariationPanel from './VariationPanel';
 
 import type { Move } from 'chess.js';
 
 export default function ReviewMoves() {
+  const variationFen = useVariationStore(state => state.fen);
+
   const {
     currentGame,
     currentMoveNum,
@@ -27,7 +30,7 @@ export default function ReviewMoves() {
   })));
 
   const history = currentGame.history({ verbose: true });
-  const fens = [DEFAULT_POSITION, ...history.map(move => move.after)];
+  const fens = [history[0]?.before ?? currentGame.fen(), ...history.map(move => move.after)];
 
   const {
     best3MovesWithClass,
@@ -41,31 +44,33 @@ export default function ReviewMoves() {
     openingNames: state.openingNames,
   })));
 
-  const historyPairs = makePair(history);
+  const moveRows = getMoveRows(history);
   const currentMove = history[currentMoveNum - 1];
   const classification = classHistory[currentMoveNum - 1];
   const advs = cps.map(formatCp);
-  const adv = (advs.length === 0) ? '0.0' : advs[currentMoveNum];
+  const adv = advs[currentMoveNum] ?? '0.0';
 
   const whiteHasAdv = useMemo(() => {
     let whiteHasAdv: boolean;
+    const cp = cps[currentMoveNum] ?? 0;
 
-    if (typeof cps[currentMoveNum] === 'number') {
-      whiteHasAdv = cps[currentMoveNum] >= 0;
+    if (typeof cp === 'number') {
+      whiteHasAdv = cp >= 0;
     }
     else {
-      whiteHasAdv = cps[currentMoveNum].startsWith('+') || cps[currentMoveNum] === '1-0';
+      whiteHasAdv = cp.startsWith('+') || cp === '1-0';
     }
 
     return whiteHasAdv;
-  }, [currentMoveNum]);
+  }, [currentMoveNum, cps]);
 
   const result = currentGame.header().Result;
 
   return (
     <div className="grid h-full grid-rows-[auto_auto_auto_1fr_80px] gap-3" id="ReviewMoves">
-      <div className="flex flex-col gap-1">
-        {currentMoveNum > 0 && (
+      <div className="flex flex-col gap-2">
+        <VariationPanel />
+        {!variationFen && currentMoveNum > 0 && (
           <p className="flex justify-between gap-2">
             <span>
               <MoveClassification
@@ -97,7 +102,7 @@ export default function ReviewMoves() {
             </span>
           </p>
         )}
-        {best3MovesWithClass[currentMoveNum - 1]
+        {!variationFen && best3MovesWithClass[currentMoveNum - 1]
           ?.filter(move => move.pv !== currentMove.lan)
           .map((move, i) => {
             let adv;
@@ -156,7 +161,7 @@ export default function ReviewMoves() {
             flex w-fit gap-0 text-tiny text-foreground-500
             hover:underline
           `}
-          href={`https://www.chess.com/analysis?fen=${fens[currentMoveNum]}&flip=${isFlipped}`}
+          href={`https://www.chess.com/analysis?fen=${encodeURIComponent(variationFen ?? fens[currentMoveNum])}&flip=${isFlipped}`}
           target="_blank"
         >
           <span>chess.com</span>
@@ -170,7 +175,7 @@ export default function ReviewMoves() {
             flex w-fit gap-0 text-tiny text-foreground-500
             hover:underline
           `}
-          href={`https://lichess.org/analysis/${fens[currentMoveNum]}`}
+          href={`https://lichess.org/analysis/${encodeURIComponent(variationFen ?? fens[currentMoveNum])}`}
           target="_blank"
         >
           <span>lichess</span>
@@ -182,7 +187,7 @@ export default function ReviewMoves() {
       </div>
       <div className="overflow-scroll">
         <div className="flex flex-col">
-          {historyPairs.map((pair, i) => (
+          {moveRows.map((row, i) => (
             <div
               className={cn(
                 `
@@ -194,11 +199,11 @@ export default function ReviewMoves() {
               key={i}
             >
               <p className="text-tiny text-foreground-500">
-                {i + 1}
+                {row.number}
                 .
               </p>
-              <MoveButton move={pair[0]} pairIndex={i} />
-              {pair[1] && <MoveButton move={pair[1]} pairIndex={i} />}
+              {row.white ? <MoveButton move={row.white.move} moveIndex={row.white.index} /> : <span />}
+              {row.black && <MoveButton move={row.black.move} moveIndex={row.black.index} />}
             </div>
           ),
           )}
@@ -210,17 +215,12 @@ export default function ReviewMoves() {
   );
 }
 
-function MoveButton({ pairIndex, move }: { pairIndex: number; move: Move }) {
+function MoveButton({ moveIndex, move }: { moveIndex: number; move: Move }) {
   const ref = useRef<HTMLButtonElement>(null);
   const currentMoveNum = useBoardStore(state => state.currentMoveNum);
   const toMove = useBoardStore(state => state.toMove);
   const classHistory = useEvalStore(state => state.classHistory);
-  let realIndex = pairIndex * 2 + 1;
-
-  if (move.color === 'b') {
-    realIndex += 1;
-  }
-
+  const realIndex = moveIndex + 1;
   const classification = classHistory[realIndex - 1];
 
   useEffect(() => {

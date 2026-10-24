@@ -20,9 +20,9 @@ export default function ChessSiteForm({ site }: { site: Site }) {
   const { handleSubmit, control, formState, watch } = useForm<Inputs>({ defaultValues: { username: lastUsername || '' } });
 
   const onSubmit: SubmitHandler<Inputs> = (data) => {
-    submitUsername(data.username, site);
+    submitUsername(data.username.trim(), site);
     set(`${site}-username`, data.username);
-    setStage('select-month');
+    setStage('select-game');
   };
 
   return (
@@ -41,11 +41,11 @@ export default function ChessSiteForm({ site }: { site: Site }) {
       <Button
         className="h-12 font-semibold text-shadow-xs"
         color="primary"
-        isDisabled={watch('username') === '' || !formState.isValid}
+        isDisabled={watch('username').trim() === '' || !formState.isValid}
         radius="sm"
         type="submit"
       >
-        Submit
+        Find games
       </Button>
       {import.meta.env.PROD || <DevTool control={control} />}
     </form>

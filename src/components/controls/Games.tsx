@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form';
 
 import Result from '../../icons/result/Result';
 import TimeClass from '../../icons/time-class/TimeClass';
-import useMonthlyArchives from '../../queries/useMonthlyArchives';
+import useRecentGames from '../../queries/useRecentGames';
 import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import capitalize from '../../utils/capitalize';
 import convertLichessTimeClass from '../../utils/convertLichessTimeClass';
@@ -15,6 +15,7 @@ import isChessComBotGame from '../../utils/isChessComBotGame';
 import isLichessAI from '../../utils/isLichessAI';
 import isLichessBotGame from '../../utils/isLichessBotGame';
 import Loading from '../Loading';
+import BatchAnalysis from './BatchAnalysis';
 import Game from './Game';
 
 import type { TimeClassType } from '../../icons/time-class/TimeClass';
@@ -30,8 +31,7 @@ interface Inputs {
 
 export default function Games() {
   const username = useSelectGameStore(state => state.username)!;
-  const monthLink = useSelectGameStore(state => state.monthLink);
-  const { data: games, isLoading, error } = useMonthlyArchives(monthLink!);
+  const { data: games, isLoading, error } = useRecentGames();
   const [filtered, setFiltered] = useState(games);
 
   useEffect(() => {
@@ -51,74 +51,35 @@ export default function Games() {
   } });
 
   const onSubmit: SubmitHandler<Inputs> = (data) => {
-    setFiltered(() => {
-      if (!games)
-        return undefined;
+    setFiltered(games?.filter((game) => {
+      const white = isChessCom(game) ? game.white.username : isLichessAI(game.players.white) ? '' : game.players.white.user.name;
+      const black = isChessCom(game) ? game.black.username : isLichessAI(game.players.black) ? '' : game.players.black.user.name;
+      const isWhite = white.toLowerCase() === username.toLowerCase();
+      const opponent = isWhite ? black : white;
+      const result = isChessCom(game) ? getChessComResult(username, game) : getLichessResult(username, game);
+      const isBot = isChessCom(game) ? isChessComBotGame(game) : isLichessBotGame(game);
+      const timeClass = isChessCom(game) ? game.time_class : convertLichessTimeClass(game.speed);
 
-      if (games.every(game => isChessCom(game))) {
-        // chess.com games
-        return games.filter((game) => {
-          const oppFilter = (game.white.username === username && game.black.username.toLowerCase().includes(data.opponent.toLowerCase()))
-            || (game.white.username.toLowerCase().includes(data.opponent.toLowerCase()) && game.black.username === username);
-
-          const result = getChessComResult(username, game);
-          const resultFilter = data.result ? result === data.result : true;
-
-          const colorFilter = data.color === 'w'
-            ? game.white.username === username
-            : data.color === 'b'
-              ? game.black.username === username
-              : true;
-
-          const timeClassFilter = data.timeClass
-            ? data.timeClass === 'bot'
-              ? isChessComBotGame(game)
-              : game.time_class === data.timeClass
-            : true;
-
-          return oppFilter && resultFilter && colorFilter && timeClassFilter;
-        });
-      }
-      else {
-        // lichess games
-        return games.filter((game) => {
-          const oppFilter = data.opponent
-            ? !isLichessAI(game.players.white)
-            && !isLichessAI(game.players.black)
-            && ((game.players.white.user.name === username && game.players.black.user.name.includes(data.opponent))
-            || (game.players.white.user.name.includes(data.opponent) && game.players.black.user.name === username))
-            : true;
-
-          const result = getLichessResult(username, game);
-          const resultFilter = data.result ? result === data.result : true;
-
-          const colorFilter = data.color === 'w'
-            ? !isLichessAI(game.players.white) && game.players.white.user.name === username
-            : data.color === 'b'
-              ? !isLichessAI(game.players.black) && game.players.black.user.name === username
-              : true;
-
-          const timeClassFilter = data.timeClass
-            ? data.timeClass === 'bot'
-              ? isLichessBotGame(game)
-              : convertLichessTimeClass(game.speed) === data.timeClass
-            : true;
-
-          return oppFilter && resultFilter && colorFilter && timeClassFilter;
-        },
-        );
-      }
-    });
+      return opponent.toLowerCase().includes(data.opponent.toLowerCase())
+        && (!data.result || result === data.result)
+        && (!data.color || (data.color === 'w' ? isWhite : !isWhite))
+        && (!data.timeClass || (data.timeClass === 'bot' ? isBot : timeClass === data.timeClass));
+    }));
   };
 
   if (isLoading)
     return <Loading label="Fetching games…" />;
 
   if (error)
-    return 'Error with Query';
+    return <p className="text-sm text-danger" role="alert">{error.message}</p>;
 
   return (
     <div className="flex max-h-full flex-col gap-2 overflow-y-scroll" id="Games">
+      <BatchAnalysis />
+      <p className="text-sm text-foreground-500">
+        Recent games for
+        {username}
+      </p>
       <Accordion
         className="mb-0 rounded-small"
         isCompact

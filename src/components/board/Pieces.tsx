@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
+import { useVariationStore } from '../../stores/useVariationStore';
 import translatePiece from '../../utils/translatePiece';
 
 import type { Color, PieceSymbol, Square } from 'chess.js';
@@ -22,9 +23,10 @@ export default function Pieces() {
   })));
 
   const history = currentGame.history({ verbose: true });
+  const variationFen = useVariationStore(state => state.fen);
   const currentMove = history[currentMoveNum - 1];
   const nextMove = history[currentMoveNum];
-  const displayedGame = new Chess(currentMoveNum > 0 ? history[currentMoveNum - 1].after : undefined);
+  const displayedGame = new Chess(variationFen ?? (currentMoveNum > 0 ? history[currentMoveNum - 1].after : history[0]?.before ?? currentGame.fen()));
   const board = displayedGame.board();
   const { pieces: piecesTheme } = useSettingsStore(state => state.settings);
 
@@ -36,6 +38,9 @@ export default function Pieces() {
    * - When moving backward (Y --> X), `initial` is `nextMove.to` / `Y.to`.
    */
   function getInitSquare(piece: { square: Square; type: PieceSymbol; color: Color }) {
+    if (variationFen)
+      return piece.square;
+
     if (lastNav === 0) {
       // lastNav === 0 happens when you flip the board.
       // By doing this, when you flip the board, the piece is not animated again.
@@ -82,6 +87,7 @@ export default function Pieces() {
             y: `${y}%`,
           }}
           className="absolute w-[12.5%] select-none"
+          draggable={false}
           initial={{
             x: `${initX}%`,
             y: `${initY}%`,

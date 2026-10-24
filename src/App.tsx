@@ -3,9 +3,15 @@ import { useEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import Board from './components/board/Board';
+import BatchProgress from './components/controls/BatchProgress';
 import Controls from './components/controls/Controls';
+import useBatchReview from './hooks/useBatchReview';
+import useReviewSession from './hooks/useReviewSession';
 
 export default function App() {
+  const { routeError, dismissRouteError } = useReviewSession();
+  useBatchReview();
+
   useEffect(() => {
     const root = document.getElementById('root');
     if (root)
@@ -21,6 +27,13 @@ export default function App() {
         `}
         id="App"
       >
+        <BatchProgress />
+        {routeError && (
+          <div className="mx-auto mb-4 flex max-w-[1146px] items-center gap-3" role="alert">
+            <p className="text-small">{routeError}</p>
+            <Button onPress={dismissRouteError} size="sm">Home</Button>
+          </div>
+        )}
         <div className={`
           relative mx-auto flex max-w-[642px] flex-col justify-center gap-6
           lg:max-w-none lg:flex-row

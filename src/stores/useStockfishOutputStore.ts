@@ -5,6 +5,7 @@ import { useStageStore } from './useStageStore';
 export interface MoveEval {
   nodes: number;
   pv: string;
+  line?: string[];
   multiPv: number;
   cp?: number;
   mate?: number; // cp and mate are mutual exclusive
@@ -57,6 +58,6 @@ export const useStockfishOutputStore = create<StockfishOutputStore>(set => ({
 
     return { best3Moves: [], fenIndex: 0, outputs: [] };
   }),
-  reset: () => set({ best3Moves: [], fenIndex: 0, outputs: [] }),
+  reset: () => set({ best3Moves: [], fenIndex: 0, outputs: [], isListening: false }),
   mock: (obj: Partial<StockfishOutputStore>) => set(state => ({ ...state, ...obj })),
 }));

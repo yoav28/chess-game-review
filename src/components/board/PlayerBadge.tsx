@@ -6,9 +6,11 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { useMemo } from 'react';
 
 import useLoser from '../../hooks/useLoser';
+import usePlayerCountry from '../../queries/usePlayerCountry';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useSelectGameStore } from '../../stores/useSelectGameStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
+import { useVariationStore } from '../../stores/useVariationStore';
 import cn from '../../utils/cn';
 import { dailyIncrementRegex, mainTimeRegex } from '../../utils/formatTimeControl';
 import formatTimestamp from '../../utils/formatTimestamp';
@@ -16,6 +18,7 @@ import getCaptured from '../../utils/getCaptured';
 import getDiff from '../../utils/getDiff';
 import isChessCom from '../../utils/isChessCom';
 import useNames from '../../utils/useNames';
+import CountryFlag from '../CountryFlag';
 import CapturedGroup from './CapturedGroup';
 
 import type { Capturable } from '../../utils/getCaptured';
@@ -32,7 +35,9 @@ export default function PlayerBadge({ color }: {
   const timestamps = useBoardStore(state => state.timestamps);
   const history = currentGame.history({ verbose: true });
   const header = currentGame.header();
-  const displayedGame = new Chess(currentMoveNum > 0 ? history[currentMoveNum - 1].after : undefined);
+  const variationFen = useVariationStore(state => state.fen);
+  const variationMoves = useVariationStore(state => state.moves);
+  const displayedGame = new Chess(variationFen ?? (currentMoveNum > 0 ? history[currentMoveNum - 1].after : history[0]?.before ?? currentGame.fen()));
   const board = displayedGame.board();
   const showRatings = useSettingsStore(state => state.settings.showRatings);
 
@@ -51,21 +56,18 @@ export default function PlayerBadge({ color }: {
 
   const [wName, bName] = useNames();
   const name = color === 'w' ? wName : bName;
+  const site = useSelectGameStore(state => state.site);
+  const { data: country } = usePlayerCountry(site, name);
   const rating = color === 'w' ? header.WhiteElo : header.BlackElo;
   const title = color === 'w' ? header.WhiteTitle : header.BlackTitle;
-  const turn = currentMoveNum === 0 ? null : currentMoveNum % 2 === 1 ? 'w' : 'b';
+  const turn = displayedGame.turn() === 'w' ? 'b' : 'w';
   const { loser, loseBy } = useLoser();
   const game = useSelectGameStore(state => state.game);
-  const captured = getCaptured(history, currentMoveNum, color);
+  const playedMoves = [...history.slice(0, currentMoveNum), ...variationMoves];
+  const captured = getCaptured(playedMoves, playedMoves.length, color);
   const diff = getDiff(board, color);
 
   const timeLeft = useMemo(() => {
-    const oneSideTimestamps = timestamps
-      ? color === 'w'
-        ? timestamps.filter((_, i) => i % 2 === 0)
-        : timestamps.filter((_, i) => i % 2 === 1)
-      : null;
-
     // 1.a. if chess.com game is correspondant, display fixed increment
     if (game && isChessCom(game) && game.time_class === 'daily') {
       if (Object.entries(header).length === 0) {
@@ -103,7 +105,7 @@ export default function PlayerBadge({ color }: {
     }
 
     // 2. no timestamps in PGN
-    else if (!oneSideTimestamps) {
+    else if (!timestamps) {
       return null;
     }
 
@@ -137,33 +139,12 @@ export default function PlayerBadge({ color }: {
         }
       }
 
-      if (color === 'w') {
-        if (turn === 'w') {
-        // currentMoveNum: 1 3 5 7 9
-          return formatTimestamp(oneSideTimestamps[(currentMoveNum - 1) / 2]);
-        }
-        else {
-        // currentMoveNum: 2 4 6 8 10
-          return formatTimestamp(oneSideTimestamps[(currentMoveNum - 2) / 2]);
-        }
-      }
-      else {
-      // black
-        if (turn === 'b') {
-        // currentMoveNum: 2 4 6 8 10
-          return formatTimestamp(oneSideTimestamps[(currentMoveNum - 2) / 2]);
-        }
-        else {
-        // currentMoveNum: 1 3 5 7 9
-          if (currentMoveNum === 1) {
-            return timeControl ? formatTimestamp(timeControl) : null;
-          }
+      const index = history.slice(0, currentMoveNum).reduce((latest, move, index) => move.color === color ? index : latest, -1);
+      const timestamp = index >= 0 ? timestamps[index] : timeControl;
 
-          return formatTimestamp(oneSideTimestamps[(currentMoveNum - 3) / 2]);
-        }
-      }
+      return timestamp ? formatTimestamp(timestamp) : null;
     }
-  }, [currentMoveNum, color, timeControl, header, loser, loseBy]);
+  }, [currentMoveNum, color, timeControl, header, loser, loseBy, timestamps]);
 
   return (
     <div className={`
@@ -187,6 +168,7 @@ export default function PlayerBadge({ color }: {
               </span>
             )}
             <span className="text-sm">{name}</span>
+            <CountryFlag country={country || (color === 'w' ? header.WhiteCountry : header.BlackCountry)} />
             {rating && showRatings && (
               <span className="ml-1 text-xs font-bold text-foreground-500">
                 {rating}

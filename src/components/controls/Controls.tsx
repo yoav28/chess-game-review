@@ -13,7 +13,6 @@ import useNames from '../../utils/useNames';
 import Forms from './Forms';
 import GameNav from './GameNav';
 import Games from './Games';
-import Months from './Months';
 import Review from './Review';
 
 export default function Controls() {
@@ -50,7 +49,8 @@ export default function Controls() {
     }
 
     else if (stage === 'select-game') {
-      setStage('select-month');
+      resetSelectGameStore();
+      setStage('home');
     }
 
     else if (stage === 'loaded' || stage === 'reviewing' || stage === 'review-overview') {
@@ -111,7 +111,7 @@ export default function Controls() {
                   <span>Game Review</span>
                 </>
               )
-            : stage === 'select-month' ? 'Select Month' : stage === 'select-game' ? 'Select Game' : 'Review'}
+            : stage === 'select-month' || stage === 'select-game' ? 'Recent games' : 'Review'}
         </p>
       </div>
       <div className={`
@@ -122,11 +122,9 @@ export default function Controls() {
       >
         {stage === 'home'
           ? <Forms />
-          : stage === 'select-month'
-            ? <Months />
-            : stage === 'select-game'
-              ? <Games />
-              : <Review />}
+          : stage === 'select-month' || stage === 'select-game'
+            ? <Games />
+            : <Review />}
       </div>
       {isLg ? <GameNav /> : createPortal(<GameNav />, document.getElementById('root')!)}
     </div>

@@ -1,9 +1,11 @@
 import Best from './Best';
 import Blunder from './Blunder';
 import Book from './Book';
+import Brilliant from './Brilliant';
 import Excellent from './Excellent';
 import Forced from './Forced';
 import Good from './Good';
+import Great from './Great';
 import Inaccuracy from './Inaccuracy';
 import Mistake from './Mistake';
 
@@ -16,6 +18,10 @@ interface MoveClassificationProps extends SVGProps<SVGSVGElement> {
 
 export default function MoveClassification({ classification, ...props }: MoveClassificationProps) {
   switch (classification) {
+    case 'brilliant':
+      return <Brilliant {...props} />;
+    case 'great':
+      return <Great {...props} />;
     case 'best':
       return <Best {...props} />;
     case 'excellent':

@@ -1,12 +1,11 @@
 import { Chess, DEFAULT_POSITION, type Move } from 'chess.js';
 
 import openings from '../openings.tsv';
-import lanToSan from './lanToSan';
+import { specialClassification } from './specialClassification';
 
 import type { MoveEvalMerged, MoveEvalWithClass } from '../stores/useEvalStore';
-import type { MoveEval } from '../stores/useStockfishOutputStore';
 
-export type Classification = 'best' | 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'forced' | 'book';
+export type Classification = 'great' | 'brilliant' | 'best' | 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'forced' | 'book';
 
 /**
  * Always returns a negative number or 0. 0 means it was the best move, and a negative number means it was not the best (sub-optimal, or worse).
@@ -262,7 +261,7 @@ function stringToNumber(beforeEval: string, afterEval: number, whiteToMove: bool
   if (whiteToMove) {
     if (!mateIsPositive) {
       // black has mate, white moves, then black loses mate --> not possible
-      throw new Error ('This should not happen');
+      return 'best';
     }
 
     // white has mate, white moves, then white loses mate
@@ -276,7 +275,7 @@ function stringToNumber(beforeEval: string, afterEval: number, whiteToMove: bool
   else {
     if (mateIsPositive) {
       // white has mate, black moves, then white loses mate --> not possible
-      throw new Error ('This should not happen');
+      return 'best';
     }
 
     // black has mate, black moves, then black loses mate
@@ -289,9 +288,7 @@ function stringToNumber(beforeEval: string, afterEval: number, whiteToMove: bool
   }
 }
 
-function classifyByEval(beforeEval: string | number, afterEval: string | number, i: number) {
-  const whiteToMove = i % 2 === 0;
-
+function classifyByEval(beforeEval: string | number, afterEval: string | number, whiteToMove: boolean) {
   if (typeof beforeEval === 'number') {
     if (typeof afterEval === 'number')
       return bothNumbers(beforeEval, afterEval, whiteToMove);
@@ -306,19 +303,16 @@ function classifyByEval(beforeEval: string | number, afterEval: string | number,
   }
 }
 
-function sniffBook(lan: string, history: Move[], i: number) {
-  // must be able to sniff variants as well
-  const fens = [DEFAULT_POSITION, ...history.map(move => move.after)];
-  const fenBeforeMove = fens[i];
-  const chess = new Chess(fenBeforeMove);
-  chess.move(lanToSan(lan, i, fens));
+function sniffBook(lan: string, history: Move[], i: number, fen: string) {
+  const chess = new Chess(fen);
+  chess.move({ from: lan.slice(0, 2), to: lan.slice(2, 4), promotion: lan[4] });
   const fenAfterMove = chess.fen();
-  const concanatedUci = history.slice(0, i + 1).map(move => move.lan).join(' ');
+  const concanatedUci = [...history.slice(0, i).map(move => move.lan), lan].join(' ');
   const epdRegex = /[\w/]+\s[wb]\s(\w+|-)\s(\w+|-)/;
 
   const foundOpening = openings.find((opening) => {
     // match by moves
-    if (opening.uci === concanatedUci)
+    if ((history[0]?.before ?? fen) === DEFAULT_POSITION && opening.uci === concanatedUci)
       return true;
 
     // match by fen
@@ -334,10 +328,6 @@ function sniffBook(lan: string, history: Move[], i: number) {
   return foundOpening ? 'book' : false;
 }
 
-function sniffForced(subArr: MoveEval[]) {
-  return subArr.length === 1 ? 'forced' : false;
-}
-
 export default function classify({
   subArr,
   lan,
@@ -345,6 +335,7 @@ export default function classify({
   i,
   beforeEval,
   afterEval,
+  fen: positionFen,
 }: {
   subArr: MoveEvalMerged[] | MoveEvalWithClass[];
   lan: string;
@@ -352,6 +343,18 @@ export default function classify({
   i: number;
   beforeEval: string | number;
   afterEval: string | number;
+  fen?: string;
 }) {
-  return sniffForced(subArr) || sniffBook(lan, history, i) || classifyByEval(beforeEval, afterEval, i);
+  const fen = positionFen ?? history[i]?.before ?? history.at(-1)?.after ?? DEFAULT_POSITION;
+  const chess = new Chess(fen);
+  if (chess.moves().length === 1)
+    return 'forced';
+
+  const special = specialClassification(fen, lan, subArr, afterEval);
+  if (special === 'brilliant')
+    return special;
+  if (special === 'great' && subArr[1] && ['mistake', 'blunder'].includes(classifyByEval(subArr[0].eval, subArr[1].eval, chess.turn() === 'w')))
+    return special;
+
+  return sniffBook(lan, history, i, fen) || classifyByEval(beforeEval, afterEval, chess.turn() === 'w');
 }

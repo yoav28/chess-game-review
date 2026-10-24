@@ -1,16 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { loadStockfish } from '../services/analysis';
+
 export default function useStockfish() {
   return useQuery({
     queryKey: ['stockfish'],
-    queryFn: fetchStockfish,
-    staleTime: 24 * 60 * 60 * 1000,
+    queryFn: loadStockfish,
+    staleTime: 0,
+    gcTime: 0,
     retry: 0,
   });
-}
-
-function fetchStockfish(): Promise<Worker> {
-  // eslint-disable-next-line ts/ban-ts-comment
-  // @ts-ignore
-  return Stockfish();
 }

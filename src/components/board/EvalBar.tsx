@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 
 import { useBoardStore } from '../../stores/useBoardStore';
 import { formatCp, useEvalStore } from '../../stores/useEvalStore';
+import { useVariationStore } from '../../stores/useVariationStore';
 import cn from '../../utils/cn';
 
 export default function EvalBar() {
@@ -11,8 +12,10 @@ export default function EvalBar() {
   const lastNav = useBoardStore(state => state.lastNav);
   const currentMoveNum = useBoardStore(state => state.currentMoveNum);
   const cps = useEvalStore(state => state.cps);
+  const variationFen = useVariationStore(state => state.fen);
+  const variationEvaluation = useVariationStore(state => state.feedback?.whiteEvaluation);
   const advs = cps.map(formatCp);
-  const adv = (advs.length === 0) ? '0.0' : advs[currentMoveNum];
+  const adv = variationFen ? formatCp(variationEvaluation ?? 0) : (advs[currentMoveNum] ?? '0.0');
 
   const initAdv = advs.length === 0
     ? '0.0'

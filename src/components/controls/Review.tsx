@@ -1,147 +1,87 @@
 import { Button, Progress } from '@heroui/react';
-import { useQueryClient } from '@tanstack/react-query';
 import { DEFAULT_POSITION } from 'chess.js';
-import { useCallback, useEffect } from 'react';
-import { useShallow } from 'zustand/react/shallow';
+import { useEffect, useState } from 'react';
 
-import useStockfish from '../../queries/useStockfish';
+import { createAnalysisEngine } from '../../services/analysis';
+import { useBatchStore } from '../../stores/useBatchStore';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useEvalStore } from '../../stores/useEvalStore';
+import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useStageStore } from '../../stores/useStageStore';
 import { useStockfishOutputStore } from '../../stores/useStockfishOutputStore';
-import cn from '../../utils/cn';
-import Loading from '../Loading';
 import ReviewMoves from './ReviewMoves';
 import ReviewOverview from './ReviewOverview';
 
-const depth = 12;
+import type { MoveEval } from '../../stores/useStockfishOutputStore';
 
 export default function Review() {
-  const queryClient = useQueryClient();
-  const { data: stockfish, isLoading, isFetching, error } = useStockfish();
-  const currentGame = useBoardStore(state => state.currentGame);
-  const history = currentGame.history({ verbose: true });
-  const fens = [DEFAULT_POSITION, ...history.map(move => move.after)];
-  const populate = useEvalStore(state => state.populate);
-  const resetEval = useEvalStore(state => state.reset);
+  const gameVersion = useBoardStore(state => state.randomState);
   const stage = useStageStore(state => state.stage);
   const setStage = useStageStore(state => state.setStage);
+  const review = useStockfishOutputStore(state => state.review);
+  const { analysisDepth, analysisModel } = useSettingsStore(state => state.settings);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    isListening,
-    fenIndex,
-    best3Moves,
-    saveMove,
-    listen,
-    stopListen,
-    review,
-    reset: resetSfOutput,
-  } = useStockfishOutputStore(useShallow(state => ({
-    isListening: state.isListening,
-    fenIndex: state.fenIndex,
-    best3Moves: state.best3Moves,
-    saveMove: state.saveMove,
-    listen: state.listen,
-    stopListen: state.stopListen,
-    review: state.review,
-    reset: state.reset,
-  })));
+  useEffect(() => {
+    if (stage !== 'reviewing')
+      return;
+    const controller = new AbortController();
+    const currentGame = useBoardStore.getState().currentGame;
+    const history = currentGame.history({ verbose: true });
+    const fens = [history[0]?.before ?? currentGame.header().FEN ?? DEFAULT_POSITION, ...history.map(move => move.after)];
+    const terminal = currentGame.isCheckmate() || currentGame.isStalemate();
+    const positions = terminal ? fens.slice(0, -1) : fens;
+    setError('');
+    setProgress(0);
+    setIsLoading(true);
+    useEvalStore.getState().reset();
+    useStockfishOutputStore.getState().reset();
 
-  const completePercentage = Math.floor((best3Moves.length / ((currentGame.isCheckmate() || currentGame.isStalemate()) ? fens.length - 1 : fens.length)) * 100); // if checkmate or stalemate, best3Moves has one less item than fens
+    async function run() {
+      let engine: Awaited<ReturnType<typeof createAnalysisEngine>> | undefined;
 
-  const outputListener = useCallback((message: string) => {
-    if (
-      message.includes('info')
-      && message.includes('depth')
-      && !message.includes('currmove')
-      && !message.includes('bound')
-    ) {
-      const depthRegex = /(?<=\sdepth\s)\w+/;
-      const currDepth = Number(message.match(depthRegex)![0]);
-      const nodesRegex = /(?<=nodes\s)\w+/;
-      const nodes = Number(message.match(nodesRegex)![0]);
-      const multiPvRegex = /(?<=multipv\s)\d/;
-      const multiPv = Number(message.match(multiPvRegex)![0]);
-      const pvRegex = /(?<=\spv\s)\w+/;
-      const pv = message.match(pvRegex)![0];
-      // score could be 'cp x' or 'mate y'
-      const cpRegex = /(?<=cp\s)[\d-]+/;
-      const cpMatch = message.match(cpRegex);
-      const cp = cpMatch ? Number(cpMatch) : undefined;
-      const mateRegex = /(?<=mate\s)[\d-]+/;
-      const mateMatch = message.match(mateRegex);
-      const mate = mateMatch ? Number(mateMatch) : undefined;
+      try {
+        engine = await createAnalysisEngine({ depth: analysisDepth, model: analysisModel, signal: controller.signal });
+        setIsLoading(false);
+        const best3Moves: MoveEval[][] = [];
 
-      if (currDepth === depth) {
-        saveMove({ nodes, pv, multiPv, cp, mate }, message);
+        for (let i = 0; i < positions.length; i++) {
+          best3Moves.push(await engine.analyze(positions[i]));
+          if (controller.signal.aborted)
+            return;
+          setProgress(Math.round(((i + 1) / positions.length) * 100));
+        }
+
+        useStockfishOutputStore.setState({ best3Moves, fenIndex: positions.length - 1, isListening: false });
+        useEvalStore.getState().populate();
+        setStage('review-overview');
+      }
+      catch (cause) {
+        if (!controller.signal.aborted) {
+          const message = cause instanceof Error ? cause.message : 'Analysis failed. Please try again.';
+          setError(message);
+          if (useBatchStore.getState().active)
+            useBatchStore.getState().fail(message);
+          setStage('loaded');
+        }
+      }
+      finally {
+        engine?.dispose();
+        if (!controller.signal.aborted)
+          setIsLoading(false);
       }
     }
 
-    if (message.includes('bestmove')) {
-      stopListen(fens.length);
-    }
-  }, []);
+    void run();
 
-  useEffect(() => {
-    if (stockfish) {
-      stockfish.postMessage('setoption name MultiPV value 3');
-      (stockfish as any).addMessageListener(outputListener);
-
-      return () => {
-        stockfish.terminate();
-      };
-    }
-  }, [stockfish]);
-
-  useEffect(() => {
-    return () => {
-      // force recreate Stockfish worker every subsequent mounts
-      queryClient.invalidateQueries({ queryKey: ['stockfish'] });
-      // reset states when leave Review page
-      resetSfOutput();
-      resetEval();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (completePercentage === 100) {
-      populate();
-      setStage('review-overview');
-    }
-  }, [completePercentage]);
-
-  useEffect(() => {
-    /*
-      Instead of sending all the fens to Stockfish at once,
-      we send one fen at a time, listen to its output,
-      and only send the next fen when the previous one is done (when isListening is 'false' again)
-    */
-    if (stockfish && stage === 'reviewing') {
-      if (!isListening) {
-        listen();
-        stockfish.postMessage(`position fen ${fens[fenIndex]}`);
-        stockfish.postMessage(`go depth ${depth}`);
-      }
-    }
-  }, [stockfish, stage, isListening]);
-
-  if (isLoading || isFetching)
-    return <Loading label="Loading Stockfish…" />;
-
-  if (error) {
-    return (
-      <p>
-        Loading Stockfish failed:
-        {' '}
-        <code className="inline-block text-small text-danger-500">
-          {error.message}
-        </code>
-      </p>
-    );
-  }
+    return () => controller.abort();
+  }, [stage, gameVersion, setStage]);
 
   return (
     <div className="h-full" id="Review">
+      {error && <p className="mb-3 text-small text-danger" role="alert">{error}</p>}
       {stage === 'loaded'
         ? (
             <Button
@@ -156,18 +96,21 @@ export default function Review() {
           )
         : stage === 'reviewing'
           ? (
-              <Progress
-                aria-label="Reviewing..."
-                classNames={{
-                  value: cn('mx-auto font-bold'),
-                  indicator: `
-                    bg-linear-[-45deg,hsl(var(--heroui-primary-600))_15%,hsl(var(--heroui-primary))_15%,hsl(var(--heroui-primary))_30%,hsl(var(--heroui-primary-600))_30%,hsl(var(--heroui-primary-600))_45%,hsl(var(--heroui-primary))_45%,hsl(var(--heroui-primary))_60%,hsl(var(--heroui-primary-600))_60%,hsl(var(--heroui-primary-600))_75%,hsl(var(--heroui-primary))_75%,hsl(var(--heroui-primary))_90%,hsl(var(--heroui-primary-600))_90%]
-                  `,
-                }}
-                showValueLabel={true}
-                size="lg"
-                value={completePercentage}
-              />
+              <div className="flex flex-col gap-3">
+                <p className="text-small text-foreground-500">{isLoading ? 'Loading Stockfish…' : `Analyzing with Stockfish ${analysisModel === 'nnue' ? 'NNUE' : 'Classical'} at depth ${analysisDepth}`}</p>
+                <Progress aria-label="Review progress" showValueLabel size="lg" value={progress} />
+                <Button
+                  onPress={() => {
+                    useBatchStore.getState().cancel();
+                    setStage('loaded');
+                  }}
+                  radius="sm"
+                  size="sm"
+                  variant="flat"
+                >
+                  Cancel analysis
+                </Button>
+              </div>
             )
           : stage === 'review-overview'
             ? <ReviewOverview />

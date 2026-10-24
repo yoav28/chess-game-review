@@ -15,6 +15,7 @@ import isChessCom from '../../utils/isChessCom';
 import isChessComBotGame from '../../utils/isChessComBotGame';
 import isLichessAI from '../../utils/isLichessAI';
 import isLichessBotGame from '../../utils/isLichessBotGame';
+import CountryFlag from '../CountryFlag';
 
 import type { ChessComGame, LichessAI, LichessGame, LichessPlayer } from '../../queries/useMonthlyArchives';
 
@@ -53,8 +54,10 @@ export default function Game({ game }: { game: ChessComGame | LichessGame }) {
   const bName = isChessCom(game) ? game.black.username : getLichessUsername(game.players.black);
   const wRating = isChessCom(game) ? game.white.rating : getLichessRating(game.players.white);
   const bRating = isChessCom(game) ? game.black.rating : getLichessRating(game.players.black);
+  const wCountry = isChessCom(game) ? game.white.country : isLichessAI(game.players.white) ? undefined : game.players.white.user.flag || game.players.white.user.country;
+  const bCountry = isChessCom(game) ? game.black.country : isLichessAI(game.players.black) ? undefined : game.players.black.user.flag || game.players.black.user.country;
   const totalMovesRegex = /\d+(?=\.\s)/g;
-  const totalMoves = game.pgn.match(totalMovesRegex)!.length;
+  const totalMoves = (game.pgn.match(totalMovesRegex) || []).length;
 
   return (
     <Card
@@ -89,6 +92,7 @@ export default function Game({ game }: { game: ChessComGame | LichessGame }) {
         <div className="flex min-w-0 flex-col gap-0.5" id="players-info">
           <div className="flex items-center gap-2">
             <span className="truncate">{wName}</span>
+            <CountryFlag country={wCountry} />
             {showRatings && (
               <span className="text-xs leading-4 font-bold text-foreground-500">
                 {wRating}
@@ -97,6 +101,7 @@ export default function Game({ game }: { game: ChessComGame | LichessGame }) {
           </div>
           <div className="flex items-center gap-2">
             <span className="truncate">{bName}</span>
+            <CountryFlag country={bCountry} />
             {showRatings && (
               <span className="text-xs leading-4 font-bold text-foreground-500">
                 {bRating}

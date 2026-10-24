@@ -46,7 +46,7 @@ export const useSelectGameStore = create<SelectGameStore>(set => ({
   site: undefined,
   monthLink: undefined,
   game: undefined, // only indicate game loaded through sites, stay undefined if loaded from PGNForm
-  submitUsername: (username: string, site: Site) => set({ username, site }),
+  submitUsername: (username: string, site: Site) => set({ username, site, monthLink: undefined, game: undefined }),
   submitMonth: (monthLink: string) => set({ monthLink }),
   submitGame: (game?: ChessComGame | LichessGame) => set({ game }),
   reset: () => set({ username: undefined, site: undefined, monthLink: undefined, game: undefined }),

@@ -2,6 +2,12 @@ import type { Classification } from './classify';
 
 export function chooseTextColor(classification: Classification) {
   switch (classification) {
+    case 'brilliant':
+      return 'text-brilliant';
+
+    case 'great':
+      return 'text-great';
+
     case 'best':
       return 'text-best';
 
@@ -33,6 +39,12 @@ export function chooseTextColor(classification: Classification) {
 
 export function chooseHighlightColor(classification: Classification) {
   switch (classification) {
+    case 'brilliant':
+      return 'bg-brilliant/50';
+
+    case 'great':
+      return 'bg-great/50';
+
     case 'best':
       return 'bg-best/50';
 
@@ -64,6 +76,12 @@ export function chooseHighlightColor(classification: Classification) {
 
 export function chooseStrokeColor(classification: Classification) {
   switch (classification) {
+    case 'brilliant':
+      return 'stroke-brilliant';
+
+    case 'great':
+      return 'stroke-great';
+
     case 'best':
       return 'stroke-best';
 
@@ -95,6 +113,12 @@ export function chooseStrokeColor(classification: Classification) {
 
 export function chooseFillColor(classification: Classification) {
   switch (classification) {
+    case 'brilliant':
+      return 'fill-brilliant';
+
+    case 'great':
+      return 'fill-great';
+
     case 'best':
       return 'fill-best';
 

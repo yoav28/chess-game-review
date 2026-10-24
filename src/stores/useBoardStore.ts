@@ -27,10 +27,12 @@ export const useBoardStore = create<BoardStore>(set => ({
   lastNav: 0,
   timestamps: null,
   randomState: 0,
-  loadGame: (pgn: string) => set((state) => {
-    state.currentGame.loadPgn(pgn);
+  loadGame: (pgn: string) => set(() => {
+    const currentGame = new Chess();
+    currentGame.loadPgn(pgn);
 
     return {
+      currentGame,
       currentMoveNum: 0,
       lastNav: 0,
       timestamps: pgn.match(timestampRegex),
@@ -38,7 +40,7 @@ export const useBoardStore = create<BoardStore>(set => ({
     };
   }),
   flipBoard: (newVal?: boolean) => set(state => ({ isFlipped: typeof newVal === 'boolean' ? newVal : !state.isFlipped, lastNav: 0 })),
-  toMove: (moveNum: number) => set({ currentMoveNum: moveNum, lastNav: 0 }),
+  toMove: (moveNum: number) => set(state => ({ currentMoveNum: Number.isFinite(moveNum) ? Math.max(0, Math.min(state.currentGame.history().length, Math.floor(moveNum))) : 0, lastNav: 0 })),
   toFirstMove: () => set({ currentMoveNum: 0, lastNav: 0 }),
   toPrevMove: () => set((state) => {
     const history = state.currentGame.history({ verbose: true });
