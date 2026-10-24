@@ -16,7 +16,7 @@ export function ReviewOverview({ review, games, username, onSelect, onExploreOpe
   const label = (move: GameReview['moves'][number]) => `${move.beforeFen.split(' ')[5]}${move.color === 'w' ? '.' : '…'} ${move.san}`
   return <details className="review-overview">
     <summary>Game summary & opening</summary>
-    <p>{result} {review.moves.length} half-moves reviewed. {errors.length} {errors.length === 1 ? 'move was' : 'moves were'} classified as a mistake, blunder, or missed opportunity.</p>
+    <p>{result} {review.moves.length} half-moves reviewed. {errors.length} {errors.length === 1 ? 'move was' : 'moves were'} classified as a mistake, blunder, or Miss.</p>
     {critical && <p>Largest recorded loss: <button className="text-button" onClick={() => onSelect(critical.ply)}>{label(critical)} · {classificationLabels[critical.classification]}</button>{' '}({review.accuracyVersion === 2 ? `${loss(critical).toFixed(1)} ${review.variant === 'threecheck' ? 'heuristic points' : 'winning-chance points'}` : `legacy loss score ${Math.round(loss(critical))}; review again for the current metric`}).</p>}
     {review.opening && <p><strong>{review.opening.name}</strong> · {review.opening.eco}</p>}
     {review.opening && localOpening?.games ? <p>In your local library, you have {localOpening.games} games with ECO {review.opening.eco}: {localOpening.wins} wins, {localOpening.draws} draws, and {localOpening.losses} losses. ECO codes can include multiple named variations.</p> : null}

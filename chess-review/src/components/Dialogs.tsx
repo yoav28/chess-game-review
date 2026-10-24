@@ -165,7 +165,7 @@ export function Dialogs({
               points), good (≤5), inaccuracy (≤10), mistake (≤20), and blunder
               (&gt;20). A previously found mate falling below 90% winning chance,
               or a chance of at least 60% falling to at most 50% with at least 10
-              points lost, can be a missed opportunity.
+              points lost, can be a Miss under our independent heuristic.
             </p>
             <p>
               Book moves match exact prefixes of 3,865 legally validated lines

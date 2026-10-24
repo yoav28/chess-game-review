@@ -95,7 +95,7 @@ export type GameReview = {
 export const classificationLabels: Record<Classification, string> = {
   brilliant: 'Brilliant', great: 'Great', book: 'Book',
   best: 'Best', excellent: 'Excellent', good: 'Good', inaccuracy: 'Inaccuracy',
-  mistake: 'Mistake', blunder: 'Blunder', missed: 'Missed opportunity', forced: 'Forced',
+  mistake: 'Mistake', blunder: 'Blunder', missed: 'Miss', forced: 'Forced',
 }
 
 export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
