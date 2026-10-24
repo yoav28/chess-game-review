@@ -43,6 +43,19 @@ export const loadLibrary = (username: string) => read<GameRecord[]>('libraries',
 export const saveLibrary = (username: string, games: GameRecord[]) => write('libraries', username, games)
 export const loadPgnGames = (username: string) => read<GameRecord[]>('libraries', `${username}:pgn-imports`)
 export const savePgnGames = (username: string, games: GameRecord[]) => write('libraries', `${username}:pgn-imports`, games)
+export type LibraryImportStatus = { complete: boolean; archivesCompleted: number; archivesTotal: number; gamesLoaded: number; updatedAt: string }
+const importStatusKey = (username: string) => `open-file-chess-com-import-status:${username}`
+export async function loadLibraryImportStatus(username: string): Promise<LibraryImportStatus | undefined> {
+  try {
+    const value = JSON.parse(localStorage.getItem(importStatusKey(username)) ?? 'null') as Partial<LibraryImportStatus> | null
+    return value && typeof value.complete === 'boolean' && Number.isInteger(value.archivesCompleted) && Number.isInteger(value.archivesTotal)
+      && Number.isInteger(value.gamesLoaded) && typeof value.updatedAt === 'string'
+      ? value as LibraryImportStatus : undefined
+  } catch { return undefined }
+}
+export async function saveLibraryImportStatus(username: string, status: LibraryImportStatus): Promise<void> {
+  localStorage.setItem(importStatusKey(username), JSON.stringify(status))
+}
 export const loadReview = (id: string) => read<GameReview>('reviews', id)
 export const saveReview = (id: string, review: GameReview) => write('reviews', id, review)
 

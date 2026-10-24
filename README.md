@@ -57,7 +57,7 @@ The importer requests Chess.com’s public archive index and every returned mont
 
 “All games” means games exposed by the public API’s archive list. Private, deleted, unpublished, or otherwise unavailable games cannot be recovered. Other variants remain in the library with original-PGN export and an explicit unsupported-review message.
 
-A complete saved library loads during the next import while every archive is checked for updates. Partial batches remain usable after a stopped or failed import, but only a completed import replaces the last complete saved library. IndexedDB stores libraries/reviews; localStorage stores settings. Storage failures are shown, and clearing site data removes local records.
+The selected username and saved games restore when the app reopens. Choosing **Import all games** checks every archive for updates; partial batches remain usable after a stopped or failed import, and the library marks the archive import incomplete until a later run finishes. IndexedDB stores libraries and reviews; localStorage stores the selected username, settings, and compact import status. Storage failures are shown, and clearing site data removes local records.
 
 Engine analysis runs locally in a Web Worker. Importing sends the username to Chess.com’s public API. Optional tablebase probing sends the selected position’s full FEN to `tablebase.lichess.ovh` only when requested, without credentials; it does not upload a username or game history. The optional masters panel sends the selected standard-chess FEN to `explorer.lichess.org` only after **Load masters**, also without credentials. Voice playback offers only voices reported as local by the browser.
 
