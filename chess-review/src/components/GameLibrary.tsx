@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   ChevronLeft,
@@ -75,6 +75,11 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
   const pages = Math.ceil(filtered.length / 30);
   const currentPage = Math.min(page, Math.max(0, pages - 1));
   const progress = library.progress;
+
+  useEffect(() => {
+    const selectedIndex = filtered.findIndex(game => game.id === selectedId);
+    if (selectedIndex >= 0) setPage(Math.floor(selectedIndex / 30));
+  }, [filtered, selectedId]);
 
   return (
     <aside className="library" aria-label="Game library">
