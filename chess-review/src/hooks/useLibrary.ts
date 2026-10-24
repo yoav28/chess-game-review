@@ -34,7 +34,7 @@ function gameIdentity(game: GameRecord) {
   let movetext = game.pgn.replace(/^\s*\[[^\r\n]*\]\s*$/gm, ' ').replace(/\{[\s\S]*?\}|;[^\r\n]*/g, ' ')
   while (/\([^()]*\)/.test(movetext)) movetext = movetext.replace(/\([^()]*\)/g, ' ')
   const moves = movetext.trim().split(/\s+/).map(token => token.replace(/^\d+\.{1,3}/, '').replace(/\$\d+/g, '').replace(/[!?+#]+$/, '').toLowerCase()).filter(Boolean).join(' ')
-  return [game.rules, initialPosition, game.endTime, game.timeControl, game.white.username.toLowerCase(), game.black.username.toLowerCase(), moves].join('|')
+  return [game.rules, initialPosition, game.white.username.trim().toLowerCase(), game.black.username.trim().toLowerCase(), moves].join('|')
 }
 
 export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies: LibraryDependencies = { load: loadLibrary, save: saveLibrary, importGames: importChessComGames }) {
@@ -45,13 +45,14 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
   const mergeGames = (...groups: GameRecord[][]) => {
     const byId = new Map<string, GameRecord>()
     const byUrl = new Set<string>()
-    const byIdentity = new Set<string>()
+    const byIdentity = new Map<string, number[]>()
     for (const game of groups.flat()) {
       const identity = gameIdentity(game)
-      if (byId.has(game.id) || game.url && byUrl.has(game.url) || byIdentity.has(identity)) continue
+      const dates = byIdentity.get(identity) ?? []
+      if (byId.has(game.id) || game.url && byUrl.has(game.url) || dates.some(date => Math.abs(date - game.endTime) <= 36 * 60 * 60 || date === 0 && game.endTime === 0)) continue
       byId.set(game.id, game)
       if (game.url) byUrl.add(game.url)
-      byIdentity.add(identity)
+      byIdentity.set(identity, [...dates, game.endTime])
     }
     return [...byId.values()].sort((a, b) => b.endTime - a.endTime)
   }
