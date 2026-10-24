@@ -1,0 +1,34 @@
+.play-position-side {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+}
+.play-position-side select {
+  min-width: 120px;
+}
+.play-position-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  margin: 24px 0 12px;
+}
+.play-position-content > .practice-actions {
+  margin-top: 24px;
+}
+.play-position-moves {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+  padding-top: 16px;
+}
+.play-position-moves h3 {
+  font-size: 14px;
+}
+.play-position-moves p {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}

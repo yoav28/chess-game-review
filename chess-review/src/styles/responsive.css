@@ -1,0 +1,418 @@
+@media (min-width: 1600px) {
+  .workspace {
+    grid-template-columns: 260px minmax(540px, 1fr) 390px;
+  }
+  .board-workspace {
+    padding-left: 50px;
+    padding-right: 50px;
+  }
+  .board-area,
+  .evaluation-graph,
+  .graph-placeholder,
+  .board-toolbar {
+    max-width: 740px;
+  }
+  .workspace-heading,
+  .game-meta,
+  .moves-heading,
+  .move-list {
+    max-width: 740px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+@media (max-width: 1250px) {
+  .workspace {
+    grid-template-columns: 220px minmax(390px, 1fr) 320px;
+  }
+  .board-workspace {
+    padding: 22px 20px;
+  }
+  .library > .section-title {
+    padding-left: 18px;
+  }
+  .import-form {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .review-content,
+  .analysis-content,
+  .practice-content {
+    padding: 21px;
+  }
+  .inspector-tabs {
+    padding: 0 12px;
+  }
+  .product-label {
+    font-size: 12px;
+  }
+  .local-indicator {
+    display: none;
+  }
+  .workspace-heading > span {
+    display: none;
+  }
+  .sample-label {
+    font-size: 9px;
+  }
+  .player-info strong {
+    font-size: 12px;
+  }
+  .board-toolbar {
+    padding-left: 26px;
+  }
+  .board-toolbar .icon-button {
+    min-width: 27px;
+    padding: 5px;
+  }
+  .board-toolbar .move-controls {
+    gap: 1px;
+  }
+  .move-position {
+    min-width: 40px;
+    font-size: 10px;
+  }
+  .keyboard-hint {
+    display: none;
+  }
+  .review-intro h2 {
+    font-size: 20px;
+  }
+  .classification-header,
+  .classification-row {
+    grid-template-columns: 1fr 40px 40px;
+  }
+  .phase-report > div {
+    grid-template-columns: 1fr 40px 40px;
+  }
+}
+@media (max-width: 1050px) {
+  .workspace {
+    grid-template-columns: minmax(390px, 1fr) 330px;
+  }
+  .library-wrapper {
+    display: none;
+  }
+  .library-wrapper.open {
+    display: block;
+    position: fixed;
+    inset: 76px auto 0 0;
+    width: 280px;
+    z-index: 25;
+    border-right: 1px solid var(--border);
+  }
+  .library-scrim {
+    display: block;
+    position: fixed;
+    inset: 76px 0 0;
+    background: #10140daa;
+    z-index: 24;
+    border-radius: 0;
+  }
+  .close-library {
+    display: inline-flex;
+  }
+  .mobile-library {
+    display: inline-flex;
+    margin-left: -5px;
+  }
+  .board-workspace {
+    padding: 20px 24px;
+  }
+  .app-header {
+    padding: 0 24px;
+  }
+  .product-label {
+    display: none;
+  }
+  .brand-divider {
+    display: none;
+  }
+  .game-meta {
+    margin-top: 12px;
+  }
+  .library-wrapper.open .library {
+    height: 100%;
+  }
+  .library-empty {
+    padding-top: 25px;
+  }
+  .inspector-bottom {
+    padding: 14px 18px;
+  }
+}
+@media (max-width: 760px) {
+  .app-header {
+    height: 63px;
+    padding: 0 16px;
+  }
+  .brand {
+    gap: 8px;
+  }
+  .brand > span:first-of-type {
+    font-size: 23px;
+  }
+  .brand > svg {
+    height: 27px;
+    width: 25px;
+  }
+  .header-actions {
+    gap: 9px;
+  }
+  .header-actions .secondary {
+    font-size: 11px;
+    min-height: 33px;
+    padding: 7px 10px;
+  }
+  .header-actions .icon-button {
+    min-width: 28px;
+    padding: 5px;
+  }
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+  }
+  .board-workspace {
+    padding: 19px 16px 0;
+    overflow: visible;
+  }
+  .workspace-heading h1 {
+    font-size: 15px;
+  }
+  .workspace-heading > div {
+    gap: 7px;
+  }
+  .sample-label {
+    font-size: 8px;
+    padding: 3px 5px;
+  }
+  .game-meta {
+    font-size: 10px;
+    margin-top: 9px;
+    margin-bottom: 8px;
+  }
+  .board-area {
+    max-width: 560px;
+  }
+  .board-with-eval {
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: 6px;
+  }
+  .evaluation-bar,
+  .evaluation-bar > span {
+    width: 14px;
+    line-height: 14px;
+    font-size: 7px;
+  }
+  .player-bar {
+    height: 53px;
+    padding-left: 20px;
+    gap: 8px;
+  }
+  .player-avatar {
+    height: 30px;
+    width: 30px;
+    font-size: 24px;
+  }
+  .player-info strong {
+    font-size: 12px;
+  }
+  .player-info > span {
+    font-size: 9px;
+  }
+  .player-clock {
+    font-size: 17px;
+    min-width: 61px;
+    padding: 6px;
+  }
+  .board-toolbar {
+    padding-left: 20px;
+    margin-top: 6px;
+    margin-bottom: 16px;
+    max-width: 560px;
+  }
+  .board-toolbar .icon-button {
+    min-height: 33px;
+    min-width: 28px;
+    padding: 5px;
+  }
+  .move-controls .autoplay {
+    margin: 0 5px;
+  }
+  .board-toolbar .move-controls {
+    gap: 1px;
+  }
+  .move-position {
+    font-size: 9px;
+    min-width: 37px;
+  }
+  .evaluation-graph,
+  .graph-placeholder {
+    padding-left: 20px;
+    max-width: 560px;
+    margin-bottom: 19px;
+  }
+  .evaluation-graph > input {
+    left: 20px;
+    width: calc(100% - 20px);
+  }
+  .graph-placeholder > span:nth-child(2) {
+    font-size: 9px;
+  }
+  .graph-placeholder > div {
+    height: 20px;
+    margin-top: 5px;
+  }
+  .evaluation-graph > svg {
+    height: 58px;
+  }
+  .evaluation-graph > input {
+    height: 58px;
+  }
+  .moves-heading,
+  .move-list {
+    margin-left: 20px;
+  }
+  .moves-heading {
+    padding-top: 14px;
+  }
+  .move-list {
+    max-height: 145px;
+    margin-bottom: 21px;
+  }
+  .inspector {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    overflow: visible;
+    min-height: 450px;
+    margin-top: 0;
+  }
+  .inspector-tabs {
+    height: 55px;
+    padding: 0 20px;
+  }
+  .inspector-body {
+    overflow: visible;
+  }
+  .review-content,
+  .analysis-content,
+  .practice-content {
+    padding: 25px 28px;
+    max-width: 600px;
+    width: 100%;
+    margin: auto;
+  }
+  .review-intro {
+    padding: 0 0 9px;
+  }
+  .review-intro-symbol {
+    margin: 5px 0 14px;
+  }
+  .review-intro h2 {
+    font-size: 20px;
+    margin-bottom: 7px;
+  }
+  .review-intro > p:not(.fine-print) {
+    max-width: 100%;
+  }
+  .review-features {
+    margin: 22px 0;
+    gap: 14px;
+  }
+  .review-bottom-note {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+  .inspector-bottom {
+    padding: 15px 28px;
+  }
+  .accuracy-players {
+    flex-direction: row;
+    gap: 25px;
+  }
+  .accuracy-players > div {
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .accuracy-players > div > span:nth-child(2) {
+    font-size: 11px;
+    max-width: 130px;
+  }
+  .accuracy-players strong {
+    width: 100%;
+    margin-left: 18px;
+    margin-top: 5px;
+  }
+  .coach-title h3 {
+    font-size: 15px;
+  }
+  .coach > p {
+    font-size: 12px;
+  }
+  .classification-header,
+  .classification-row {
+    grid-template-columns: 1fr 65px 65px;
+  }
+  .classification-row {
+    min-height: 33px;
+  }
+  .phase-report > div {
+    grid-template-columns: 1fr 65px 65px;
+  }
+  .review-footer {
+    font-size: 10px;
+  }
+  .app-footer {
+    height: auto;
+    min-height: 50px;
+    padding: 14px 18px;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 9px;
+  }
+  .app-footer .text-button {
+    font-size: 9px;
+  }
+  .library-wrapper.open {
+    top: 63px;
+  }
+  .library-scrim {
+    top: 63px;
+  }
+  .practice-filter {
+    max-width: 544px;
+    margin: 23px auto 0;
+    padding: 0 28px;
+    width: 100%;
+  }
+  .variation-toolbar {
+    margin-left: 20px;
+    font-size: 10px;
+  }
+  .modal-backdrop {
+    padding: 16px;
+  }
+  .modal {
+    padding: 22px;
+    max-height: 92svh;
+  }
+  .modal > .section-title h2 {
+    font-size: 15px;
+  }
+  .toast {
+    bottom: 18px;
+    font-size: 11px;
+    padding: 11px 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

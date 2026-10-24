@@ -1,0 +1,254 @@
+.toggle {
+  border: 1px solid #667057;
+  background: #434a3b;
+  width: 33px;
+  height: 19px;
+  border-radius: 12px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+.toggle > span {
+  width: 13px;
+  height: 13px;
+  background: #a1aa95;
+  border-radius: 50%;
+  transition: margin 0.15s;
+}
+.toggle.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle.on > span {
+  background: #334127;
+  margin-left: 13px;
+}
+.analysis-content > .muted {
+  font-size: 10px;
+  margin-top: 12px;
+}
+.inline-icon {
+  display: inline;
+  vertical-align: middle;
+  margin-left: 7px;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.engine-lines {
+  margin-top: 23px;
+}
+.engine-line {
+  padding: 17px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+}
+.engine-line > strong {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+  min-width: 34px;
+}
+.engine-line > svg {
+  color: var(--subtle);
+  margin-top: 1px;
+}
+.pv-moves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  flex: 1;
+}
+.pv-moves > button {
+  font-size: 12px;
+  padding: 2px 3px;
+  border-radius: 2px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.pv-moves > button:first-child {
+  color: var(--text);
+  font-weight: 600;
+}
+.pv-moves > button:hover {
+  background: #414b36;
+  color: var(--accent);
+}
+.engine-empty {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  padding: 25px 0;
+}
+.analysis-tip {
+  margin-top: 34px;
+  border-top: 1px solid var(--border);
+  padding-top: 23px;
+}
+.analysis-tip h3 {
+  font-weight: 500;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.analysis-tip p {
+  font-size: 11px;
+  color: var(--subtle);
+  line-height: 1.8;
+}
+.position-details {
+  margin-top: 24px;
+  font-size: 10px;
+  color: var(--subtle);
+}
+.position-details summary {
+  cursor: pointer;
+  padding: 10px 0;
+}
+.position-details code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.8;
+  margin-top: 10px;
+}
+.variation-banner,
+.variation-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--accent);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.8;
+}
+.variation-banner {
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 17px;
+}
+.variation-toolbar {
+  margin: 0 0 17px 26px;
+}
+.variation-toolbar > span {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.variation-toolbar .text-button {
+  font-size: 10px;
+  white-space: nowrap;
+}
+.practice-filter {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 22px 24px 0;
+}
+.practice-filter label {
+  margin: 0;
+  font-size: 11px;
+}
+.practice-filter select {
+  font-size: 11px;
+  padding: 8px;
+}
+.practice-content > .report-caption {
+  margin-bottom: 15px;
+}
+.practice-content > .report-caption h2 {
+  font-size: 14px;
+}
+.practice-icon {
+  margin: 39px 0 23px;
+  color: var(--accent);
+}
+.practice-content > h3 {
+  font-weight: 500;
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.practice-content > p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.85;
+}
+.practice-content .practice-feedback {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 22px 0;
+  color: var(--accent);
+  font-size: 12px;
+}
+.practice-content .wrong {
+  color: #e7ad8a;
+}
+.hint-message {
+  padding: 14px 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.practice-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 30px;
+}
+.practice-actions > .secondary {
+  flex: 1;
+  font-size: 11px;
+}
+.practice-exit {
+  margin-top: 30px;
+}
+.practice-content .solution-text {
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 15px 0 25px;
+}
+.practice-content > .secondary {
+  margin-top: 20px;
+}
+.unsupported-game {
+  padding: 70px 20px;
+  line-height: 1.8;
+}
+.unsupported-game h2 {
+  font-size: 19px;
+  font-weight: 500;
+}
+.unsupported-game p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 15px 0;
+}
+.app-footer {
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  font-size: 9px;
+  color: var(--subtle);
+  border-top: 1px solid var(--border);
+  background: #252723;
+}
+.app-footer .text-button {
+  font-size: 10px;
+}
+.mobile-library {
+  display: none;
+}
+.library-scrim {
+  display: none;
+}

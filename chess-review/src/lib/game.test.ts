@@ -1,0 +1,67 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { Chess } from 'chess.js'
+import { demoGame } from './demo'
+import { formatClock, gameFromPgn, parseGame, parsePgn } from './game'
+
+test('the demo is a complete legal mating game with castling and a queen sacrifice', () => {
+  const parsed = parseGame(demoGame)
+  assert.equal(parsed.moves.length, 33)
+  assert.equal(parsed.positions.length, 34)
+  assert.equal(parsed.moves.at(-1)?.san, 'Rd8#')
+  assert.equal(new Chess(parsed.positions.at(-1)).isCheckmate(), true)
+  assert.equal(parsed.moves.find((move) => move.san === 'O-O-O')?.uci, 'e1c1')
+  assert.equal(parsed.result, '1-0')
+  assert.equal(demoGame.white.result, 'win')
+})
+
+test('PGN setup positions preserve black to move, move number, and promotion', () => {
+  const parsed = parsePgn(`[SetUp "1"]
+[FEN "8/8/8/8/8/8/1p6/4K2k b - - 0 42"]
+[Result "*"]
+
+42... b1=Q+ {[%clk 0:01:02.5]} 43. Kf2 *`)
+  assert.equal(parsed.initialFen, '8/8/8/8/8/8/1p6/4K2k b - - 0 42')
+  assert.equal(parsed.moves[0].color, 'b')
+  assert.equal(parsed.moves[0].uci, 'b2b1q')
+  assert.equal(parsed.moves[0].promotion, 'q')
+  assert.equal(parsed.moves[0].clockSeconds, 62.5)
+  assert.equal(parsed.positions.length, 3)
+})
+
+test('mainline clocks stay aligned through variations, NAGs and repeated positions', () => {
+  const parsed = parsePgn(`[Result "*"]
+
+1.Nf3 {[%clk 0:05:00]} (1. e4 {[%clk 0:00:01]} e5) 1...Nf6 {[%clk 0:04:59]}
+2. Ng1 $2 {[%clk 0:04:57]} Ng8 {[%clk 0:04:56]}
+3. Nf3 {[%clk 0:04:55]} *`)
+  assert.deepEqual(parsed.clocks, [300, 299, 297, 296, 295])
+  assert.equal(parsed.moves[4].clockSeconds, 295)
+})
+
+test('en passant moves include the actual capture information', () => {
+  const parsed = parsePgn('1. e4 a6 2. e5 d5 3. exd6 *')
+  assert.equal(parsed.moves.at(-1)?.captured, 'p')
+  assert.equal(parsed.moves.at(-1)?.flags.includes('e'), true)
+  assert.equal(new Chess(parsed.positions.at(-1)).get('d5'), undefined)
+})
+
+test('invalid PGNs and unsupported variants return actionable errors', () => {
+  assert.throws(() => parsePgn(''), /empty/)
+  assert.throws(() => parsePgn('1. e4 e5 2. Qxe8 *'), /Cannot read this PGN/)
+  assert.throws(() => parseGame({ ...demoGame, rules: 'chess960' }), /standard chess/)
+})
+
+test('imported PGN keeps player names, ratings, result, and stable IDs', () => {
+  const pgn = '[White "Ada"]\n[Black "Grace"]\n[WhiteElo "1500"]\n[Date "2025.01.02"]\n[Result "1/2-1/2"]\n\n1. e4 e5 1/2-1/2'
+  const game = gameFromPgn(pgn)
+  assert.equal(game.white.username, 'Ada')
+  assert.equal(game.white.rating, 1500)
+  assert.equal(game.white.result, 'agreed')
+  assert.equal(game.black.result, 'agreed')
+  assert.equal(game.endTime, 1735776000)
+  assert.equal(game.id, gameFromPgn(pgn).id)
+  assert.equal(formatClock(62.9), '1:02')
+  assert.equal(formatClock(3662), '1:01:02')
+  assert.equal(formatClock(undefined), '—')
+})

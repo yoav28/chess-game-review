@@ -1,0 +1,9 @@
+Open File distributes unmodified Stockfish.js 19.0.1 lite single-threaded JavaScript and WebAssembly files from the npm stockfish package.
+
+License: GNU General Public License v3.0. See COPYING.txt in this directory.
+Published package: https://registry.npmjs.org/stockfish/-/stockfish-19.0.1.tgz
+Upstream release: https://github.com/nmrugg/stockfish.js/releases/tag/v19.0.1
+Corresponding upstream source tree: https://github.com/nmrugg/stockfish.js/tree/0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6
+Source archive: https://github.com/nmrugg/stockfish.js/archive/0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6.tar.gz
+
+The upstream v19.0.1 tag resolves to that commit. The npm release omits gitHead; exact npm bytes are pinned by package-lock.json integrity.
