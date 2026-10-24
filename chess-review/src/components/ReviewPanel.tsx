@@ -88,6 +88,7 @@ export function ReviewPanel({
     review?.moves.filter((m) =>
       ["inaccuracy", "mistake", "blunder", "missed"].includes(m.classification) && (focusColor === 'all' || m.color === focusColor),
     ) ?? [];
+  const retryableMove = move && ['inaccuracy', 'mistake', 'blunder', 'missed'].includes(move.classification)
   return (
     <div className="review-content">
       {running && (
@@ -203,6 +204,7 @@ export function ReviewPanel({
               <label className="coach-detail">Explanation style<select aria-label="Explanation style" value={coachDetail} onChange={event => onSettings({ ...settings, coachDetail: event.target.value as CoachDetail })}><option value="detailed">Detailed</option><option value="concise">Concise</option></select></label>
               <p>{coachText(move, coachDetail, settings.coachProfile)}</p>
               <div className="coach-actions"><button className="secondary" onClick={onExplain}><Lightbulb size={15} /> Explain move</button>{move.bestMove && <button className="text-button" onClick={onBestLine}>Analyze {move.bestMoveSan}<ChevronRight size={14} /></button>}</div>
+              {retryableMove && move && <button className="text-button" onClick={() => onPracticePosition(move.ply)}><RotateCcw size={14} /> Retry this move</button>}
             </section>
           )}
           <ReviewStats review={review} ply={move?.ply} onSelect={onSelect} />
