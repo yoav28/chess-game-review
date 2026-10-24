@@ -153,7 +153,7 @@ export function gameFromPgn(pgn: string): GameRecord {
     timeControl: headers.TimeControl ?? '-',
     endTime: Number.isFinite(timestamp) ? Math.floor(timestamp / 1000) : 0,
     rules: variant ?? 'chess',
-    eco: headers.ECOUrl ?? headers.ECO,
+    eco: headers.ECO ?? headers.ECOUrl,
   }
 }
 

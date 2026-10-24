@@ -1,8 +1,12 @@
+import { useMemo } from 'react'
 import type { GameReview } from '../lib/review'
+import type { GameRecord } from '../lib/game'
+import { openingHistory } from '../lib/opening-history'
 import { classificationLabels } from '../lib/review'
 import './ReviewOverview.css'
 
-export function ReviewOverview({ review, onSelect }: { review: GameReview; onSelect: (ply: number) => void }) {
+export function ReviewOverview({ review, games, username, onSelect }: { review: GameReview; games: readonly GameRecord[]; username: string; onSelect: (ply: number) => void }) {
+  const localOpening = useMemo(() => review.opening ? openingHistory(games, review.opening.eco, username) : null, [games, review.opening, username])
   const result = review.result === '1-0' ? `${review.white} won.` : review.result === '0-1' ? `${review.black} won.` : review.result === '1/2-1/2' ? 'The game was drawn.' : 'The recorded game is unfinished.'
   const errors = review.moves.filter(move => ['mistake', 'blunder', 'missed'].includes(move.classification))
   const loss = (move: GameReview['moves'][number]) => review.accuracyVersion === 2 ? move.winningChanceLoss ?? 0 : move.centipawnLoss
@@ -15,6 +19,7 @@ export function ReviewOverview({ review, onSelect }: { review: GameReview; onSel
     <p>{result} {review.moves.length} half-moves reviewed. {errors.length} {errors.length === 1 ? 'move was' : 'moves were'} classified as a mistake, blunder, or missed opportunity.</p>
     {critical && <p>Largest recorded loss: <button className="text-button" onClick={() => onSelect(critical.ply)}>{label(critical)} · {classificationLabels[critical.classification]}</button>{' '}({review.accuracyVersion === 2 ? `${loss(critical).toFixed(1)} ${review.variant === 'threecheck' ? 'heuristic points' : 'winning-chance points'}` : `legacy loss score ${Math.round(loss(critical))}; review again for the current metric`}).</p>}
     {review.opening && <p><strong>{review.opening.name}</strong> · {review.opening.eco}</p>}
+    {review.opening && localOpening?.games ? <p>In your local library, you have {localOpening.games} games with ECO {review.opening.eco}: {localOpening.wins} wins, {localOpening.draws} draws, and {localOpening.losses} losses. ECO codes can include multiple named variations.</p> : null}
     {lastBook ? <>
       <p>Last book position recorded in this report: <button className="text-button" onClick={() => onSelect(lastBook.ply)}>{label(lastBook)}</button>.</p>
       <div className="opening-replay" aria-label="Recorded opening moves">{book.map(move => <button className="text-button" key={move.ply} onClick={() => onSelect(move.ply)}>{label(move)}</button>)}</div>

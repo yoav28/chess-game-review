@@ -118,6 +118,8 @@ function App() {
               <ReviewPanel
                 key={game.id}
                 game={game}
+                games={library.games}
+                username={library.username}
                 review={review}
                 move={currentMove}
                 running={running}
