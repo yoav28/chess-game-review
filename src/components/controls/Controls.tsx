@@ -19,6 +19,7 @@ import ReviewFavoriteButton from './ReviewFavoriteButton';
 import ReviewStartButton from './ReviewStartButton';
 
 import '../../styles/review.css';
+import '../../styles/review-header.css';
 
 export default function Controls() {
   const reset = useBoardStore(state => state.reset);
@@ -70,24 +71,25 @@ export default function Controls() {
         <title>{isLoaded ? `${wName} vs. ${bName} | Game Review` : 'Game Review'}</title>
       </Helmet>
       <header className="review-panel-header">
-        {stage === 'review-overview'
-          ? <ReviewFavoriteButton />
-          : (
-              <Button
-                aria-label="Back"
-                className={`
-                  review-back
-                  ${stage === 'home' ? 'invisible' : ''}
-                `}
-                isIconOnly
-                onPress={back}
-                radius="sm"
-                size="sm"
-                variant="light"
-              >
-                <Icon icon="material-symbols:chevron-left-rounded" />
-              </Button>
-            )}
+        <div className="review-header-actions">
+          {stage !== 'review-overview' && (
+            <Button
+              aria-label="Back"
+              className={`
+                review-back
+                ${stage === 'home' ? 'invisible' : ''}
+              `}
+              isIconOnly
+              onPress={back}
+              radius="sm"
+              size="sm"
+              variant="light"
+            >
+              <Icon icon="material-symbols:arrow-back-rounded" />
+            </Button>
+          )}
+          {(stage === 'review-overview' || stage === 'review-moves') && <ReviewFavoriteButton />}
+        </div>
         <h1>
           {isAnalysis ? <NavigationIcon name="analysis" /> : <img alt="" src="/navigation/review.png" />}
           {stage === 'select-month' || stage === 'select-game' ? 'Recent Games' : isAnalysis ? 'Analysis' : 'Game Review'}

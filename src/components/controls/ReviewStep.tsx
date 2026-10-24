@@ -26,7 +26,7 @@ export default function ReviewStep() {
   const badMove = ['inaccuracy', 'mistake', 'blunder'].includes(classification);
   const opening = openingNames[moveNumber];
   const score = cps[moveNumber] ?? 0;
-  const evaluation = `${typeof score === 'number' && score > 0 ? '+' : ''}${formatCp(score)}`;
+  const evaluation = typeof score === 'number' ? `${score > 0 ? '+' : ''}${(score / 100).toFixed(2)}` : formatCp(score);
   const best = best3MovesWithClass[moveNumber - 1]?.[0];
   const fens = [history[0]?.before ?? currentGame.fen(), ...history.map(move => move.after)];
   const preferred = best ? lanToSan(best.pv, moveNumber - 1, fens) : null;
@@ -66,7 +66,7 @@ export default function ReviewStep() {
                     {move
                       ? (
                           <>
-                            <SanMove color={move.color} san={move.san} />
+                            <SanMove color="b" san={move.san} />
                             {title.slice(move.san.length)}
                           </>
                         )
@@ -82,7 +82,12 @@ export default function ReviewStep() {
                     {evaluation}
                   </span>
                 </div>
-                <p className="review-step-explanation">{message}</p>
+                <p className={classification === 'book' && retryTarget === null
+                  ? `sr-only`
+                  : `review-step-explanation`}
+                >
+                  {message}
+                </p>
               </>
             )}
       </ReviewCoach>
@@ -118,7 +123,7 @@ export default function ReviewStep() {
           }}
           radius="sm"
         >
-          <Icon icon="material-symbols:key-rounded" />
+          <Icon icon="material-symbols:arrow-forward-rounded" />
           {moveNumber >= history.length ? 'Finish Review' : 'Next'}
         </Button>
       </div>
