@@ -54,6 +54,7 @@ export async function loadLibraryImportStatus(username: string): Promise<Library
   } catch { return undefined }
 }
 export async function saveLibraryImportStatus(username: string, status: LibraryImportStatus): Promise<void> {
+  if (typeof localStorage === 'undefined') return
   localStorage.setItem(importStatusKey(username), JSON.stringify(status))
 }
 export const loadReview = (id: string) => read<GameReview>('reviews', id)
