@@ -16,6 +16,7 @@ These checks used the local app. Hosted execution of the new version has not bee
 | Flow | Observed result |
 | --- | --- |
 | Complete username refresh | Importing MagnusCarlsen restored the cached library, then completed all 67 / 67 returned archive requests and displayed “All 9,973 public games imported.” |
+| Selected library restoration | After setting the saved account once, reloading the app restored its 23 public/PGN-merged games and username from browser storage without requesting the archive list again. |
 | Signed-in account import, PGN deduplication, and review | The account’s 23-game public archive imported completely. Downloading and importing the account’s multi-game PGN export kept the library at 23 after deduplication, including the Feb 17 UTC / Feb 18 profile-date boundary. A 27-ply game completed local review at 90.5 / 80.3 under v2, then reopened with its scores after a page reload. |
 | Local opening history in review | The authenticated library’s Zukertort/A06 review summary showed one matching ECO game and the selected player’s 0–0–1 record, while explicitly warning that an ECO can include multiple named variations. |
 | Opening link to local explorer | Activating the review’s opening control selected the last book position, opened Analysis, and the imported-game explorer found two matching games among 23 checked records with legal next moves and results. |

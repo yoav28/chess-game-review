@@ -22,6 +22,15 @@ interface LibraryDependencies {
 }
 
 const pendingSaves = new Map<string, Promise<void>>()
+const usernameStorageKey = 'open-file-chess-com-username'
+
+function savedUsername(): string {
+  try { return localStorage.getItem(usernameStorageKey) ?? '' } catch { return '' }
+}
+
+function rememberUsername(username: string) {
+  try { localStorage.setItem(usernameStorageKey, username) } catch {}
+}
 
 async function saveCompleteLibrary(username: string, games: GameRecord[], save: LibraryDependencies['save']) {
   const pending = (pendingSaves.get(username) ?? Promise.resolve()).catch(() => undefined).then(() => save(username, games))
@@ -39,6 +48,7 @@ function gameIdentity(game: GameRecord) {
 
 export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies: LibraryDependencies = { load: loadLibrary, save: saveLibrary, importGames: importChessComGames }) {
   let active = true
+  let restoreSequence = 0
   let current: { controller: AbortController; games: GameRecord[]; importing: boolean; username: string } | null = null
   const owns = (request: NonNullable<typeof current>) => active && current === request
   const live = (request: NonNullable<typeof current>) => owns(request) && !request.controller.signal.aborted
@@ -57,10 +67,30 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
     return [...byId.values()].sort((a, b) => b.endTime - a.endTime)
   }
 
+  async function loadSavedUser(raw: string) {
+    let user: string
+    try { user = normalizeUsername(raw) } catch (e) { callbacks.error((e as Error).message); return }
+    const sequence = ++restoreSequence
+    callbacks.username(user)
+    callbacks.error('')
+    callbacks.notice('')
+    callbacks.progress(null)
+    const [cached, imported] = await Promise.all([
+      dependencies.load(user).catch(() => undefined),
+      (dependencies.loadPgnGames ?? loadPgnGames)(user).catch(() => undefined),
+    ])
+    if (!active || sequence !== restoreSequence) return
+    const restored = mergeGames(cached ?? [], imported ?? [])
+    callbacks.games(restored)
+    callbacks.notice(restored.length ? `${restored.length.toLocaleString()} saved games restored.` : 'No saved games found. Import all public archives to start a library.')
+  }
+
   async function importUser(raw: string) {
     if (!active) return
     let user: string
     try { user = normalizeUsername(raw) } catch (e) { callbacks.error((e as Error).message); return }
+    restoreSequence += 1
+    rememberUsername(user)
     current?.controller.abort()
     const request = { controller: new AbortController(), games: [] as GameRecord[], importing: true, username: user }
     current = request
@@ -113,9 +143,12 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
 
   return {
     importUser,
+    loadSavedUser,
     importPgn: async (raw: string, text: string) => {
       let user: string
       try { user = normalizeUsername(raw) } catch (e) { callbacks.error((e as Error).message); return }
+      restoreSequence += 1
+      rememberUsername(user)
       callbacks.error('')
       callbacks.notice('')
       try {
@@ -145,7 +178,7 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
 
 export function useLibrary() {
   const [games, setGames] = useState<GameRecord[]>([])
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState(savedUsername)
   const [progress, setProgress] = useState<ImportProgress | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -153,8 +186,13 @@ export function useLibrary() {
   const importer = useRef<ReturnType<typeof createLibraryImporter> | null>(null)
   if (!importer.current) importer.current = createLibraryImporter({ games: setGames, username: setUsername, progress: setProgress, loading: setLoading, error: setError, notice: setNotice })
   const service = importer.current
+  const initialUsername = useRef(username)
 
-  useEffect(() => { service.activate(); return () => service.dispose() }, [service])
+  useEffect(() => {
+    service.activate()
+    if (initialUsername.current) void service.loadSavedUser(initialUsername.current)
+    return () => service.dispose()
+  }, [service])
 
   return { games, username, progress, loading, error, notice, importUser: service.importUser, importPgn: service.importPgn, cancel: service.cancel }
 }
