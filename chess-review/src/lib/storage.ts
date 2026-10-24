@@ -41,6 +41,8 @@ async function write(store: string, key: string, value: unknown): Promise<void> 
 
 export const loadLibrary = (username: string) => read<GameRecord[]>('libraries', username)
 export const saveLibrary = (username: string, games: GameRecord[]) => write('libraries', username, games)
+export const loadPgnGames = (username: string) => read<GameRecord[]>('libraries', `${username}:pgn-imports`)
+export const savePgnGames = (username: string, games: GameRecord[]) => write('libraries', `${username}:pgn-imports`, games)
 export const loadReview = (id: string) => read<GameReview>('reviews', id)
 export const saveReview = (id: string, review: GameReview) => write('reviews', id, review)
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   ChevronLeft,
@@ -28,6 +28,7 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
   const [sort, setSort] = useState("newest");
   const [month, setMonth] = useState("");
   const [rules, setRules] = useState('all');
+  const pgnFile = useRef<HTMLInputElement>(null);
   const ruleCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const game of library.games) counts.set(game.rules, (counts.get(game.rules) ?? 0) + 1);
@@ -116,6 +117,23 @@ export function GameLibrary({ library, selectedId, onSelect, onClose }: Props) {
           </button>
         </div>
         <p className="fine-print">All public archives. No login needed.</p>
+        <input
+          ref={pgnFile}
+          type="file"
+          accept=".pgn,.txt"
+          hidden
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            if (file) {
+              setPage(0);
+              await library.importPgn(input, await file.text());
+            }
+            event.target.value = "";
+          }}
+        />
+        <button className="text-button" type="button" onClick={() => pgnFile.current?.click()}>
+          <ArrowDownToLine size={14} /> Add games from PGN
+        </button>
       </form>
       {library.loading && (
         <div className="import-status" role="status">

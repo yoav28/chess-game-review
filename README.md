@@ -28,7 +28,7 @@ Tests cover public archive import, cancellation and stale requests, standard, Ch
 
 ## Use the application
 
-Enter a Chess.com username in the library and choose **Import all games**. Search or filter by player, time control, result, or month. Select a game and start its review. You can also load one PGN game or a FEN position.
+Enter a Chess.com username in the library and choose **Import all games**. Search or filter by player, time control, result, or month. Select a game and start its review. Add a multi-game PGN export to include games outside public archives, or load one PGN game or a FEN position.
 
 The application provides:
 
@@ -53,7 +53,7 @@ The application provides:
 
 ## Public archives and local data
 
-The importer requests Chess.com’s public archive index and every returned monthly archive, newest first. Requests are sequential, with retries, progress, cancellation, and deduplication by game URL. There is no application backend, Chess.com login requirement, or API key.
+The importer requests Chess.com’s public archive index and every returned monthly archive, newest first. Requests are sequential, with retries, progress, cancellation, and deduplication by game URL. Multi-game PGN files are stored separately in the browser and merged into the selected username’s library. There is no application backend, Chess.com login requirement, or API key.
 
 “All games” means games exposed by the public API’s archive list. Private, deleted, unpublished, or otherwise unavailable games cannot be recovered. Other variants remain in the library with original-PGN export and an explicit unsupported-review message.
 
