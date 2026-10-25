@@ -92,7 +92,7 @@ test('three-check media retain the variant, heuristic label and terminal counter
   assert.doesNotThrow(() => new Script(embedPlayerScript))
 })
 
-test('Crazyhouse replay media preserves both pockets and rejects incomplete drop puzzles', () => {
+test('Crazyhouse replay and puzzle media preserve pockets and legal drops', () => {
   const pgn = readFileSync(new URL('../test/fixtures/crazyhouse-pocket-drop.pgn', import.meta.url), 'utf8')
   const review = reviewFixture(pgn)
   const data = reviewImageData(review)
@@ -102,5 +102,11 @@ test('Crazyhouse replay media preserves both pockets and rejects incomplete drop
   assert.equal(payload.frames[4].pockets.w.p, 1)
   assert.equal(payload.frames[4].pockets.b.p, 1)
   assert.match(embed.document, /drawPocket\('pocket-top'/)
-  assert.throws(() => buildReviewEmbed(review, {}, { puzzle: true }), /pocket-drop puzzles are not supported/)
+  const puzzle = buildReviewEmbed(review, {}, { puzzle: true })
+  const puzzlePayload = JSON.parse(puzzle.document.match(/id="review-data">([\s\S]*?)<\/script>/)![1])
+  assert.doesNotThrow(() => new Script(embedPlayerScript))
+  assert.equal(puzzlePayload.puzzle.expected[6], 'P@e5')
+  assert.ok(puzzlePayload.puzzle.turns[6].some((move: { uci: string; drop?: string }) => move.uci === 'P@e5' && move.drop === 'p'))
+  assert.ok(puzzlePayload.puzzle.turns[6].some((move: { uci: string }) => move.uci === 'P@e6'))
+  assert.match(puzzle.document, /puzzleSelectDrop/)
 })

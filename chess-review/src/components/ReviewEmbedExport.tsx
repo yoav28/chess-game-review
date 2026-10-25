@@ -14,8 +14,7 @@ export function ReviewEmbedExport({ review, ply, orientation }: { review: GameRe
   const [puzzle, setPuzzle] = useState(false)
   const [start, setStart] = useState('beginning')
   const request = useRef(0)
-  const puzzleSupported = review.variant !== 'crazyhouse'
-  const puzzleMode = puzzle && puzzleSupported
+  const puzzleMode = puzzle
   const invalid = puzzleMode && start === 'selected' && ply >= review.moves.length
   useEffect(() => { request.current++; setBusy(false); setNotice(''); setCode(''); return () => { request.current++ } }, [review, ply, orientation, puzzle, start, appearance.boardTheme, appearance.pieceSet, appearance.coordinates])
   async function create(action: 'download' | 'copy') {
@@ -35,8 +34,7 @@ export function ReviewEmbedExport({ review, ply, orientation }: { review: GameRe
     <h3>Embed a replay or puzzle</h3>
     <p>Create an offline HTML file or copy a sandboxed iframe. It includes the game, scores, and recorded explanations; no account or server is required.</p>
     <BoardAppearanceControls value={appearance} onChange={onChange} />
-    <label><input type="checkbox" checked={puzzleMode} disabled={!review.moves.length || !puzzleSupported} onChange={event => setPuzzle(event.target.checked)} />Puzzle mode · guess the recorded moves</label>
-    {!puzzleSupported && <p className="fine-print">Crazyhouse pocket-drop puzzles are not supported yet; replay export preserves the board and pocket states.</p>}
+    <label><input type="checkbox" checked={puzzleMode} disabled={!review.moves.length} onChange={event => setPuzzle(event.target.checked)} />Puzzle mode · guess the recorded moves</label>
     {puzzleMode && <><label>Start at<select aria-label="Puzzle starting position" value={start} onChange={event => setStart(event.target.value)}><option value="beginning">Game beginning</option><option value="selected">Selected position · {ply}/{review.moves.length}</option></select></label><p className="fine-print">The side to move guesses its recorded moves; opponent replies play automatically. Hint, retry, solution, and reset work offline. Other good moves may differ from the game.</p></>}
     {invalid && <p role="status">Select a position before the final move, or start at the game beginning.</p>}
     <div className="review-share-actions"><button className="secondary" disabled={busy || invalid} onClick={() => void create('download')}>Download {puzzleMode ? 'puzzle' : 'replay'} HTML</button><button className="text-button" disabled={busy || invalid} onClick={() => void create('copy')}>Copy embed code</button></div>

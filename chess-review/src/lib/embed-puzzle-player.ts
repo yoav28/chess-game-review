@@ -1,5 +1,5 @@
 export const embedPuzzlePlayerScript = String.raw`
-let puzzleSelected = null, puzzleHint = null, puzzleWrong = null, puzzlePending = null;
+let puzzleSelected = null, puzzleDrop = null, puzzleHint = null, puzzleWrong = null, puzzlePending = null;
 let puzzleReply = null, puzzleSolved = false, puzzleRevealed = false, puzzleStatus = '', puzzleCursor = 'e2';
 const puzzleActive = () => Boolean(data.puzzle && !puzzleRevealed);
 const puzzleFrame = () => puzzleWrong || data.frames[ply];
@@ -7,15 +7,15 @@ function clearPuzzleReply() { clearTimeout(puzzleReply); puzzleReply = null; }
 function puzzleReset() {
   pause(); clearPuzzleReply();
   ply = data.puzzle.start;
-  puzzleSelected = puzzleHint = puzzleWrong = puzzlePending = null;
+  puzzleSelected = puzzleDrop = puzzleHint = puzzleWrong = puzzlePending = null;
   puzzleSolved = puzzleRevealed = false; puzzleStatus = '';
   draw();
 }
 function puzzleFocus() { document.querySelector('[data-square="' + puzzleCursor + '"]')?.focus(); }
 function puzzleChoose(move) {
-  puzzleSelected = puzzleHint = puzzlePending = null;
+  puzzleSelected = puzzleDrop = puzzleHint = puzzlePending = null;
   if (move.uci !== data.puzzle.expected[ply]) {
-    puzzleWrong = { ...data.frames[ply], fen: move.fen, label: move.san, outcome: null, lastMove: { from: move.from, to: move.to } };
+    puzzleWrong = { ...data.frames[ply], fen: move.fen, pockets: move.pockets, label: move.san, outcome: null, lastMove: { from: move.from, to: move.to } };
     puzzleStatus = move.san + ' is legal, but is not the recorded move. Try again.';
     draw(); el('retry').focus(); return;
   }
@@ -37,15 +37,30 @@ function puzzleSelect(square, piece) {
   if (!puzzleActive() || puzzleSolved || puzzleReply || puzzleWrong) return;
   puzzleCursor = square;
   const moves = data.puzzle.turns[ply] || [];
+  if (puzzleDrop) {
+    const drop = moves.find(move => move.drop === puzzleDrop && move.to === square);
+    if (drop) { puzzleChoose(drop); puzzleFocus(); return; }
+    puzzleStatus = 'That is not a legal drop square. Choose another square.';
+    draw(); puzzleFocus(); return;
+  }
   if (puzzleSelected) {
     const matches = moves.filter(move => move.from === puzzleSelected && (move.to === square || move.rookFrom === square));
     if (matches.length === 1) { puzzleChoose(matches[0]); puzzleFocus(); return; }
     if (matches.length > 1) { puzzlePending = matches; puzzleStatus = 'Choose the move below the board.'; draw(); el('choices').querySelector('button')?.focus(); return; }
   }
   if (piece && (piece === piece.toUpperCase() ? 'w' : 'b') === data.puzzle.side) {
-    puzzleSelected = puzzleSelected === square ? null : square;
+    puzzleSelected = puzzleSelected === square ? null : square; puzzleDrop = null;
     puzzlePending = null; puzzleStatus = puzzleSelected ? 'Choose a destination for ' + square + '.' : '';
   } else puzzleStatus = puzzleSelected ? 'That destination is not legal. Choose another square.' : 'Choose one of your pieces.';
+  draw(); puzzleFocus();
+}
+function puzzleSelectDrop(type) {
+  if (!puzzleActive() || puzzleSolved || puzzleReply || puzzleWrong) return;
+  const moves = data.puzzle.turns[ply] || [];
+  if (!moves.some(move => move.drop === type)) return;
+  puzzleSelected = null; puzzleDrop = puzzleDrop === type ? null : type;
+  puzzlePending = null; puzzleHint = null;
+  puzzleStatus = puzzleDrop ? 'Choose a square for the ' + ({ p:'pawn', n:'knight', b:'bishop', r:'rook', q:'queen' }[type]) + ' drop.' : '';
   draw(); puzzleFocus();
 }
 function puzzleCell(cell, square, piece, index) {
@@ -54,6 +69,7 @@ function puzzleCell(cell, square, piece, index) {
   cell.tabIndex = square === puzzleCursor ? 0 : -1;
   cell.setAttribute('aria-label', square + ', ' + (piece ? (piece === piece.toUpperCase() ? 'White ' : 'Black ') + ({ p:'pawn', n:'knight', b:'bishop', r:'rook', q:'queen', k:'king' }[piece.toLowerCase()]) : 'empty'));
   cell.setAttribute('aria-pressed', String(puzzleSelected === square));
+  if (puzzleDrop && (data.puzzle.turns[ply] || []).some(move => move.drop === puzzleDrop && move.to === square)) cell.classList.add('drop-target');
   cell.disabled = Boolean(puzzleSolved || puzzleReply || puzzleWrong);
   if (square === puzzleSelected || square === puzzleHint) cell.classList.add('selected');
   cell.onclick = () => puzzleSelect(square, piece);
@@ -98,12 +114,18 @@ function setupPuzzle() {
   puzzleCursor = data.puzzle.side === 'w' ? 'e2' : 'e7';
   el('hint').onclick = () => {
     const move = data.puzzle.turns[ply].find(move => move.uci === data.puzzle.expected[ply]);
-    puzzleHint = move.from; puzzleStatus = 'Hint: move the piece on ' + move.from + '.'; draw();
+    if (move.drop) {
+      puzzleSelected = null; puzzleDrop = move.drop; puzzleHint = move.to;
+      puzzleStatus = 'Hint: drop a ' + ({ p:'pawn', n:'knight', b:'bishop', r:'rook', q:'queen' }[move.drop]) + ' on ' + move.to + '.';
+    } else {
+      puzzleDrop = null; puzzleHint = move.from; puzzleStatus = 'Hint: move the piece on ' + move.from + '.';
+    }
+    draw();
   };
-  el('retry').onclick = () => { puzzleWrong = puzzleSelected = puzzlePending = null; puzzleStatus = ''; draw(); puzzleFocus(); };
+  el('retry').onclick = () => { puzzleWrong = puzzleSelected = puzzleDrop = puzzlePending = null; puzzleStatus = ''; draw(); puzzleFocus(); };
   el('reset').onclick = puzzleReset;
   el('solution').onclick = () => {
-    clearPuzzleReply(); puzzleWrong = puzzleSelected = puzzlePending = null; puzzleRevealed = true;
+    clearPuzzleReply(); puzzleWrong = puzzleSelected = puzzleDrop = puzzlePending = null; puzzleRevealed = true;
     el('solution-line').textContent = data.frames.slice(data.puzzle.start + 1).map(frame => frame.label).join(' · '); draw(); el('play').focus();
   };
   puzzleReset();

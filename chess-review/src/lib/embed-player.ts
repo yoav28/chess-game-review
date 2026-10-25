@@ -20,13 +20,21 @@ function draw() {
   const frame = puzzleFrame(), ranks = frame.fen.split(' ')[0].split('/'), cells = [];
   const drawPocket = (id, color) => {
     const container = el(id), pieces = frame.pockets && frame.pockets[color];
+    container.setAttribute('role', 'group'); container.setAttribute('aria-label', color === 'w' ? 'White pocket' : 'Black pocket');
     container.replaceChildren();
     if (!pieces || !Object.values(pieces).some(count => count > 0)) return;
     const label = document.createElement('small'); label.textContent = color === 'w' ? 'White pocket' : 'Black pocket'; container.append(label);
     for (const type of ['p','n','b','r','q']) {
       const count = pieces[type]; if (!count) continue;
-      const item = document.createElement('div'), image = document.createElement('img'), total = document.createElement('span');
+      const active = puzzleActive() && color === data.puzzle.side;
+      const item = document.createElement(active ? 'button' : 'div'), image = document.createElement('img'), total = document.createElement('span');
       item.className = 'pocket-piece'; image.alt = ''; image.src = data.artwork[color + type]; total.textContent = String(count);
+      if (active) {
+        item.type = 'button'; item.setAttribute('aria-label', 'Drop ' + (color === 'w' ? 'white ' : 'black ') + ({ p:'pawn', n:'knight', b:'bishop', r:'rook', q:'queen' }[type]) + ', ' + count + ' available');
+        item.setAttribute('aria-pressed', String(puzzleDrop === type)); item.disabled = Boolean(puzzleSolved || puzzleReply || puzzleWrong);
+        item.onclick = () => puzzleSelectDrop(type);
+      }
+      if (puzzleDrop === type && active) item.classList.add('selected');
       item.append(image, total); container.append(item);
     }
   };
