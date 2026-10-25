@@ -1,8 +1,16 @@
-import { ArrowRight, FolderOpen, Settings as SettingsIcon } from "lucide-react";
+import { Activity, ArrowRight, Bookmark, ClipboardCheck, Dumbbell, FolderOpen, Library, Settings as SettingsIcon } from "lucide-react";
+import type { WorkspaceTab } from "./WorkspaceTabs";
 
-type AppHeaderProps = { onImport: () => void; onSettings: () => void };
+type AppHeaderProps = {
+  activeTab: WorkspaceTab;
+  libraryOpen: boolean;
+  onImport: () => void;
+  onLibrary: () => void;
+  onSettings: () => void;
+  onTabChange: (tab: WorkspaceTab) => void;
+};
 
-export function AppHeader({ onImport, onSettings }: AppHeaderProps) {
+export function AppHeader({ activeTab, libraryOpen, onImport, onLibrary, onSettings, onTabChange }: AppHeaderProps) {
   return (
       <header className="app-header">
         <div className="brand">
@@ -21,9 +29,25 @@ export function AppHeader({ onImport, onSettings }: AppHeaderProps) {
           <span className="brand-divider" />
           <span className="product-label">Game review</span>
         </div>
+        <nav className="app-navigation" aria-label="Workspace">
+          <button aria-label="Games" className={libraryOpen ? "active" : ""} aria-current={libraryOpen ? "page" : undefined} onClick={onLibrary}>
+            <Library size={21} /><span>Games</span>
+          </button>
+          <button aria-label="Review" className={activeTab === "review" ? "active" : ""} aria-current={activeTab === "review" ? "page" : undefined} onClick={() => onTabChange("review")}>
+            <ClipboardCheck size={21} /><span>Review</span>
+          </button>
+          <button aria-label="Analysis" className={activeTab === "analysis" ? "active" : ""} aria-current={activeTab === "analysis" ? "page" : undefined} onClick={() => onTabChange("analysis")}>
+            <Activity size={21} /><span>Analysis</span>
+          </button>
+          <button aria-label="Practice" className={activeTab === "practice" ? "active" : ""} aria-current={activeTab === "practice" ? "page" : undefined} onClick={() => onTabChange("practice")}>
+            <Dumbbell size={21} /><span>Practice</span>
+          </button>
+          <button aria-label="Saved" className={activeTab === "history" ? "active" : ""} aria-current={activeTab === "history" ? "page" : undefined} onClick={() => onTabChange("history")}>
+            <Bookmark size={21} /><span>Saved</span>
+          </button>
+        </nav>
         <div className="header-actions">
-          <span className="local-indicator">Analysis on your device</span>
-          <button className="secondary" onClick={onImport}>
+          <button aria-label="Load PGN" className="secondary" onClick={onImport}>
             <FolderOpen size={16} />
             <span>Load PGN</span>
           </button>

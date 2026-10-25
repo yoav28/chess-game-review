@@ -64,7 +64,7 @@
   width: 25%;
   height: 25%;
   border-radius: 50%;
-  background: #303c3340;
+  background: #0003;
   pointer-events: none;
 }
 
@@ -72,7 +72,7 @@
   content: '';
   position: absolute;
   inset: 2%;
-  border: min(0.7vw, 6px) solid #303c3366;
+  border: min(0.7vw, 6px) solid #0003;
   border-radius: 50%;
   pointer-events: none;
   z-index: 2;
@@ -104,7 +104,7 @@
 .board-arrow-annotation { color: #e2a044; }
 .board-arrow-best { color: #81b64c; }
 .board-arrow-coach { color: #447fae; }
-.board-classification { position: absolute; top: 3%; right: 3%; z-index: 5; display: flex; align-items: center; justify-content: center; width: 29%; height: 29%; border-radius: 50%; background: #56534e; color: #fff; font-size: clamp(9px, 1.8vw, 18px); font-weight: 800; line-height: 1; box-shadow: 0 1px 3px #18201766; pointer-events: none; }
+.board-classification { position: absolute; top: 3%; right: 3%; z-index: 5; display: flex; align-items: center; justify-content: center; width: 29%; height: 29%; border-radius: 50%; background: #56534e; color: #fff; font-size: clamp(9px, 1.8vw, 18px); font-weight: 800; line-height: 1; box-shadow: 0 1px 3px #0003; pointer-events: none; }
 .board-classification.brilliant { background: #187f86; }
 .board-classification.great { background: #436b9a; }
 .board-classification.book { background: #83684e; }

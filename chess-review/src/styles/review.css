@@ -7,7 +7,7 @@
   overflow: hidden;
 }
 .inspector-tabs {
-  display: flex;
+  display: none;
   border-bottom: 1px solid var(--border);
   padding: 0 22px;
   flex-shrink: 0;
@@ -156,7 +156,7 @@
   height: 10px;
   width: 10px;
   display: inline-block;
-  border: 1px solid #89917b;
+  border: 1px solid #56534e;
   border-radius: 2px;
   flex-shrink: 0;
 }
@@ -164,7 +164,7 @@
   background: #eeeed2;
 }
 .player-dot.black {
-  background: #252a21;
+  background: #262522;
 }
 .accuracy-players > div > span:nth-child(2) {
   font-size: 12px;
@@ -235,7 +235,7 @@
 }
 .coach > p {
   font-size: 12px;
-  color: #b5bdab;
+  color: #b3b2b1;
   line-height: 1.85;
   margin: 17px 0 0;
 }
@@ -318,11 +318,11 @@
   gap: 12px;
   text-align: left;
   padding: 13px 7px;
-  border-bottom: 1px solid #383e31;
+  border-bottom: 1px solid #302e2b;
 }
 .moments > button:hover,
 .moments > button.active {
-  background: #30372a;
+  background: #363532;
 }
 .moments > button > span {
   display: flex;

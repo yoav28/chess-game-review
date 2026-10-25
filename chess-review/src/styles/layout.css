@@ -2,29 +2,37 @@
   min-height: 100svh;
 }
 .app-header {
-  height: 60px;
+  position: fixed;
+  z-index: 30;
+  inset: 0 auto 0 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  border-bottom: 1px solid var(--border);
+  width: 170px;
+  height: 100svh;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0 0 12px;
+  border-right: 1px solid var(--border);
   background: #262522;
 }
 .brand {
   display: flex;
+  height: 60px;
+  flex: none;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
+  padding: 0 16px;
   white-space: nowrap;
 }
 .brand > svg {
-  width: 28px;
-  height: 31px;
+  width: 22px;
+  height: 26px;
+  flex: none;
   color: var(--accent);
 }
 .brand > span:first-of-type {
   font-weight: 700;
-  font-size: 25px;
-  letter-spacing: -1.3px;
+  font-size: 19px;
+  letter-spacing: -0.7px;
 }
 .brand-period {
   color: var(--accent);
@@ -36,13 +44,52 @@
   margin: 0 7px;
 }
 .product-label {
+  display: none;
+}
+.app-navigation {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+.app-navigation button {
+  display: flex;
+  height: 42px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  color: #dedddc;
   font-size: 14px;
-  color: var(--muted);
+  font-weight: 600;
+  text-align: left;
+}
+.app-navigation button svg {
+  flex: none;
+  color: #b3b2b1;
+}
+.app-navigation button:hover {
+  background: #1f1e1b;
+  color: #fff;
+}
+.app-navigation button.active {
+  color: #fff;
+}
+.app-navigation button.active svg {
+  color: var(--accent);
 }
 .header-actions {
   display: flex;
-  align-items: center;
-  gap: 17px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: auto;
+  padding: 0 12px;
+}
+.header-actions .secondary {
+  width: 100%;
+  justify-content: flex-start;
+}
+.header-actions .icon-button {
+  align-self: flex-start;
 }
 .local-indicator {
   font-size: 12px;
@@ -75,7 +122,7 @@
   color: var(--text);
 }
 .secondary:hover:not(:disabled) {
-  background: #3a4033;
+  background: #484745;
 }
 .icon-button {
   display: inline-flex;
@@ -89,7 +136,7 @@
 }
 .icon-button:hover:not(:disabled) {
   color: var(--text);
-  background: #3a3e34;
+  background: #484745;
 }
 .primary.icon-button {
   color: var(--accent-dark);
@@ -131,8 +178,10 @@
 }
 .workspace {
   display: grid;
-  grid-template-columns: 246px minmax(440px, 1fr) 364px;
-  height: calc(100svh - 95px);
+  grid-template-columns: 220px minmax(500px, 1fr) 340px;
+  width: calc(100% - 170px);
+  height: calc(100svh - 35px);
+  margin-left: 170px;
   min-height: 0;
 }
 .library-wrapper {

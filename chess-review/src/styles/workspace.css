@@ -84,10 +84,10 @@
 }
 .player-avatar.w {
   background: #eeeed2;
-  color: #343c2e;
+  color: #302e2b;
 }
 .player-avatar.b {
-  background: #3b4034;
+  background: #403f3c;
   color: #b3b2b1;
 }
 .player-info {
@@ -120,14 +120,14 @@
   min-width: 70px;
   text-align: center;
   padding: 7px 8px;
-  background: #292d26;
+  background: #403f3c;
   color: var(--muted);
   border: 1px solid #403f3c;
   border-radius: 4px;
 }
 .player-clock.turn {
   background: #eeeed2;
-  color: #383e31;
+  color: #302e2b;
   border-color: #eeeed2;
 }
 .board-with-eval {
@@ -140,7 +140,7 @@
   width: 17px;
   overflow: hidden;
   border-radius: 2px;
-  background: #3d4338;
+  background: #403f3c;
   display: flex;
   flex-direction: column-reverse;
 }
@@ -158,7 +158,7 @@
   left: 0;
   font-size: 8px;
   font-weight: 650;
-  color: #414836;
+  color: #302e2b;
   width: 17px;
   text-align: center;
   writing-mode: vertical-rl;
@@ -191,7 +191,7 @@
   min-width: 33px;
 }
 .move-controls .autoplay {
-  background: #353a2f;
+  background: #403f3c;
   color: var(--accent);
   margin: 0 3px;
 }
@@ -296,7 +296,7 @@
   border-radius: 3px;
 }
 .starting-position.active {
-  background: #333b2c;
+  background: #363532;
   color: var(--accent);
 }
 .move-pair {
@@ -305,7 +305,7 @@
   gap: 5px;
   align-items: center;
   min-height: 35px;
-  border-bottom: 1px solid #30362a;
+  border-bottom: 1px solid #403f3c;
 }
 .move-pair > span {
   color: var(--subtle);
@@ -323,11 +323,11 @@
   border-radius: 3px;
 }
 .move-cell:hover {
-  background: #2e3428;
+  background: #363532;
 }
 .move-cell.active {
   background: #262522;
-  color: #e6efd8;
+  color: #fff;
 }
 .move-glyph {
   font-size: 11px;
@@ -365,12 +365,12 @@
 }
 @media (min-width: 761px) {
   .board-area,.board-toolbar,.evaluation-graph,.graph-placeholder {
-    width: min(100%, calc(100svh - 320px));
+    width: min(100%, calc(100svh - 136px));
   }
 }
 @media (min-width: 761px) {
   .workspace-heading,.game-meta,.moves-heading,.move-list {
-    width: min(100%, calc(100svh - 320px));
+    width: min(100%, calc(100svh - 136px));
     margin-left:auto;
     margin-right:auto;
   }

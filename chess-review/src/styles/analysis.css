@@ -20,7 +20,7 @@
   border-color: var(--accent);
 }
 .toggle.on > span {
-  background: #334127;
+  background: #262522;
   margin-left: 13px;
 }
 .analysis-content > .muted {
@@ -233,6 +233,8 @@
   margin: 15px 0;
 }
 .app-footer {
+  width: calc(100% - 170px);
+  margin-left: 170px;
   height: 35px;
   display: flex;
   align-items: center;

@@ -8,7 +8,7 @@ import { PlayPositionPanel } from "./components/PlayPositionPanel";
 import { ExplanationPanel } from "./components/ExplanationPanel";
 import { SavedReviewsPanel } from "./components/SavedReviewsPanel";
 import { ReviewShare } from "./components/ReviewShare";
-import { WorkspaceTabs } from "./components/WorkspaceTabs";
+import { WorkspaceTabs, type WorkspaceTab } from "./components/WorkspaceTabs";
 import { PracticePanel } from "./components/PracticePanel";
 import { Dialogs } from "./components/Dialogs";
 import { demoGame } from "./lib/demo";
@@ -38,10 +38,29 @@ function App() {
     practice, variant, boardBestMove, showBestArrow, boardCoachArrows, classificationMark, threat,
   } = useWorkspace();
 
+  const changeWorkspaceTab = (value: WorkspaceTab) => {
+    stopPlay();
+    explanation.stop();
+    practice.stop();
+    if (value === "practice") beginPractice();
+    else {
+      setTab(value);
+      setVariation([]);
+      setPlaying(false);
+    }
+  };
+
   return (
     <BoardAppearanceContext.Provider value={{ appearance: settings, onChange: patch => setSettings(normalizeSettings({ ...settings, ...patch })) }}>
     <div className="app-shell">
-      <AppHeader onImport={() => setDialog("import")} onSettings={() => setDialog("settings")} />
+      <AppHeader
+        activeTab={tab}
+        libraryOpen={libraryOpen}
+        onImport={() => setDialog("import")}
+        onLibrary={() => setLibraryOpen(true)}
+        onSettings={() => setDialog("settings")}
+        onTabChange={changeWorkspaceTab}
+      />
       <div className="workspace">
         <div className={`library-wrapper ${libraryOpen ? "open" : ""}`}>
           <GameLibrary
@@ -101,17 +120,7 @@ function App() {
           }}
         />
         <aside className="inspector">
-          <WorkspaceTabs tab={tab} onChange={value => {
-                  stopPlay();
-                  explanation.stop();
-                  practice.stop();
-                  if (value === "practice") beginPractice();
-                  else {
-                    setTab(value);
-                    setVariation([]);
-                    setPlaying(false);
-                  }
-                }} />
+          <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} />
           <div className="inspector-body" role="tabpanel" id="workspace-panel" aria-labelledby={`workspace-tab-${tab}`}>
             {explanation.active ? (
               <ExplanationPanel explanation={explanation} onExit={explanation.stop} />
