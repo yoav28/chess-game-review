@@ -4,7 +4,7 @@ import { insightsForMove } from './insights'
 import type { GamePhase, GameReview, MoveReview, ParsedMove } from './review'
 import { isVariantHeuristic, variantLabel } from './variants'
 
-export type TrainingTheme = 'loose-pieces' | 'fork' | 'pin' | 'mate' | 'third-check' | 'king-of-the-hill' | 'atomic' | 'development' | 'castling' | 'calculation'
+export type TrainingTheme = 'loose-pieces' | 'fork' | 'pin' | 'mate' | 'third-check' | 'king-of-the-hill' | 'atomic' | 'horde' | 'development' | 'castling' | 'calculation'
 
 export type TrainingExercise = {
   ply: number
@@ -70,6 +70,10 @@ function themeFor(move: MoveReview, best: ParsedMove): Pick<TrainingExercise, 't
   if (outcome?.reason === 'atomic-win') return {
     theme: 'atomic', title: 'Explode the opposing king', evidence: 'The engine alternative wins immediately with an explosive capture.',
     goal: 'Find a legal capture that removes the opposing king without exploding your own.',
+  }
+  if (outcome?.reason === 'horde-win') return {
+    theme: 'horde', title: 'Finish the Horde game', evidence: 'The engine alternative wins immediately by eliminating the opposing army.',
+    goal: 'Find a move that removes every opposing piece or completes the horde win condition.',
   }
   if (bestBoard.isCheckmate()) return {
     theme: 'mate', title: 'Finish the mating attack', evidence: 'The engine alternative delivers immediate checkmate.',

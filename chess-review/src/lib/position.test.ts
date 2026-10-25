@@ -25,5 +25,7 @@ test('variant parsing accepts known labels and rejects unsupported variants rath
   assert.equal(pgnVariant('1. e4 *'), 'chess')
   assert.equal(pgnVariant('[Variant "Chess960"]'), 'chess960')
   assert.equal(pgnVariant('[Variant "Fischerandom"]'), 'chess960')
-  assert.throws(() => pgnVariant('[Variant "Atomic"]'), /not supported/)
+  assert.equal(pgnVariant('[Variant "Atomic"]'), 'atomic')
+  assert.equal(pgnVariant('[Variant "Horde"]'), 'horde')
+  assert.throws(() => pgnVariant('[Variant "Crazyhouse"]'), /not supported/)
 })

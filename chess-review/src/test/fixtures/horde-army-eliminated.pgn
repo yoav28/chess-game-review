@@ -1,0 +1,7 @@
+[Event "Horde"]
+[Variant "Horde"]
+[SetUp "1"]
+[FEN "r3k3/8/8/8/8/8/P7/8 b - - 0 1"]
+[Result "0-1"]
+
+1... Rxa2 0-1

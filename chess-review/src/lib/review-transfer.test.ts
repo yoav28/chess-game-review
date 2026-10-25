@@ -112,7 +112,7 @@ test('illegal or dishonest best/PV/SAN data and inconsistent evaluation history 
   assert.throws(() => parseReviewTransfer(mutate(review => { review.moves[0].pvSan = ['fiction'] })), /legal SAN/)
   assert.throws(() => parseReviewTransfer(mutate(review => { review.moves[0].pv = Array(257).fill('e2e4'); review.moves[0].pvSan = Array(257).fill('e4') })), /continuation/)
   assert.throws(() => parseReviewTransfer(mutate(review => { review.moves[1].beforeEvaluation = { cp: 80, mate: null } })), /evaluation history/)
-  assert.throws(() => parseReviewTransfer(mutate(review => { review.initialAnalysis.lines[0].rank = 6 })), /candidate rank/)
+  assert.throws(() => parseReviewTransfer(mutate(review => { review.initialAnalysis.lines[0].rank = 6 })), /candidate line rank/)
 })
 
 test('forged summary counts, phase samples, key plies, and overall averages cannot enter saved statistics', () => {

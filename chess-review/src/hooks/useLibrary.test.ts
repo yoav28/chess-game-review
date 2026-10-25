@@ -26,11 +26,15 @@ function sink() {
   return { state, events, callbacks }
 }
 
-const game = (id: string, endTime = 1): GameRecord => ({ ...demoGame, id, endTime })
+const game = (id: string, endTime = 1, pgn = demoGame.pgn): GameRecord => ({ ...demoGame, id, endTime, pgn })
 const progress: ImportProgress = { phase: 'games', username: 'ada', archivesCompleted: 1, archivesTotal: 2, gamesLoaded: 1 }
 
-async function flush() {
-  for (let index = 0; index < 6; index += 1) await Promise.resolve()
+async function waitFor(predicate: () => boolean, description: string) {
+  for (let index = 0; index < 100; index += 1) {
+    if (predicate()) return
+    await new Promise<void>(resolve => setImmediate(resolve))
+  }
+  assert.fail(`Timed out waiting for ${description}.`)
 }
 
 test('a superseded import cannot publish games, progress, errors, notices or loading changes', async () => {
@@ -44,9 +48,9 @@ test('a superseded import cannot publish games, progress, errors, notices or loa
     importGames: (username, options) => { calls.set(username, options); return username === 'ada' ? oldResult.promise : newResult.promise },
   })
   const oldImport = importer.importUser('ada')
-  await flush()
+  await waitFor(() => calls.has('ada'), 'the first archive request')
   const newImport = importer.importUser('grace')
-  await flush()
+  await waitFor(() => calls.has('grace'), 'the replacement archive request')
   assert.equal(calls.get('ada')?.signal?.aborted, true)
   const eventCount = view.events.length
   calls.get('ada')?.onGames?.([game('stale')])
@@ -82,27 +86,28 @@ test('Stop during cache loading is immediate and prevents the network import', a
   assert.deepEqual(view.state.games, [])
 })
 
-test('partial batches merge with the complete cache but cannot overwrite saved history on Stop', async () => {
+test('partial batches persist, and callbacks arriving after Stop cannot overwrite them', async () => {
   const view = sink()
   const result = deferred<GameRecord[]>()
   let options: ImportOptions | undefined
-  let saves = 0
+  const writes: string[][] = []
   const importer = createLibraryImporter(view.callbacks, {
     load: async () => [game('old', 1)],
-    save: async () => { saves += 1 },
+    save: async (_, games) => { writes.push(games.map(value => value.id)) },
     importGames: (_, value) => { options = value; return result.promise },
   })
   const pending = importer.importUser('ada')
-  await flush()
-  options?.onGames?.([game('new', 2)])
+  await waitFor(() => options !== undefined, 'the partial-import callback')
+  options?.onGames?.([game('new', 2, demoGame.pgn.replace('1. e4', '1. d4'))])
   assert.deepEqual(view.state.games.map(value => value.id), ['new', 'old'])
   importer.cancel()
   options?.onGames?.([game('late', 3)])
   result.reject(new DOMException('Cancelled', 'AbortError'))
   await pending
+  await waitFor(() => writes.length === 2, 'partial and stopped library writes')
   assert.deepEqual(view.state.games.map(value => value.id), ['new', 'old'])
   assert.equal(view.state.notice, 'Import stopped. 2 loaded games remain available.')
-  assert.equal(saves, 0)
+  assert.deepEqual(writes, [['new', 'old'], ['new', 'old']])
 })
 
 test('unmount suppresses continuations from cache loading, network callbacks, and storage failures', async () => {
@@ -125,7 +130,7 @@ test('unmount suppresses continuations from cache loading, network callbacks, an
     importGames: async (_, value) => { options = value; return [game('one')] },
   })
   const pending = importer.importUser('ada')
-  await flush()
+  await waitFor(() => options !== undefined, 'the in-flight import callback')
   importer.dispose()
   const eventCount = view.events.length
   options?.onGames?.([game('late')])
@@ -146,19 +151,18 @@ test('complete cache writes stay ordered and an old storage failure cannot repla
       writes.push(games.map(value => value.id))
       if (writes.length === 1) await firstSave.promise
     },
-    importGames: async () => ++imports === 1 ? [game('old')] : [game('new'), game('newer')],
+    importGames: async () => ++imports === 1 ? [game('old')] : [game('new', 2, demoGame.pgn.replace('1. e4', '1. d4')), game('newer', 3, demoGame.pgn.replace('1. e4', '1. c4'))],
   })
   const oldImport = importer.importUser('ada')
-  await flush()
+  await waitFor(() => writes.length === 1, 'the first saved archive')
   const newImport = importer.importUser('ada')
-  await flush()
+  await waitFor(() => imports === 2, 'the replacement network import')
   assert.deepEqual(writes, [['old']])
-  assert.equal(view.state.notice, 'All 2 public games imported.')
   firstSave.reject(new Error('Old storage failed'))
   await Promise.all([oldImport, newImport])
   assert.deepEqual(writes, [['old'], ['new', 'newer']])
   assert.equal(view.state.notice, 'All 2 public games imported.')
-  assert.deepEqual(view.state.games.map(value => value.id), ['new', 'newer'])
+  assert.deepEqual(view.state.games.map(value => value.id), ['newer', 'new'])
 })
 
 test('a completed import replaces cached stale games with authoritative complete history', async () => {

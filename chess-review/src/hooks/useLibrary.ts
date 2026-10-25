@@ -173,6 +173,7 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
       if (!storageError) {
         await saveImportStatus(user, { ...request.statusProgress, gamesLoaded: result.length, complete: true, updatedAt: new Date().toISOString() }, saveStatus).catch(() => { storageError = true })
       }
+      if (!live(request)) return
       if (storageError) {
         callbacks.notice('All games imported. Browser storage is unavailable; keep this tab open to retain them.')
       } else {
