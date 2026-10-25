@@ -224,7 +224,7 @@ export function useWorkspace() {
 
   useEffect(() => {
     if (!library.username || !library.games.length) return
-    if (restoredUsername.current === library.username && game.id !== demoGame.id) return
+    if (restoredUsername.current === library.username) return
     restoredUsername.current = library.username
     const lastId = readLastGame(library.username)
     const selected = library.games.find(candidate => candidate.id === lastId || candidate.url === lastId) ?? library.games[0]

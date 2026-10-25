@@ -1,4 +1,5 @@
-import { Check, SlidersHorizontal } from "lucide-react";
+import { Check, ChevronLeft, Settings, SlidersHorizontal, Star } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AppHeader } from "./components/AppChrome";
 import { BoardWorkspace } from "./components/BoardWorkspace";
 import { GameLibrary } from "./components/GameLibrary";
@@ -37,11 +38,20 @@ function App() {
     openSaved, importReport,
     practice, variant, boardBestMove, showBestArrow, boardCoachArrows, classificationMark, threat,
   } = useWorkspace();
+  const [reviewMode, setReviewMode] = useState<'overview' | 'moves'>('overview');
+  const favoriteKey = `review-favorite:${game.id}`;
+  const [reviewFavorite, setReviewFavorite] = useState(() => readReviewFavorite(favoriteKey));
+
+  useEffect(() => {
+    setReviewMode('overview');
+    setReviewFavorite(readReviewFavorite(favoriteKey));
+  }, [favoriteKey]);
 
   const changeWorkspaceTab = (value: WorkspaceTab) => {
     stopPlay();
     explanation.stop();
     practice.stop();
+    if (value !== 'review') setReviewMode('overview');
     if (value === "practice") beginPractice();
     else {
       setTab(value);
@@ -67,7 +77,7 @@ function App() {
             reviewedGameId={review?.pgn === game.pgn ? game.id : undefined}
             onSelect={selected => { selectGame(selected); setLibraryOpen(false); }}
             onClose={() => setLibraryOpen(false)}
-            onSample={() => { selectGame(demoGame); setPly(18); setLibraryOpen(false); }}
+            onSample={() => { selectGame(demoGame); setPly(0); setLibraryOpen(false); }}
           />
         </div>
         {libraryOpen && (
@@ -104,7 +114,6 @@ function App() {
           isVariation={isVariation && !explanation.active}
           variationSans={variationState.sans}
           onOpenLibrary={() => setLibraryOpen(true)}
-          onSettings={() => setDialog("settings")}
           onMove={boardMove}
           onFlip={() => setOrientation((value) => (value === "w" ? "b" : "w"))}
           onCopyPosition={copyPosition}
@@ -121,11 +130,23 @@ function App() {
             navigate(next);
           }}
         />
-        <aside className="inspector">
+        <button className="board-settings" onClick={() => setDialog("settings")} aria-label="Board settings">
+          <Settings size={18} />
+        </button>
+        <aside className={`inspector ${tab === 'review' && review && reviewMode === 'moves' ? 'review-step-active' : ''}`}>
           <div className="inspector-header">
+            {tab === 'review' && review && reviewMode === 'moves' && <>
+              <button className="inspector-back" aria-label="Back to highlights" onClick={() => setReviewMode('overview')}><ChevronLeft size={23} /></button>
+              <button className="inspector-favorite" aria-label="Favorite review" aria-pressed={reviewFavorite} onClick={() => {
+                const value = !reviewFavorite;
+                setReviewFavorite(value);
+                try { localStorage.setItem(favoriteKey, String(value)); } catch { }
+              }}><Star size={20} fill={reviewFavorite ? 'currentColor' : 'none'} /></button>
+            </>}
             <h1>{tab === "review" ? "Game Review" : tab === "history" ? "Saved Games" : tab === "analysis" ? "Analysis" : "Practice"}</h1>
+            {tab === 'review' && review && reviewMode === 'moves' && <button className="inspector-analysis" aria-label="Review settings" onClick={() => setDialog('settings')}><Settings size={19} /></button>}
           </div>
-          <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} />
+          {!(tab === 'review' && review && reviewMode === 'moves') && <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} />}
           <div className="inspector-body" role="tabpanel" id="workspace-panel" aria-labelledby={`workspace-tab-${tab}`}>
             {explanation.active ? (
               <ExplanationPanel explanation={explanation} onExit={explanation.stop} />
@@ -136,6 +157,8 @@ function App() {
                 parsed={parsed}
                 ply={safePly}
                 showTimeSpent={settings.showTimeSpent}
+                moveReview={reviewMode === 'moves'}
+                onMoveReview={setReviewMode}
                 games={library.games}
                 username={library.username}
                 review={review}
@@ -264,3 +287,11 @@ function App() {
 }
 
 export default App;
+
+function readReviewFavorite(key: string) {
+  try {
+    return localStorage.getItem(key) === 'true';
+  } catch {
+    return false;
+  }
+}

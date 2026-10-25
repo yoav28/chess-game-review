@@ -52,14 +52,13 @@
   color: var(--muted);
 }
 .board-layout {
-  position: relative;
   max-width: 840px;
   margin: 0 auto;
 }
 .board-settings {
   position: absolute;
-  top: 0;
-  right: -40px;
+  top: 16px;
+  left: calc(100% - var(--analysis-width) - 44px);
   display: flex;
   width: 24px;
   min-width: 24px;

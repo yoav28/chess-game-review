@@ -19,6 +19,9 @@
     grid-template-columns: minmax(0, 1fr) 340px;
     gap: 24px;
   }
+  .board-settings {
+    left: calc(100% - 376px);
+  }
   .board-workspace {
     padding: 0 12px 16px;
   }

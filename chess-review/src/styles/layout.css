@@ -225,8 +225,10 @@
   font-weight: 600;
 }
 .workspace {
+  position: relative;
+  --analysis-width: clamp(340px, calc(100vw - 170px - 100svh + 32px), 500px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(340px, calc(100vw - 170px - 100svh + 32px), 500px);
+  grid-template-columns: minmax(0, 1fr) var(--analysis-width);
   gap: 32px;
   width: calc(100% - 170px);
   height: 100svh;
@@ -268,12 +270,41 @@
   text-decoration: none;
 }
 .inspector-header {
+  position: relative;
   display: flex;
   min-height: 48px;
   flex: none;
   align-items: center;
   justify-content: center;
   background: #21201e;
+}
+.inspector-back,
+.inspector-favorite,
+.inspector-analysis {
+  position: absolute;
+  top: 6px;
+  display: inline-flex;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.inspector-back {
+  left: 4px;
+}
+.inspector-analysis {
+  right: 4px;
+}
+.inspector-favorite {
+  left: 40px;
+  color: var(--muted);
+}
+.inspector-back:hover,
+.inspector-favorite:hover,
+.inspector-analysis:hover {
+  color: #fff;
 }
 .inspector-header h1 {
   font-family: "Chess Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;

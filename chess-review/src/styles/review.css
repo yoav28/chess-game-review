@@ -36,6 +36,9 @@
 .inspector-tabs button:hover {
   color: var(--text);
 }
+.inspector:has(.review-step-panel) .inspector-tabs {
+  display: none;
+}
 .inspector-body {
   flex: 1;
   overflow: auto;
@@ -214,23 +217,11 @@
   white-space: nowrap;
 }
 .review-player-avatar {
-  display: flex;
+  display: block;
   width: 64px;
   height: 64px;
-  align-items: center;
-  justify-content: center;
   border-radius: 3px;
-  font-family: "Chess Sans", sans-serif;
-  font-size: 48px;
-  line-height: 1;
-}
-.review-player-avatar.white {
-  background: #fff;
-  color: #363532;
-}
-.review-player-avatar.black {
-  background: #403f3c;
-  color: #fff;
+  object-fit: cover;
 }
 .review-accuracy-label {
   grid-column: 1;
@@ -304,6 +295,137 @@
   max-height: 320px;
   margin: 0;
   padding: 0;
+}
+.review-step-panel {
+  padding: 0 0 20px;
+}
+.review-step-coach {
+  margin-bottom: 0;
+}
+.review-step-coach .review-coach-bubble {
+  min-height: 98px;
+  padding: 12px 16px;
+}
+.review-step-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  line-height: 22px;
+}
+.review-step-title strong {
+  min-width: 0;
+}
+.review-step-icon {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.review-evaluation {
+  min-width: 48px;
+  margin-left: auto;
+  padding: 2px 4px;
+  border-radius: 2px;
+  background: #f1f1ee;
+  color: #262522;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+.review-evaluation-black {
+  background: #454340;
+  color: #fff;
+}
+.review-step-explanation {
+  margin-top: 8px;
+  color: #55534f;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.review-step-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 0 12px;
+}
+.review-step-retry {
+  min-height: 40px;
+  justify-content: center;
+  padding: 7px 10px;
+  background: #403f3b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.review-step-next {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  margin-left: auto;
+  border-radius: 4px;
+  font-size: 16px;
+}
+.review-game-heading {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-bottom: 1px solid #ffffff12;
+  font-size: 13px;
+}
+.review-game-heading strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-game-heading strong span {
+  margin: 0 4px;
+  color: var(--muted);
+}
+.review-game-heading > span {
+  margin-left: auto;
+  color: var(--muted);
+}
+.review-opening {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #ffffff12;
+  border-bottom: 1px solid #ffffff12;
+  color: var(--muted);
+  font-size: 12px;
+}
+.review-step-moves .move-list {
+  max-height: 100px;
+}
+.review-step-moves .starting-position {
+  display: none;
+}
+.review-step-moves > summary {
+  display: none;
+}
+.review-overview-footer {
+  position: sticky;
+  bottom: -23px;
+  z-index: 5;
+  margin: 16px -24px -23px;
+  padding: 16px 24px 20px;
+  background: #262522;
+}
+.review-start-button {
+  min-height: 56px;
+  border-radius: 6px;
+  background: linear-gradient(#87b94b, #63963b);
+  box-shadow: 0 2px 0 #4b762f;
+  font-size: 20px;
+}
+.review-start-button:hover {
+  background: linear-gradient(#95c45a, #70a546);
 }
 .coach-title h3 {
   font-size: 14px;

@@ -1,5 +1,7 @@
 import {
+  BookOpen,
   ArrowRight,
+  ChevronLeft,
   ChevronRight,
   Lightbulb,
   RotateCcw,
@@ -49,6 +51,8 @@ type Props = {
   onExplain: () => void;
   preferredColor?: 'w' | 'b';
   settings: Settings;
+  moveReview: boolean;
+  onMoveReview: (mode: 'overview' | 'moves') => void;
   onSettings: (settings: Settings) => void;
   onBestLine: () => void;
   onShowLine: (line: string[]) => void;
@@ -78,6 +82,8 @@ export function ReviewPanel({
   onExplain,
   preferredColor,
   settings,
+  moveReview,
+  onMoveReview,
   onSettings,
   onBestLine,
   onShowLine,
@@ -143,12 +149,25 @@ export function ReviewPanel({
             />
           </details>
         </div>
+      ) : moveReview ? (
+        <ReviewMoveStep
+          game={game}
+          parsed={parsed}
+          review={review}
+          move={move}
+          ply={ply}
+          showTimeSpent={showTimeSpent}
+          settings={settings}
+          onBack={() => onMoveReview('overview')}
+          onSelect={onSelect}
+          onPracticePosition={onPracticePosition}
+        />
       ) : (
         <>
           {review.importedAt && <p className="fine-print" role="note">Imported report. Scores and explanations came from the file; no engine analysis was rerun here. Use Review again to calculate a new report.</p>}
           {settings.showCoachAvatar && (
             <div className="review-coach">
-              <img className="review-coach-avatar" src="/coach/default.png" alt="" />
+              <img className="review-coach-avatar" src="/coach/hikaru.png" alt="" />
               <div className="review-coach-bubble">Let’s look at the key moments from this game.</div>
             </div>
           )}
@@ -167,11 +186,11 @@ export function ReviewPanel({
               <span className="review-comparison-label">Players</span>
               <div className="review-player-score review-player-score-0">
                 <p className="review-player-name">{game.white.username}</p>
-                <div className="review-player-avatar white" aria-hidden="true">♔</div>
+                <img className="review-player-avatar" src="/players/white.png" alt={game.white.username} />
               </div>
               <div className="review-player-score review-player-score-1">
                 <p className="review-player-name">{game.black.username}</p>
-                <div className="review-player-avatar black" aria-hidden="true">♚</div>
+                <img className="review-player-avatar" src="/players/black.png" alt={game.black.username} />
               </div>
               <span className="review-comparison-label review-accuracy-label">Accuracy</span>
               <strong className="review-accuracy review-accuracy-white">{review.whiteAccuracy?.toFixed(1) ?? "—"}</strong>
@@ -312,6 +331,11 @@ export function ReviewPanel({
               <RotateCcw size={12} /> Review again
             </button>
           </div>
+          <div className="review-overview-footer">
+            <button className="primary full-width review-start-button" onClick={() => onMoveReview('moves')}>
+              Start Review <ArrowRight size={21} />
+            </button>
+          </div>
         </>
       )}
       {!engineRules(game.rules) && (
@@ -320,6 +344,87 @@ export function ReviewPanel({
           engine reviews standard chess, material odds, Chess960, three-check, King of the Hill, Atomic, Horde, and Crazyhouse.
         </p>
       )}
+    </div>
+  );
+}
+
+function ReviewMoveStep({
+  game,
+  parsed,
+  review,
+  move,
+  ply,
+  showTimeSpent,
+  settings,
+  onBack,
+  onSelect,
+  onPracticePosition,
+}: {
+  game: GameRecord;
+  parsed: ParsedGame;
+  review: GameReview;
+  move: MoveReview | undefined;
+  ply: number;
+  showTimeSpent: boolean;
+  settings: Settings;
+  onBack: () => void;
+  onSelect: (ply: number) => void;
+  onPracticePosition: (ply: number) => void;
+}) {
+  const finished = ply >= review.moves.length;
+  const retryable = move && ['inaccuracy', 'mistake', 'blunder', 'missed'].includes(move.classification);
+  const message = move
+    ? coachText(move, settings.coachDetail, settings.coachProfile)
+    : 'Choose Next to review the first move, or move a piece to explore the position.';
+  const title = move
+    ? `${move.san} is ${classificationLabels[move.classification] === 'Book' ? 'a book move' : `a ${classificationLabels[move.classification].toLowerCase()}`}`
+    : 'Starting Position';
+  const evaluation = move?.beforeEvaluation ?? review.initialAnalysis.evaluation;
+
+  return (
+    <div className="review-step-panel">
+      {settings.showCoachAvatar ? (
+        <div className="review-coach review-step-coach">
+          <img className="review-coach-avatar" src="/coach/hikaru-review.png" alt="" />
+          <div className="review-coach-bubble">
+            <div className="review-step-title">
+              {move && <MoveClassification className="review-step-icon" classification={move.classification} />}
+              <strong>{title}</strong>
+              <span className={`review-evaluation ${evaluation.cp < 0 ? 'review-evaluation-black' : ''}`}>
+                {evaluationLabel(evaluation, move?.variant)}
+              </span>
+            </div>
+            <p className="review-step-explanation">{message}</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="review-step-title">
+            {move && <MoveClassification className="review-step-icon" classification={move.classification} />}
+            <strong>{title}</strong>
+            <span className={`review-evaluation ${evaluation.cp < 0 ? 'review-evaluation-black' : ''}`}>
+              {evaluationLabel(evaluation, move?.variant)}
+            </span>
+          </div>
+          <p className="review-step-explanation">{message}</p>
+        </>
+      )}
+      <div className="review-step-actions">
+        {retryable && move && <button className="secondary review-step-retry" onClick={() => onPracticePosition(move.ply)}><RotateCcw size={15} /> Retry</button>}
+        <button className="primary review-step-next" onClick={() => finished ? onBack() : onSelect(ply + 1)}>
+          <ArrowRight size={20} /> {finished ? 'Finish Review' : 'Next'}
+        </button>
+      </div>
+      <div className="review-opening">
+        <span>{ply === 0 ? 'Starting Position' : review.opening?.name ?? 'Starting Position'}</span>
+        <BookOpen size={18} />
+      </div>
+      <div className="review-game-heading"><strong>{game.white.username}<span>–</span>{game.black.username}</strong><span>{review.result}</span></div>
+      <details className="review-move-section review-step-moves" open>
+        <summary><span>Game moves</span><span>{parsed.moves.length} half-moves</span></summary>
+        <MoveList parsed={parsed} timeControl={game.timeControl} timeClass={game.timeClass} showTimeSpent={showTimeSpent} moves={parsed.moves} review={review} ply={ply} onSelect={onSelect} />
+      </details>
+      <div className="review-analysis-graph"><EvaluationGraph review={review} ply={ply} onSelect={onSelect} /></div>
     </div>
   );
 }
