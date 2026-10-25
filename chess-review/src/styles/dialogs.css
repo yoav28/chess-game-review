@@ -14,7 +14,7 @@
   max-height: 90svh;
   overflow: auto;
   background: #2b2f26;
-  border: 1px solid #4b5540;
+  border: 1px solid #56534e;
   border-radius: 8px;
   padding: 24px;
   box-shadow: 0 2px 8px #0003;
@@ -88,7 +88,7 @@
   display: flex;
   gap: 9px;
   align-items: center;
-  background: #d9e2ca;
+  background: #dedddc;
   color: #2d3823;
   padding: 12px 18px;
   border-radius: 5px;

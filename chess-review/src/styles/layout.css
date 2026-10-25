@@ -2,13 +2,13 @@
   min-height: 100svh;
 }
 .app-header {
-  height: 76px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 28px;
   border-bottom: 1px solid var(--border);
-  background: #252723;
+  background: #262522;
 }
 .brand {
   display: flex;
@@ -67,11 +67,11 @@
   color: var(--accent-dark);
 }
 .primary:hover:not(:disabled) {
-  background: #ccddaf;
+  background: #9bc46c;
 }
 .secondary {
-  border: 1px solid #505548;
-  background: #30342c;
+  border: 1px solid #56534e;
+  background: #403f3c;
   color: var(--text);
 }
 .secondary:hover:not(:disabled) {
@@ -132,11 +132,11 @@
 .workspace {
   display: grid;
   grid-template-columns: 246px minmax(440px, 1fr) 364px;
-  height: calc(100svh - 111px);
+  height: calc(100svh - 95px);
   min-height: 0;
 }
 .library-wrapper {
   min-width: 0;
   border-right: 1px solid var(--border);
-  background: #252723;
+  background: #262522;
 }

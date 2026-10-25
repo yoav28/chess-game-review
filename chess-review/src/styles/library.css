@@ -37,7 +37,7 @@
   border-radius: 4px;
   padding-left: 10px;
   color: var(--subtle);
-  background: #22251f;
+  background: #262522;
 }
 .search-input input {
   background: none;
@@ -82,13 +82,13 @@
   text-align: left;
   padding: 14px 14px;
   gap: 9px;
-  border-top: 1px solid #34382f;
+  border-top: 1px solid #403f3c;
 }
 .game-row:hover {
-  background: #2d3129;
+  background: #363532;
 }
 .game-row.selected {
-  background: #353e2b;
+  background: #343f2b;
   box-shadow: inset 3px 0 var(--accent);
 }
 .result-mark {
@@ -98,7 +98,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid #555d4b;
+  border: 1px solid #56534e;
   border-radius: 3px;
   font-size: 12px;
 }
@@ -154,11 +154,11 @@
   margin-bottom: auto;
 }
 .library-empty > svg {
-  color: #8d9e77;
+  color: #81b64c;
   margin-bottom: 21px;
 }
 .library-empty h3 {
-  color: #cdd1c2;
+  color: #dedddc;
   font-size: 15px;
   font-weight: 500;
   margin-bottom: 9px;
@@ -166,7 +166,7 @@
 .library-empty p {
   font-size: 12px;
   line-height: 1.8;
-  color: #959d8b;
+  color: #999896;
 }
 .library-empty > span {
   display: block;
@@ -189,7 +189,7 @@
 .small-rook {
   font-size: 24px;
   line-height: 1;
-  color: #8d9e77;
+  color: #81b64c;
 }
 .import-status {
   margin: 0 20px 20px;

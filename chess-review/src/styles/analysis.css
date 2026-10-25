@@ -1,6 +1,6 @@
 .toggle {
-  border: 1px solid #667057;
-  background: #434a3b;
+  border: 1px solid #56534e;
+  background: #403f3c;
   width: 33px;
   height: 19px;
   border-radius: 12px;
@@ -11,7 +11,7 @@
 .toggle > span {
   width: 13px;
   height: 13px;
-  background: #a1aa95;
+  background: #b3b2b1;
   border-radius: 50%;
   transition: margin 0.15s;
 }
@@ -78,7 +78,7 @@
   font-weight: 600;
 }
 .pv-moves > button:hover {
-  background: #414b36;
+  background: #403f3c;
   color: var(--accent);
 }
 .engine-empty {
@@ -241,7 +241,7 @@
   font-size: 9px;
   color: var(--subtle);
   border-top: 1px solid var(--border);
-  background: #252723;
+  background: #262522;
 }
 .app-footer .text-button {
   font-size: 10px;

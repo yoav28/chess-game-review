@@ -1,5 +1,5 @@
 .inspector {
-  background: #272925;
+  background: #262522;
   border-left: 1px solid var(--border);
   min-width: 0;
   display: flex;
@@ -78,10 +78,10 @@
   align-items: center;
   gap: 12px;
   font-size: 11px;
-  color: #c7cebb;
+  color: #dedddc;
 }
 .review-features svg {
-  color: #8fa579;
+  color: #81b64c;
 }
 .review-intro .primary {
   min-height: 45px;
@@ -106,7 +106,7 @@
 }
 .review-bottom-note svg {
   flex-shrink: 0;
-  color: #8d9c7b;
+  color: #81b64c;
 }
 .inspector-bottom {
   display: flex;
@@ -161,7 +161,7 @@
   flex-shrink: 0;
 }
 .player-dot.white {
-  background: #e1e4d2;
+  background: #eeeed2;
 }
 .player-dot.black {
   background: #252a21;
@@ -196,7 +196,7 @@
   height: 31px;
   width: 31px;
   border-radius: 5px;
-  background: #415133;
+  background: #403f3c;
   display: flex;
   align-items: center;
   justify-content: center;
