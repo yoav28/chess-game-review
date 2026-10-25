@@ -43,6 +43,7 @@ type BoardWorkspaceProps = {
   threatArrow?: { from: string; to: string };
   classification?: { square: string; kind: Classification };
   showTimeSpent: boolean;
+  showMoves: boolean;
   showTimeline: boolean;
   disabled: boolean;
   evaluation?: Evaluation;
@@ -76,6 +77,7 @@ export function BoardWorkspace({
   threatArrow,
   classification,
   showTimeSpent,
+  showMoves,
   showTimeline,
   disabled,
   evaluation,
@@ -300,23 +302,27 @@ export function BoardWorkspace({
             </div>
           )}
           {showTimeline && <EvaluationGraph review={review} ply={ply} onSelect={onSelectMove} />}
-          <div className="moves-heading">
-            <h2>Moves</h2>
-            <span>
-              {parsed.moves.length} half-moves{" "}
-              <span className="keyboard-hint">· use ← → to navigate</span>
-            </span>
-          </div>
-          <MoveList
-            parsed={parsed}
-            timeControl={game.timeControl}
-            timeClass={game.timeClass}
-            showTimeSpent={showTimeSpent}
-            moves={parsed.moves}
-            review={review}
-            ply={ply}
-            onSelect={onSelectMove}
-          />
+          {showMoves && (
+            <>
+              <div className="moves-heading">
+                <h2>Moves</h2>
+                <span>
+                  {parsed.moves.length} half-moves{" "}
+                  <span className="keyboard-hint">· use ← → to navigate</span>
+                </span>
+              </div>
+              <MoveList
+                parsed={parsed}
+                timeControl={game.timeControl}
+                timeClass={game.timeClass}
+                showTimeSpent={showTimeSpent}
+                moves={parsed.moves}
+                review={review}
+                ply={ply}
+                onSelect={onSelectMove}
+              />
+            </>
+          )}
         </>
       )}
     </main>

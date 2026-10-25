@@ -92,6 +92,7 @@ function App() {
           threatArrow={threat.result?.arrow ?? undefined}
           classification={classificationMark}
           showTimeSpent={settings.showTimeSpent}
+          showMoves={tab !== "review"}
           showTimeline={tab !== "review"}
           disabled={
             explanation.active || (tab === "practice" && (practiceBusy || ["solved", "revealed"].includes(practiceStatus))) ||
@@ -130,6 +131,9 @@ function App() {
               <ReviewPanel
                 key={game.id}
                 game={game}
+                parsed={parsed}
+                ply={safePly}
+                showTimeSpent={settings.showTimeSpent}
                 games={library.games}
                 username={library.username}
                 review={review}

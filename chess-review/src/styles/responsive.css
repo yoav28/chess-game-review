@@ -205,10 +205,17 @@
     margin: 0;
     padding: 0;
   }
-  .site-search,
   .site-profile,
   .site-footer-icons a {
     display: none;
+  }
+  .site-search {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
   }
   .site-footer-icons {
     height: auto;

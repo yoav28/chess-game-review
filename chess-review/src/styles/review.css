@@ -95,21 +95,6 @@
   text-align: center;
   margin-top: 11px;
 }
-.review-bottom-note {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--subtle);
-  font-size: 11px;
-  line-height: 1.8;
-  border-top: 1px solid var(--border);
-  padding-top: 24px;
-  margin-top: 51px;
-}
-.review-bottom-note svg {
-  flex-shrink: 0;
-  color: #81b64c;
-}
 .inspector-bottom {
   display: flex;
   align-items: center;
@@ -281,28 +266,44 @@
   gap: 11px;
   align-items: center;
 }
-.classification-symbol {
-  height: 31px;
+.classification-icon {
   width: 31px;
-  border-radius: 5px;
-  background: #403f3c;
+  height: 31px;
+  flex: none;
+}
+.review-classification-icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.moments .move-glyph-icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.review-move-section {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.review-move-section > summary {
   display: flex;
+  min-height: 42px;
   align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  font-size: 17px;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 13px;
   font-weight: 700;
-  flex-shrink: 0;
 }
-.classification-symbol.blunder,
-.classification-symbol.missed {
-  background: #614138;
-  color: #f5b4a3;
+.review-move-section > summary span:last-child {
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 400;
 }
-.classification-symbol.mistake,
-.classification-symbol.inaccuracy {
-  background: #5a4d31;
-  color: #e8cc84;
+.review-move-section .move-list {
+  max-height: 320px;
+  margin: 0;
+  padding: 0;
 }
 .coach-title h3 {
   font-size: 14px;

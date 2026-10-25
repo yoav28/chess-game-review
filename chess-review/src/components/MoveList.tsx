@@ -2,9 +2,8 @@ import { useEffect, useRef } from "react";
 import type { GameMove, ParsedGame } from "../lib/game";
 import { moveTimes } from "../lib/move-time";
 import { classificationLabels, type GameReview } from "../lib/review";
-import { classificationGlyph } from "../lib/classification";
-
 export { classificationGlyph } from "../lib/classification";
+import MoveClassification from "./move-classifications/MoveClassification";
 
 export function MoveList({
   moves,
@@ -71,12 +70,11 @@ export function MoveList({
                 aria-label={`Move ${row.number} ${color === "w" ? "White" : "Black"} ${move.san}${rating ? `, ${classificationLabels[rating.classification]}` : ""}`}
               >
                 {rating && (
-                  <span
-                    className={`move-glyph ${rating.classification}`}
-                    title={classificationLabels[rating.classification]}
-                  >
-                    {classificationGlyph[rating.classification]}
-                  </span>
+                  <MoveClassification
+                    className="move-glyph-icon"
+                    classification={rating.classification}
+                    aria-label={classificationLabels[rating.classification]}
+                  />
                 )}
                 <Notation color={move.color} san={move.san} />
                 {showTimeSpent && elapsed[move.ply - 1] != null && <MoveTime color={move.color} seconds={elapsed[move.ply - 1]!} />}

@@ -1,5 +1,5 @@
 import { classificationLabels, type Classification, type GameReview } from "../lib/review";
-import { classificationGlyph } from "./MoveList";
+import MoveClassification from "./move-classifications/MoveClassification";
 
 type ReviewStatsProps = {
   review: GameReview;
@@ -20,9 +20,7 @@ export function ReviewStats({ review, ply, onSelect }: ReviewStatsProps) {
         {categories.map((category) => (
           <div className="classification-row" key={category}>
             <span>
-              <i className={`move-glyph ${category}`}>
-                {classificationGlyph[category]}
-              </i>
+              <MoveClassification className="review-classification-icon" classification={category} />
               {classificationLabels[category]}
             </span>
             {(["w", "b"] as const).map((color) => (

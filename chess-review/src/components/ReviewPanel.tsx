@@ -1,12 +1,11 @@
 import {
   ArrowRight,
-  BookOpen,
   ChevronRight,
   Lightbulb,
   RotateCcw,
   Square,
 } from "lucide-react";
-import { engineRules, type GameRecord } from "../lib/game";
+import { engineRules, type GameRecord, type ParsedGame } from "../lib/game";
 import {
   classificationLabels,
   type GameReview,
@@ -14,8 +13,9 @@ import {
 } from "../lib/review";
 import type { ReviewProgress } from "../engine/types";
 import { isVariantHeuristic, variantLabel } from "../lib/variants";
-import { classificationGlyph } from "./MoveList";
+import MoveClassification from "./move-classifications/MoveClassification";
 import { EvaluationGraph, evaluationLabel } from "./EvaluationGraph";
+import { MoveList } from "./MoveList";
 import { CoachControls } from "./CoachControls";
 import { SkillBreakdown } from "./SkillBreakdown";
 import { ReviewStats } from "./ReviewStats";
@@ -30,6 +30,9 @@ import type { Settings } from "../lib/settings";
 
 type Props = {
   game: GameRecord;
+  parsed: ParsedGame & { error: string };
+  ply: number;
+  showTimeSpent: boolean;
   games: readonly GameRecord[];
   username: string;
   review: GameReview | null;
@@ -56,6 +59,9 @@ type Props = {
 
 export function ReviewPanel({
   game,
+  parsed,
+  ply,
+  showTimeSpent,
   games,
   username,
   review,
@@ -123,6 +129,19 @@ export function ReviewPanel({
             {running ? "Analyzing…" : "Start Review"}{" "}
             <ArrowRight size={17} />
           </button>
+          <details className="review-move-section">
+            <summary><span>Game moves</span><span>{parsed.moves.length} half-moves</span></summary>
+            <MoveList
+              parsed={parsed}
+              timeControl={game.timeControl}
+              timeClass={game.timeClass}
+              showTimeSpent={showTimeSpent}
+              moves={parsed.moves}
+              review={null}
+              ply={ply}
+              onSelect={onSelect}
+            />
+          </details>
         </div>
       ) : (
         <>
@@ -173,11 +192,7 @@ export function ReviewPanel({
           {move && (
             <section className="coach">
               <div className="coach-title">
-                <span
-                  className={`classification-symbol ${move.classification}`}
-                >
-                  {classificationGlyph[move.classification]}
-                </span>
+                <MoveClassification className="classification-icon" classification={move.classification} />
                 <div>
                   <h3>
                     {move.beforeFen.split(' ')[5]}
@@ -213,9 +228,7 @@ export function ReviewPanel({
                     onClick={() => onSelect(ply)}
                     className={move?.ply === ply ? "active" : ""}
                   >
-                    <i className={`move-glyph ${moment.classification}`}>
-                      {classificationGlyph[moment.classification]}
-                    </i>
+                    <MoveClassification className="move-glyph-icon" classification={moment.classification} />
                     <span>
                       <strong>
                         {moment.beforeFen.split(' ')[5]}
@@ -234,6 +247,19 @@ export function ReviewPanel({
               <p className="muted">No major evaluation swings for this selection.</p>
             )}
           </section>
+          <details className="review-move-section">
+            <summary><span>Game moves</span><span>{parsed.moves.length} half-moves</span></summary>
+            <MoveList
+              parsed={parsed}
+              timeControl={game.timeControl}
+              timeClass={game.timeClass}
+              showTimeSpent={showTimeSpent}
+              moves={parsed.moves}
+              review={review}
+              ply={ply}
+              onSelect={onSelect}
+            />
+          </details>
           <button
             className="primary full-width practice-action"
             onClick={() => onPractice(focusColor)}
@@ -293,12 +319,6 @@ export function ReviewPanel({
           This is a {game.rules} game. Its PGN is available for export; this
           engine reviews standard chess, material odds, Chess960, three-check, King of the Hill, Atomic, and Horde.
         </p>
-      )}
-      {!review && (
-        <div className="review-bottom-note">
-          <BookOpen size={16} />
-          <span>Explore the moves below the board while your review runs.</span>
-        </div>
       )}
     </div>
   );
