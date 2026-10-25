@@ -9,7 +9,7 @@ import {
   Square,
   X,
 } from "lucide-react";
-import { engineRules, type GameRecord } from "../lib/game";
+import { engineRules, gameMoveCount, type GameRecord } from "../lib/game";
 import { loadSavedReviews } from "../lib/storage";
 import type { useLibrary } from "../hooks/useLibrary";
 
@@ -82,6 +82,8 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
   );
   const pages = Math.ceil(filtered.length / 30);
   const currentPage = Math.min(page, Math.max(0, pages - 1));
+  const pageGames = useMemo(() => filtered.slice(currentPage * 30, currentPage * 30 + 30), [filtered, currentPage]);
+  const pageMoveCounts = useMemo(() => pageGames.map(gameMoveCount), [pageGames]);
   const progress = library.progress;
   const reviewed = useMemo(() => reviewedGameId ? new Set([...reviewedIds, reviewedGameId]) : reviewedIds, [reviewedIds, reviewedGameId]);
   const reviewableGames = useMemo(() => library.games.filter(game => engineRules(game.rules)).sort((a, b) => b.endTime - a.endTime), [library.games]);
@@ -308,9 +310,8 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
             {library.username && <span>@{library.username}</span>}
           </div>
           <div className="game-list">
-            {filtered
-              .slice(currentPage * 30, currentPage * 30 + 30)
-              .map((game) => {
+            {pageGames
+              .map((game, index) => {
                 const isWhite =
                   game.white.username.toLowerCase() === library.username;
                 const me = isWhite ? game.white : game.black;
@@ -323,7 +324,7 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
                   "50move",
                   "timevsinsufficient",
                 ].includes(me.result);
-                const moveCount = (game.pgn.match(/\d+\./g) ?? []).length;
+                const moveCount = pageMoveCounts[index];
                 return (
                   <button
                     key={game.id}
@@ -343,7 +344,7 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
                       <span className="game-row-player"><strong>{game.black.username}</strong>{game.black.rating > 0 && <span className="game-row-rating">({game.black.rating})</span>}</span>
                     </span>
                     <span className="game-row-result">
-                      <span>{moveCount}</span>
+                      <span>{moveCount ?? '—'}</span>
                       <span className={`result-mark ${won ? "won" : drawn ? "drawn" : "lost"}`}>{won ? "1" : drawn ? "½" : "0"}</span>
                       <time>{new Date(game.endTime * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</time>
                     </span>

@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Chess } from 'chess.js'
 import { demoGame } from './demo'
-import { engineRules, formatClock, gameFromPgn, parseGame, parsePgn } from './game'
+import { engineRules, formatClock, gameFromPgn, gameMoveCount, parseGame, parsePgn } from './game'
 import { readFileSync } from 'node:fs'
 
 test('the demo is a complete legal mating game with castling and a queen sacrifice', () => {
@@ -79,6 +79,12 @@ test('imported PGN keeps player names, ratings, result, and stable IDs', () => {
   assert.equal(formatClock(62.9), '1:02')
   assert.equal(formatClock(3662), '1:01:02')
   assert.equal(formatClock(undefined), '—')
+})
+
+test('game-list move counts parse mainline moves instead of matching header dates', () => {
+  const record = gameFromPgn('[Event "Open"]\n[Date "2026.10.25"]\n[White "Ada"]\n[Black "Grace"]\n\n1. e4 e5 2. Nf3 Nc6 1-0')
+  assert.equal(gameMoveCount(record), 4)
+  assert.equal(gameMoveCount({ ...record, pgn: 'not a valid game' }), null)
 })
 test('public queen-odds PGN uses its actual custom start and standard move rules', () => {
   const source = readFileSync(new URL('../test/fixtures/material-odds.pgn', import.meta.url), 'utf8')

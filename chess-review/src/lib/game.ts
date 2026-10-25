@@ -134,6 +134,10 @@ export function parseGame(game: GameRecord): ParsedGame {
   return parsePgn(game.pgn, variant)
 }
 
+export function gameMoveCount(game: GameRecord): number | null {
+  try { return parseGame(game).moves.length } catch { return null }
+}
+
 function pgnResult(result: string, color: Color): string {
   if (result === '*') return 'unfinished'
   if (result === '1/2-1/2') return 'agreed'
