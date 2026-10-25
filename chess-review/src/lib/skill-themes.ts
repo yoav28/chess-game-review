@@ -63,6 +63,13 @@ function pathBetween(from: Square, to: Square): Square[] {
   return result
 }
 
+function rayStep(from: Square, to: Square): { file: number; rank: number } | null {
+  const fileDelta = to.charCodeAt(0) - from.charCodeAt(0)
+  const rankDelta = Number(to[1]) - Number(from[1])
+  if (fileDelta !== 0 && rankDelta !== 0 && Math.abs(fileDelta) !== Math.abs(rankDelta)) return null
+  return { file: Math.sign(fileDelta), rank: Math.sign(rankDelta) }
+}
+
 function createsBattery(move: MoveReview): boolean {
   const board = createPosition(move.afterFen, move.variant)
   const moved = board.get(move.to as Square)
@@ -96,6 +103,45 @@ function trapsPiece(move: MoveReview): boolean {
   return board.board().flat().some(piece => piece?.color === enemy && piece.type !== 'k'
     && board.moves({ square: piece.square, verbose: true }).length === 0
     && board.attackers(piece.square, move.color).length > 0)
+}
+
+function kicks(move: MoveReview): boolean {
+  const after = createPosition(move.afterFen, move.variant)
+  const fields = after.fen().split(/\s+/)
+  fields[1] = move.color
+  fields[3] = '-'
+  const moverBoard = createPosition(fields.join(' '), move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  return after.board().flat().some(target => target !== null && target.color === enemy && target.type !== 'k'
+    && after.attackers(target.square, move.color).includes(move.to as Square)
+    && moverBoard.moves({ square: move.to as Square, verbose: true }).some(candidate => candidate.to === target.square && candidate.captured))
+}
+
+function skewer(move: MoveReview): boolean {
+  if (!['b', 'r', 'q'].includes(move.piece)) return false
+  const board = createPosition(move.afterFen, move.variant)
+  const origin = move.to as Square
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  const targets = board.board().flat().filter(piece => piece !== null && piece.color === enemy && piece.type !== 'k')
+  for (const high of targets) {
+    if (pieceValues[high!.type] < 5 || !board.attackers(high!.square, move.color).includes(origin)) continue
+    const direction = rayStep(origin, high!.square)
+    if (!direction) continue
+    for (const low of targets) {
+      if (low === high || pieceValues[low!.type] >= pieceValues[high!.type]) continue
+      const farther = rayStep(origin, low!.square)
+      if (!farther || farther.file !== direction.file || farther.rank !== direction.rank) continue
+      const path = pathBetween(origin, low!.square)
+      if (path.includes(high!.square) && path.filter(square => board.get(square)).every(square => square === high!.square)) return true
+    }
+  }
+  return false
+}
+
+function bookMilestone(move: MoveReview, index: number, moves: MoveReview[], threshold: number): boolean {
+  if (move.classification !== 'book') return false
+  const previous = moves.slice(0, index).filter(candidate => candidate.color === move.color && candidate.phase === 'opening' && candidate.classification === 'book').length
+  return previous + 1 === threshold
 }
 
 function doubleCheck(move: MoveReview): boolean {
@@ -351,6 +397,10 @@ const detections: Record<SkillTab, Detection[]> = {
       return !board.board().flat().some(piece => piece?.color === move.color && ['n', 'b'].includes(piece.type) && piece.square[1] === home)
     } },
     { key: 'book-moves', label: 'Book moves', description: 'The move matches a registered opening-book prefix.', matches: move => move.classification === 'book' },
+    { key: 'one-book-move', label: '1 book move', description: 'The player’s first move matched the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 1) },
+    { key: 'two-book-moves', label: '2 book moves', description: 'The player recorded at least two moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 2) },
+    { key: 'three-book-moves', label: '3 book moves', description: 'The player recorded at least three moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 3) },
+    { key: 'four-book-moves', label: '4 book moves', description: 'The player recorded at least four moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 4) },
     { key: 'fianchettos', label: 'Fianchettos', description: 'A bishop develops to a standard fianchetto square.', matches: move => move.piece === 'b' && ['b2', 'g2', 'b7', 'g7'].includes(move.to) },
     { key: 'develops-with-tempo', label: 'Develops with tempo', description: 'An opening minor-piece development creates a new attack on a valuable piece.', matches: move => developsWithTempo(move) },
   ],
@@ -364,6 +414,8 @@ const detections: Record<SkillTab, Detection[]> = {
     { key: 'attacks-pinned-pieces', label: 'Attacks pinned pieces', description: 'The moved piece attacks an enemy piece pinned to its king.', matches: move => attacksPinnedPiece(move) },
     { key: 'traps-pieces', label: 'Traps pieces', description: 'An attacked enemy piece has no legal move in the resulting position.', matches: move => trapsPiece(move) },
     { key: 'removes-defenders', label: 'Removes defenders', description: 'A capture reduces the number of defenders around another valuable enemy piece.', matches: move => removesDefender(move) },
+    { key: 'kicks', label: 'Kicks', description: 'The moved piece attacks a target it can legally capture on the next turn.', matches: move => kicks(move) },
+    { key: 'skewers', label: 'Skewers', description: 'A line piece attacks a higher-value enemy piece with a lower-value piece behind it.', matches: move => skewer(move) },
     { key: 'en-passant', label: 'En passant', description: 'A pawn captures diagonally onto an empty square.', matches: move => move.piece === 'p' && move.captured === 'p' && move.from[0] !== move.to[0] && !createPosition(move.beforeFen, move.variant).get(move.to as Square) },
     { key: 'double-checks', label: 'Double checks', description: 'The move attacks the opposing king with at least two pieces.', matches: (move, _, __, ___) => doubleCheck(move) },
     { key: 'discovered-checks', label: 'Discovered checks', description: 'A non-moving piece delivers check after the move opens its line.', matches: move => discoversCheck(move) },

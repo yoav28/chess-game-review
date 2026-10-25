@@ -20,6 +20,16 @@ test('skills panel exposes the five source-level categories with local heuristic
   assert.ok(strategy['center-control'].w.includes(1))
 })
 
+test('opening book milestones count each player’s recorded book moves', () => {
+  const review = reviewFixture('1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 *')
+  review.moves.filter(move => move.color === 'w').forEach(move => { move.classification = 'book' })
+  const openings = themeCounts(review, 'openings')
+  assert.deepEqual(openings['one-book-move'].w, [1])
+  assert.deepEqual(openings['two-book-moves'].w, [3])
+  assert.deepEqual(openings['three-book-moves'].w, [5])
+  assert.deepEqual(openings['four-book-moves'].w, [7])
+})
+
 test('tactical and endgame themes use recorded legal moves and board facts', () => {
   const tactics = reviewFixture('1. e4 a6 2. e5 d5 3. exd6 *')
   const tacticalThemes = themeCounts(tactics, 'tactics')
@@ -30,6 +40,10 @@ test('tactical and endgame themes use recorded legal moves and board facts', () 
   assert.deepEqual(themeCounts(recapture, 'strategy')['equal-trades'], { w: [], b: [4] })
   const queenSacrifice = reviewFixture('1. e3 d5 2. Qh5 g6 3. Qxg6 hxg6 *')
   assert.deepEqual(themeCounts(queenSacrifice, 'tactics')['queen-sacrifices'], { w: [5], b: [] })
+  const skewer = reviewFixture('[FEN "r6k/q7/8/8/8/8/8/1R5K w - - 0 1"]\n\n1. Ra1 *')
+  const skewerThemes = themeCounts(skewer, 'tactics')
+  assert.deepEqual(skewerThemes.skewers, { w: [1], b: [] })
+  assert.deepEqual(skewerThemes.kicks, { w: [1], b: [] })
   const promotion = reviewFixture('[FEN "7k/P7/8/8/8/8/8/7K w - - 0 1"]\n\n1. a8=Q+ *')
   assert.deepEqual(themeCounts(promotion, 'endgames').promotions, { w: [1], b: [] })
   assert.deepEqual(themeCounts(promotion, 'endgames')['passed-pawns'], { w: [1], b: [] })
