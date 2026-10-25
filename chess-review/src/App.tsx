@@ -127,7 +127,7 @@ function App() {
           fen={isImportHome ? importHomeParsed.initialFen : fen}
           lastMove={!isImportHome && tab !== "practice" ? lastMove : undefined}
           bestMove={isImportHome ? undefined : boardBestMove}
-          showBestMove={!isImportHome && showBestArrow}
+          showBestMove={!isImportHome && !(reviewReportActive && safePly === 0) && showBestArrow}
           coachArrows={isImportHome ? [] : boardCoachArrows}
           threatArrow={isImportHome ? undefined : threat.result?.arrow ?? undefined}
           classification={isImportHome ? undefined : classificationMark}
