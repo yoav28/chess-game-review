@@ -2,6 +2,20 @@ import type { GameReview } from "../lib/review";
 import type { Evaluation } from "../engine/types";
 import type { ChessVariant } from "../lib/position";
 
+const classificationColors = {
+  brilliant: "#26c2a3",
+  great: "#749bbf",
+  book: "#d5a47d",
+  best: "#81b64c",
+  excellent: "#81b64c",
+  good: "#95b776",
+  inaccuracy: "#f7c631",
+  mistake: "#ffa459",
+  blunder: "#fa412d",
+  missed: "#ff7769",
+  forced: "#96af8b",
+} satisfies Record<GameReview["moves"][number]["classification"], string>;
+
 export function evaluationLabel(evaluation?: Evaluation | null, variant?: ChessVariant) {
   if (!evaluation) return "—";
   const variantScore = variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' || variant === 'giveaway' || variant === 'racingkings';
@@ -51,14 +65,13 @@ export function EvaluationGraph({
         role="img"
         aria-label="Game evaluation graph"
       >
-        <polygon points={area} fill="var(--board-light)" opacity=".18" />
+        <polygon points={area} fill="#3f3d39" opacity=".18" />
         <line
           x1="0"
           y1="40"
           x2="600"
           y2="40"
-          stroke="var(--border)"
-          strokeDasharray="3 4"
+          stroke="#9b9a96"
         />
         <polyline
           points={points}
@@ -66,24 +79,31 @@ export function EvaluationGraph({
           stroke="var(--accent)"
           strokeWidth="2"
         />
-        {review.keyMoments.map((moment) => (
-          <circle
-            key={moment}
-            cx={x(moment)}
-            cy={y(values[moment])}
-            r="3"
-            fill="var(--bad)"
-          />
-        ))}
+        {review.moves.map((move, index) =>
+          ["inaccuracy", "mistake", "blunder"].includes(move.classification) ? (
+            <circle
+              key={move.ply}
+              cx={x(index + 1)}
+              cy={y(values[index + 1])}
+              r="4"
+              fill={classificationColors[move.classification]}
+            />
+          ) : null,
+        )}
         <line
           x1={x(ply)}
           y1="0"
           x2={x(ply)}
           y2={height}
-          stroke="var(--text)"
-          strokeWidth="1"
+          stroke={classificationColors[review.moves[ply - 1]?.classification ?? "forced"]}
+          strokeWidth="3"
         />
-        <circle cx={x(ply)} cy={y(values[ply])} r="4" fill="var(--text)" />
+        <circle
+          cx={x(ply)}
+          cy={y(values[ply])}
+          r="5"
+          fill={classificationColors[review.moves[ply - 1]?.classification ?? "forced"]}
+        />
       </svg>
       <input
         type="range"

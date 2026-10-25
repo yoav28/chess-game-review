@@ -47,6 +47,10 @@ function App() {
     setReviewFavorite(readReviewFavorite(favoriteKey));
   }, [favoriteKey]);
 
+  useEffect(() => {
+    if (review) setReviewMode('moves');
+  }, [review]);
+
   const changeWorkspaceTab = (value: WorkspaceTab) => {
     stopPlay();
     explanation.stop();

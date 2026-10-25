@@ -207,17 +207,14 @@
   background: #fff;
 }
 .review-analysis-graph .evaluation-graph polygon {
-  fill: #777;
+  fill: #3f3d39;
   opacity: .18;
 }
 .review-analysis-graph .evaluation-graph polyline {
   stroke: #454440;
 }
 .review-analysis-graph .evaluation-graph line:first-of-type {
-  stroke: #c9c8c5;
-}
-.review-analysis-graph .evaluation-graph line:last-of-type {
-  stroke: #454440;
+  stroke: #9b9a96;
 }
 .review-analysis-graph .evaluation-graph > input {
   left: 0;
