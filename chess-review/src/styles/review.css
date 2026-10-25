@@ -485,8 +485,25 @@
   margin: 0;
 }
 .review-step-panel > .review-analysis-graph {
-  margin-right: 4px;
-  margin-left: 11px;
+  margin: 0 4px 0 11px;
+}
+.review-external-links {
+  display: flex;
+  height: 18px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 12px;
+  color: #999896;
+  font-size: 11px;
+}
+.review-external-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: inherit;
+}
+.review-external-links a:hover {
+  color: #fff;
 }
 .review-step-moves .move-list {
   max-height: 95px;

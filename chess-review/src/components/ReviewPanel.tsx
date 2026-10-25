@@ -3,6 +3,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   Lightbulb,
   RotateCcw,
   Square,
@@ -159,6 +160,7 @@ export function ReviewPanel({
           ply={ply}
           showTimeSpent={showTimeSpent}
           settings={settings}
+          orientation={orientation}
           onBack={() => onMoveReview('overview')}
           onSelect={onSelect}
           onPracticePosition={onPracticePosition}
@@ -357,6 +359,7 @@ function ReviewMoveStep({
   ply,
   showTimeSpent,
   settings,
+  orientation,
   onBack,
   onSelect,
   onPracticePosition,
@@ -368,6 +371,7 @@ function ReviewMoveStep({
   ply: number;
   showTimeSpent: boolean;
   settings: Settings;
+  orientation: 'w' | 'b';
   onBack: () => void;
   onSelect: (ply: number) => void;
   onPracticePosition: (ply: number) => void;
@@ -381,6 +385,9 @@ function ReviewMoveStep({
     ? `${move.san} is ${classificationLabels[move.classification] === 'Book' ? 'a book move' : `a ${classificationLabels[move.classification].toLowerCase()}`}`
     : 'Starting Position';
   const evaluation = move?.beforeEvaluation ?? review.initialAnalysis.evaluation;
+  const positionFen = parsed.positions[Math.min(ply, parsed.positions.length - 1)] ?? parsed.initialFen;
+  const chessComUrl = `https://www.chess.com/analysis?fen=${encodeURIComponent(positionFen)}&flip=${orientation === 'b'}`;
+  const lichessUrl = `https://lichess.org/analysis/${encodeURIComponent(positionFen)}`;
 
   return (
     <div className="review-step-panel">
@@ -426,6 +433,10 @@ function ReviewMoveStep({
         <MoveList parsed={parsed} timeControl={game.timeControl} timeClass={game.timeClass} showTimeSpent={showTimeSpent} moves={parsed.moves} review={review} ply={ply} onSelect={onSelect} />
       </details>
       <div className="review-analysis-graph"><EvaluationGraph review={review} ply={ply} onSelect={onSelect} /></div>
+      {game.rules === 'chess' && <div className="review-external-links">
+        <a href={chessComUrl} target="_blank" rel="noreferrer">Open on Chess.com <ExternalLink size={11} /></a>
+        <a href={lichessUrl} target="_blank" rel="noreferrer">Lichess <ExternalLink size={11} /></a>
+      </div>}
     </div>
   );
 }
