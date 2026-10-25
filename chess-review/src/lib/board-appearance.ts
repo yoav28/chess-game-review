@@ -1,5 +1,5 @@
 export const boardThemes = {
-  sage: { label: 'Green', light: '#eeeed2', dark: '#769656', lightText: '#3c4932', darkText: '#172313', lastLight: '#f6f669', lastDark: '#baca44', selected: '#f6f669' },
+  sage: { label: 'Green', light: '#ebecd0', dark: '#739552', lightText: '#3c4932', darkText: '#172313', lastLight: '#f6f669', lastDark: '#baca44', selected: '#f6f669' },
   walnut: { label: 'Brown & white', light: '#ffffff', dark: '#9a7557', lightText: '#593b27', darkText: '#100d08', lastLight: '#e4cf88', lastDark: '#b7a15f', selected: '#c9b66b' },
   graphite: { label: 'Graphite', light: '#f3f3ec', dark: '#8b9095', lightText: '#42474b', darkText: '#1d2022', lastLight: '#dfdfa2', lastDark: '#a9af78', selected: '#c7c98a' },
   contrast: { label: 'High contrast', light: '#ffffff', dark: '#545454', lightText: '#303030', darkText: '#ffffff', lastLight: '#f1e290', lastDark: '#7b6b25', selected: '#d1b956' },
@@ -9,7 +9,7 @@ export const pieceSets = { classic: 'Classic', neo: 'Neo', geometric: 'Geometric
 export type BoardTheme = keyof typeof boardThemes
 export type PieceSet = keyof typeof pieceSets
 export type BoardAppearance = { boardTheme: BoardTheme; pieceSet: PieceSet; coordinates: boolean }
-export const defaultBoardAppearance: BoardAppearance = { boardTheme: 'walnut', pieceSet: 'neo', coordinates: true }
+export const defaultBoardAppearance: BoardAppearance = { boardTheme: 'sage', pieceSet: 'neo', coordinates: true }
 
 export function normalizeBoardAppearance(value: unknown): BoardAppearance {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
