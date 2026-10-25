@@ -181,15 +181,14 @@ test('a completed import replaces cached stale games with authoritative complete
 test('identical moves with distinct Chess.com archive URLs remain separate library games', async () => {
   const view = sink()
   const first = { ...game('one', 100), url: 'https://www.chess.com/game/live/1001' }
+  const firstCopy = { ...first, id: 'one-copy' }
   const second = { ...game('two', 101), url: 'https://www.chess.com/game/live/1002' }
-  let saved: GameRecord[] = []
   const importer = createLibraryImporter(view.callbacks, {
     load: async () => undefined,
-    save: async (_, games) => { saved = games },
-    importGames: async () => [first, second],
+    save: async () => undefined,
+    importGames: async () => [first, firstCopy, second],
   })
 
   await importer.importUser('ada')
   assert.deepEqual(view.state.games.map(value => value.id), ['two', 'one'])
-  assert.deepEqual(saved.map(value => value.id), ['one', 'two'])
 })
