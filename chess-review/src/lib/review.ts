@@ -99,6 +99,7 @@ export const classificationLabels: Record<Classification, string> = {
   best: 'Best', excellent: 'Excellent', good: 'Good', inaccuracy: 'Inaccuracy',
   mistake: 'Mistake', blunder: 'Blunder', missed: 'Miss', forced: 'Forced',
 }
+export const classificationSummary: Classification[] = ['brilliant', 'great', 'book', 'best', 'excellent', 'good', 'inaccuracy', 'mistake', 'missed', 'blunder']
 
 export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
   const parsed = parseGamePgn(pgn, variant)

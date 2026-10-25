@@ -24,6 +24,14 @@ test('image metadata keeps model, recorded depth, starting selection and importe
   assert.match(reviewImageData(review).model, /Legacy/)
 })
 
+test('move-quality summaries follow the source report categories without its separate Forced move state', () => {
+  const review = reviewFixture()
+  review.moves[0].classification = 'forced'
+  const data = reviewImageData(review)
+  assert.deepEqual(data.counts.map(row => row.label), ['Brilliant', 'Great', 'Book', 'Best', 'Excellent', 'Good', 'Inaccuracy', 'Mistake', 'Miss', 'Blunder'])
+  assert.equal(data.counts.reduce((sum, row) => sum + row.white + row.black, 0), review.moves.length - 1)
+})
+
 test('timeline preserves white-relative mate direction and stays inside its bounds', () => {
   const points = reviewImageGraph([{ cp: -10000, mate: -1 }, { cp: 0, mate: null }, { cp: 10000, mate: 1 }], 200, 100)
   assert.deepEqual(points.map(point => point.x), [0, 100, 200])

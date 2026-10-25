@@ -1,4 +1,4 @@
-import { classificationLabels, type Classification, type GameReview } from "../lib/review";
+import { classificationLabels, classificationSummary, type GameReview } from "../lib/review";
 import MoveClassification from "./move-classifications/MoveClassification";
 
 type ReviewStatsProps = {
@@ -8,7 +8,7 @@ type ReviewStatsProps = {
 };
 
 export function ReviewStats({ review, ply, onSelect }: ReviewStatsProps) {
-  const categories = Object.keys(classificationLabels) as Classification[];
+  const categories = classificationSummary;
   return (
     <>
       <section className="classification-report" aria-label="Move quality classification counts">

@@ -1,6 +1,6 @@
 import type { Color, PieceSymbol } from 'chess.js'
 import type { Evaluation } from '../engine/types'
-import { classificationLabels, type Classification, type GameReview } from './review'
+import { classificationLabels, classificationSummary, type GameReview } from './review'
 import { createPosition } from './position'
 import { isVariantHeuristic, variantLabel } from './variants'
 import { drawReviewBoard, loadReviewPieceImages } from './review-board-image'
@@ -26,7 +26,7 @@ export function reviewImageData(review: GameReview, options: ReviewImageOptions 
   const minimum = depths.length ? Math.min(...depths) : null
   const maximum = depths.length ? Math.max(...depths) : null
   const model = review.variant && isVariantHeuristic(review.variant) ? `${variantLabel(review.variant)} quality heuristic v2 · uncalibrated for this variant` : review.accuracyVersion === 2 ? 'Win-chance move accuracy v2 · arithmetic mean' : 'Legacy centipawn move accuracy v1'
-  const counts = (Object.keys(classificationLabels) as Classification[]).map(classification => ({
+  const counts = classificationSummary.map(classification => ({
     label: classificationLabels[classification], white: review.moves.filter(item => item.color === 'w' && item.classification === classification).length,
     black: review.moves.filter(item => item.color === 'b' && item.classification === classification).length,
   }))
