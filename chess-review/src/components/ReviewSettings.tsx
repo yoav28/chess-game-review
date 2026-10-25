@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { normalizeSettings, type Settings } from '../lib/settings'
+import { normalizeSettings, reviewStrengthPresets, type Settings } from '../lib/settings'
 import { coachProfiles } from '../lib/coach'
 import { BoardAppearanceControls } from './BoardAppearanceControls'
 import { AnalysisSettingsFields } from './AnalysisSettingsFields'
@@ -14,10 +14,20 @@ export function ReviewSettings({ settings, onChange, onDone }: { settings: Setti
   const update = (patch: Partial<Settings>) => onChange(normalizeSettings({ ...settings, ...patch }))
   const toggle = (key: ToggleKey, label: string) => <label className="checkbox-label"><input type="checkbox" checked={settings[key]} onChange={event => update({ [key]: event.target.checked })} />{label}</label>
   const times = [150, 500, 1500, 5000]
+  const strengthPreset = reviewStrengthPresets.find(preset => preset.depth === settings.depth && preset.timeMs === settings.timeMs)?.key ?? 'custom'
 
   return <div className="review-settings">
     <fieldset>
       <legend>Game review</legend>
+      <label htmlFor={`${id}-strength`}>Review strength</label>
+      <select id={`${id}-strength`} value={strengthPreset} onChange={event => {
+        const preset = reviewStrengthPresets.find(item => item.key === event.target.value)
+        if (preset) update({ depth: preset.depth, timeMs: preset.timeMs })
+      }}>
+        {strengthPreset === 'custom' && <option value="custom">Custom</option>}
+        {reviewStrengthPresets.map(preset => <option key={preset.key} value={preset.key}>{preset.label}</option>)}
+      </select>
+      <p className="fine-print">Presets set this app’s local search budgets; engine level and results differ from Chess.com.</p>
       <label htmlFor={`${id}-depth`}>Maximum depth<strong>{settings.depth}</strong></label>
       <input id={`${id}-depth`} type="range" min="10" max="22" value={settings.depth} onChange={event => update({ depth: Number(event.target.value) })} />
       <label htmlFor={`${id}-time`}>Time per position</label>

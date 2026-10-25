@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { defaultSettings, normalizeSettings, readSettings } from './settings'
+import { defaultSettings, normalizeSettings, readSettings, reviewStrengthPresets } from './settings'
 
 test('stored legacy arrows migrate without dropping engine and sound preferences', () => {
   const old = { depth: 19, timeMs: 1500, sound: true, showArrows: false }
@@ -76,4 +76,13 @@ test('position-analysis budgets migrate independently from full-game review sett
   assert.equal(live.timeMs, 1500)
   assert.equal(live.analysisTimeMs, 0)
   assert.equal(live.analysisThreads, 2)
+})
+
+test('review strength presets map source-level labels to explicit local search budgets', () => {
+  assert.deepEqual(reviewStrengthPresets.map(({ key, label }) => [key, label]), [
+    ['fast', 'Fast'], ['standard', 'Standard'], ['deep', 'Deep'], ['maximum', 'Maximum'],
+  ])
+  assert.deepEqual(reviewStrengthPresets.map(({ depth, timeMs }) => [depth, timeMs]), [
+    [12, 150], [16, 500], [18, 1500], [22, 5000],
+  ])
 })

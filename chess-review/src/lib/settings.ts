@@ -32,6 +32,13 @@ export const defaultSettings: Settings = {
   showTimeSpent: true, highlight: 'all', coachDetail: 'detailed', coachProfile: 'clear',
 }
 
+export const reviewStrengthPresets = [
+  { key: 'fast', label: 'Fast', depth: 12, timeMs: 150 },
+  { key: 'standard', label: 'Standard', depth: 16, timeMs: 500 },
+  { key: 'deep', label: 'Deep', depth: 18, timeMs: 1500 },
+  { key: 'maximum', label: 'Maximum', depth: 22, timeMs: 5000 },
+] as const
+
 function bounded(value: unknown, fallback: number, minimum: number, maximum: number): number {
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.max(minimum, Math.min(maximum, Math.round(value))) : fallback
