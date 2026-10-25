@@ -1,14 +1,13 @@
 import { useId, useMemo, useState } from 'react'
 import { skillSummaries } from "../lib/report";
-import { skillTabs, skillThemeGroups, type SkillTab } from '../lib/skill-themes'
+import { skillTabs, skillThemeGroup, type SkillTab } from '../lib/skill-themes'
 import type { GameReview } from "../lib/review";
 
 export function SkillBreakdown({ review, onSelect }: { review: GameReview; onSelect?: (ply: number) => void }) {
   const skills = skillSummaries(review);
-  const groups = useMemo(() => skillThemeGroups(review), [review])
   const [selectedTab, setSelectedTab] = useState<SkillTab>('fundamentals')
   const id = useId()
-  const active = groups.find(group => group.key === selectedTab)!
+  const active = useMemo(() => skillThemeGroup(review, selectedTab), [review, selectedTab])
   return (
     <section className="skill-report">
       <h3>Performance by skill</h3>
