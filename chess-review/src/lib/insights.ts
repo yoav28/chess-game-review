@@ -21,7 +21,10 @@ export function insightsForMove(move: ParsedMove): string[] {
   const before = createPosition(move.beforeFen, move.variant)
   const after = createPosition(move.afterFen, move.variant)
   const outcome = after.variantOutcome?.()
-  if (outcome) return [`${outcome.winner === 'w' ? 'White' : 'Black'} wins ${outcome.reason === 'third-check' ? 'by delivering the third check' : 'by reaching the hill'}.`]
+  if (outcome) {
+    const reason = outcome.reason === 'third-check' ? 'by delivering the third check' : outcome.reason === 'king-of-the-hill' ? 'by reaching the hill' : 'by exploding the opposing king'
+    return [`${outcome.winner === 'w' ? 'White' : 'Black'} wins ${reason}.`]
+  }
   if (after.isCheckmate() || move.san.startsWith('O-O')) return []
   const from = move.from as Square
   const to = move.to as Square

@@ -89,6 +89,7 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
   if (variant && identified !== 'chess' && variant !== identified) throw new Error('The PGN variant conflicts with the selected game rules.')
   if (variant === 'threecheck' || identified === 'threecheck') return parseVariantPgn(pgn, 'threecheck')
   if (variant === 'kingofthehill' || identified === 'kingofthehill') return parseVariantPgn(pgn, 'kingofthehill')
+  if (variant === 'atomic' || identified === 'atomic') return parseVariantPgn(pgn, 'atomic')
   if (variant === 'chess960' || identified === 'chess960') return parseChess960Pgn(pgn)
   const chess = new Chess()
   try {
@@ -119,12 +120,12 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
 }
 
 export function engineRules(rules: string): ChessVariant | null {
-  return rules === 'threecheck' ? 'threecheck' : rules === 'kingofthehill' ? 'kingofthehill' : rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
+  return rules === 'threecheck' ? 'threecheck' : rules === 'kingofthehill' ? 'kingofthehill' : rules === 'atomic' ? 'atomic' : rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
 }
 
 export function parseGame(game: GameRecord): ParsedGame {
   const variant = engineRules(game.rules)
-  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, Chess960, and three-check; King of the Hill is also supported.`)
+  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, Chess960, three-check, King of the Hill, and Atomic.`)
   return parsePgn(game.pgn, variant)
 }
 

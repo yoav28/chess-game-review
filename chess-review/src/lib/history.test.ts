@@ -246,3 +246,17 @@ test('King of the Hill reports have their own uncalibrated history pool', async 
   assert.equal(summary.games, 1)
   assert.match(summary.modelLabel, /King of the Hill quality heuristic/)
 })
+
+test('Atomic reports use a separate uncalibrated history pool', async () => {
+  const { reviewFixture } = await import('../test/review-fixture')
+  const { variantsForPlayer } = await import('./history')
+  const atomic = reviewFixture('[White "Ada"]\n[Black "Grace"]\n[Variant "Atomic"]\n\n1. e4 e5 2. Nf3 Nc6 *')
+  atomic.variant = 'atomic'
+  atomic.moves.forEach(move => { move.accuracy = 25 })
+  const entries = [{ id: 'atomic', review: atomic }]
+  assert.deepEqual(variantsForPlayer(entries, 'Ada'), ['atomic'])
+  const summary = playerHistory(entries, 'Ada', 'atomic')
+  assert.equal(summary.overall.accuracy, 25)
+  assert.equal(summary.games, 1)
+  assert.match(summary.modelLabel, /Atomic quality heuristic/)
+})

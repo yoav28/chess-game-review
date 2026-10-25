@@ -50,7 +50,7 @@ test('en passant moves include the actual capture information', () => {
 test('invalid PGNs and unsupported variants return actionable errors', () => {
   assert.throws(() => parsePgn(''), /empty/)
   assert.throws(() => parsePgn('1. e4 e5 2. Qxe8 *'), /Cannot read this PGN/)
-  assert.throws(() => parseGame({ ...demoGame, rules: 'atomic' }), /standard chess, material odds, Chess960, and three-check/)
+  assert.throws(() => parseGame({ ...demoGame, rules: 'crazyhouse' }), /King of the Hill, and Atomic/)
 })
 
 test('Chess960 PGN import preserves variant, clocks, headers and physical castle destinations', () => {

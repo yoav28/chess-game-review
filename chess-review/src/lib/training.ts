@@ -4,7 +4,7 @@ import { insightsForMove } from './insights'
 import type { GamePhase, GameReview, MoveReview, ParsedMove } from './review'
 import { isVariantHeuristic, variantLabel } from './variants'
 
-export type TrainingTheme = 'loose-pieces' | 'fork' | 'pin' | 'mate' | 'third-check' | 'king-of-the-hill' | 'development' | 'castling' | 'calculation'
+export type TrainingTheme = 'loose-pieces' | 'fork' | 'pin' | 'mate' | 'third-check' | 'king-of-the-hill' | 'atomic' | 'development' | 'castling' | 'calculation'
 
 export type TrainingExercise = {
   ply: number
@@ -26,7 +26,7 @@ const names: Record<PieceSymbol, string> = { p: 'pawn', n: 'knight', b: 'bishop'
 const errors = new Set(['inaccuracy', 'mistake', 'blunder', 'missed'])
 const chanceLoss = (move: MoveReview): number | undefined => typeof move.winningChanceLoss === 'number' && Number.isFinite(move.winningChanceLoss) && move.winningChanceLoss >= 0 && move.winningChanceLoss <= 100 ? move.winningChanceLoss : undefined
 const rankLoss = (move: MoveReview): number => chanceLoss(move) ?? move.centipawnLoss / 100
-const lossDescription = (move: MoveReview): string => chanceLoss(move) !== undefined ? `${chanceLoss(move)!.toFixed(1)} ${move.variant === 'threecheck' || move.variant === 'kingofthehill' ? 'heuristic points' : 'winning-chance points'}` : `${(move.centipawnLoss / 100).toFixed(2)} pawns of engine evaluation`
+const lossDescription = (move: MoveReview): string => chanceLoss(move) !== undefined ? `${chanceLoss(move)!.toFixed(1)} ${move.variant && isVariantHeuristic(move.variant) ? 'heuristic points' : 'winning-chance points'}` : `${(move.centipawnLoss / 100).toFixed(2)} pawns of engine evaluation`
 
 function alternative(move: MoveReview): ParsedMove | null {
   if (!move.bestMove || move.bestMove === move.uci) return null
@@ -66,6 +66,10 @@ function themeFor(move: MoveReview, best: ParsedMove): Pick<TrainingExercise, 't
   if (outcome?.reason === 'king-of-the-hill') return {
     theme: 'king-of-the-hill', title: 'Reach the hill', evidence: 'The engine alternative wins immediately by moving the king to a center square.',
     goal: 'Find a legal king move to one of the four center squares.',
+  }
+  if (outcome?.reason === 'atomic-win') return {
+    theme: 'atomic', title: 'Explode the opposing king', evidence: 'The engine alternative wins immediately with an explosive capture.',
+    goal: 'Find a legal capture that removes the opposing king without exploding your own.',
   }
   if (bestBoard.isCheckmate()) return {
     theme: 'mate', title: 'Finish the mating attack', evidence: 'The engine alternative delivers immediate checkmate.',

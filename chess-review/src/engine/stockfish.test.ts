@@ -222,6 +222,28 @@ test('Fairy-Stockfish reviews and exports a King of the Hill center-square win',
   assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
 })
 
+test('Fairy-Stockfish reviews and exports an Atomic king explosion', { timeout: 30000 }, async () => {
+  const { readFileSync } = await import('node:fs')
+  const { parsePgn } = await import('../lib/game')
+  const { reviewedPgn } = await import('../lib/report')
+  const { parseReviewTransfer, serializeReviewTransfer } = await import('../lib/review-transfer')
+  const pgn = readFileSync(new URL('../test/fixtures/atomic-king-explosion.pgn', import.meta.url), 'utf8')
+  const original = parsePgn(pgn)
+  const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
+  assert.equal(review.variant, 'atomic')
+  assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12.*Atomic/)
+  assert.match(review.accuracyModel, /uncalibrated move-quality heuristic/)
+  assert.equal(review.opening, null)
+  assert.deepEqual(review.moves.at(-1)!.evaluation, { cp: 100000, mate: 0 })
+  const exported = parsePgn(reviewedPgn(review))
+  assert.equal(exported.headers.Variant, 'Atomic')
+  assert.deepEqual(exported.positions, original.positions)
+  assert.equal(exported.result, '1-0')
+  const imported = parseReviewTransfer(serializeReviewTransfer(review))
+  assert.equal(imported.variant, 'atomic')
+  assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
+})
+
 test('both actual three-check games review and export every counter, position, clock and result', { timeout: 90000 }, async () => {
   const { readFileSync } = await import('node:fs')
   const { parsePgn } = await import('../lib/game')

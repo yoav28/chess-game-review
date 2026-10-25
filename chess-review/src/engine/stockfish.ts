@@ -1,7 +1,7 @@
 import { boardWithHistory, engineFen, parseInfo, terminalEvaluation } from './protocol'
 import type { AnalysisOptions, EngineLine, PositionAnalysis } from './types'
 import { resolveVariant, type ChessVariant } from '../lib/position'
-import { usesVariantEngine } from '../lib/variants'
+import { fairyVariantName, usesVariantEngine } from '../lib/variants'
 import { engineThreads, searchCommand } from './search-options'
 import { searchResult } from './search-results'
 
@@ -35,7 +35,7 @@ export class StockfishEngine {
   private async initialize() {
     await this.waitFor(line => line === 'uciok', 'uci', 30000)
     if (this.variantEngine) {
-      this.worker.postMessage(`setoption name UCI_Variant value ${this.rules === 'threecheck' ? '3check' : 'kingofthehill'}`)
+      this.worker.postMessage(`setoption name UCI_Variant value ${fairyVariantName(this.rules)}`)
       this.worker.postMessage('setoption name Use NNUE value false')
     }
     if (this.variantEngine || this.threads > 1) this.worker.postMessage(`setoption name Threads value ${this.threads}`)

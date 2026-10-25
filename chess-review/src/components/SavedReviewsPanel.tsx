@@ -57,7 +57,7 @@ export function SavedReviewsPanel({ onOpen, refreshKey }: { onOpen: (entry: Save
         <option value="">Choose a player</option>
         {[...new Set([...availablePlayers, ...(selectedPlayer ? [selectedPlayer] : [])])].map(name => <option key={name} value={name}>{name}</option>)}
       </select>
-      {selectedPlayer && <><label htmlFor={rulesId}>Statistics rules</label><select id={rulesId} value={selectedPool} onChange={event => setPool(event.target.value as ChessVariant)}>{pools.map(variant => <option key={variant} value={variant}>{variantLabel(variant)}</option>)}</select><p className="saved-history-note">Statistics use one rules pool. Three-check quality scores are a heuristic, not calibrated winning probabilities.</p></>}
+      {selectedPlayer && <><label htmlFor={rulesId}>Statistics rules</label><select id={rulesId} value={selectedPool} onChange={event => setPool(event.target.value as ChessVariant)}>{pools.map(variant => <option key={variant} value={variant}>{variantLabel(variant)}</option>)}</select><p className="saved-history-note">Statistics use one rules pool. Variant-engine quality scores are heuristics, not calibrated winning probabilities.</p></>}
       {summary && <section className="saved-player-summary" aria-label={`${summary.player} saved review statistics`}>
         <h3>{summary.player}</h3>
         <p>Statistics use {summary.modelLabel}.{summary.excludedReviews > 0 ? ` ${summary.excludedReviews} older-model ${summary.excludedReviews === 1 ? 'review is' : 'reviews are'} excluded from these statistics and ${summary.excludedReviews === 1 ? 'remains' : 'remain'} available below.` : ' All statistics below use this model.'}</p>

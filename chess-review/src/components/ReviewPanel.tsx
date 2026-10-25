@@ -305,7 +305,7 @@ export function ReviewPanel({
       {!engineRules(game.rules) && (
         <p className="error-message">
           This is a {game.rules} game. Its PGN is available for export; this
-          engine reviews standard chess, material odds, Chess960, three-check, and King of the Hill.
+          engine reviews standard chess, material odds, Chess960, three-check, King of the Hill, and Atomic.
         </p>
       )}
       {!review && (
