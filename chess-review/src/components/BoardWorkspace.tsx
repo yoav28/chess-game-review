@@ -163,7 +163,6 @@ export function BoardWorkspace({
                 game={game}
                 parsed={parsed}
                 ply={ply}
-                review={review}
                 board={board}
               />
             </div>
@@ -205,7 +204,6 @@ export function BoardWorkspace({
                 game={game}
                 parsed={parsed}
                 ply={ply}
-                review={review}
                 board={board}
               />
             </div>

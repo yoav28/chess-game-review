@@ -99,8 +99,8 @@
   flex: 1;
 }
 .player-info strong {
-  font-size: 13px;
-  font-weight: 550;
+  font-size: 14px;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -110,13 +110,24 @@
   font-weight: 400;
   color: var(--muted);
 }
+.player-info strong > .player-rating {
+  color: #c3c2c1;
+  font-size: 12px;
+}
 .player-info strong > .player-title {
+  margin-right: 4px;
   padding: 1px 3px;
   border-radius: 2px;
   background: #b33430;
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
+}
+.player-info strong > .player-flag {
+  margin-left: 4px;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
 }
 .player-info > span {
   color: var(--subtle);

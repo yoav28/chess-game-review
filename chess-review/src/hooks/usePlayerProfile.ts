@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export type PlayerProfile = { avatar: string | null; title: string | null }
+export type PlayerProfile = { avatar: string | null; title: string | null; country: string | null }
 
 const profileCache = new Map<string, PlayerProfile | null>()
 const profileRequests = new Map<string, Promise<PlayerProfile | null>>()
@@ -25,7 +25,8 @@ export function usePlayerProfile(username: string) {
           const data = await response.json()
           const avatar = typeof data.avatar === 'string' && /^https?:\/\//.test(data.avatar) ? data.avatar : null
           const title = typeof data.title === 'string' ? data.title : null
-          return { avatar, title }
+          const country = typeof data.country === 'string' ? data.country : null
+          return { avatar, title, country }
         })
         .catch(() => null)
       profileRequests.set(normalized, request)
