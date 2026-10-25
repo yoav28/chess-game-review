@@ -45,6 +45,59 @@ function connectedRooks(move: MoveReview): boolean {
   return false
 }
 
+function pathBetween(from: Square, to: Square): Square[] {
+  const fileDelta = to.charCodeAt(0) - from.charCodeAt(0)
+  const rankDelta = Number(to[1]) - Number(from[1])
+  const aligned = fileDelta === 0 || rankDelta === 0 || Math.abs(fileDelta) === Math.abs(rankDelta)
+  if (!aligned) return []
+  const fileStep = Math.sign(fileDelta)
+  const rankStep = Math.sign(rankDelta)
+  const result: Square[] = []
+  let file = from.charCodeAt(0) + fileStep
+  let rank = Number(from[1]) + rankStep
+  while (file !== to.charCodeAt(0) || rank !== Number(to[1])) {
+    result.push((String.fromCharCode(file) + rank) as Square)
+    file += fileStep
+    rank += rankStep
+  }
+  return result
+}
+
+function createsBattery(move: MoveReview): boolean {
+  const board = createPosition(move.afterFen, move.variant)
+  const moved = board.get(move.to as Square)
+  if (!moved || !['b', 'r', 'q'].includes(moved.type)) return false
+  const sliders = board.board().flat().filter(piece => piece?.color === move.color && ['b', 'r', 'q'].includes(piece.type))
+  return sliders.some(piece => piece!.square !== move.to && pathBetween(move.to as Square, piece!.square).length > 0
+    && pathBetween(move.to as Square, piece!.square).every(square => !board.get(square)))
+}
+
+function attacksPinnedPiece(move: MoveReview): boolean {
+  if (move.piece !== 'q' && move.piece !== 'r' && move.piece !== 'b' && move.piece !== 'n') return false
+  const board = createPosition(move.afterFen, move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  const king = board.board().flat().find(piece => piece?.color === enemy && piece.type === 'k')
+  if (!king) return false
+  const target = move.to as Square
+  const candidates = board.board().flat().filter((piece): piece is NonNullable<typeof piece> => piece?.color === enemy && piece.square !== king.square)
+  for (const pinned of candidates) {
+    if (!board.attackers(pinned.square, move.color).includes(target)) continue
+    const between = pathBetween(king.square, pinned.square)
+    if (!between.length || !between.includes(target)) continue
+    const blockers = between.filter(square => board.get(square))
+    if (blockers.length === 1 && blockers[0] === target) return true
+  }
+  return false
+}
+
+function trapsPiece(move: MoveReview): boolean {
+  const board = createPosition(move.afterFen, move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  return board.board().flat().some(piece => piece?.color === enemy && piece.type !== 'k'
+    && board.moves({ square: piece.square, verbose: true }).length === 0
+    && board.attackers(piece.square, move.color).length > 0)
+}
+
 function doubleCheck(move: MoveReview): boolean {
   const board = createPosition(move.afterFen, move.variant)
   const king = board.board().flat().find(piece => piece?.color !== move.color && piece?.type === 'k')
@@ -123,25 +176,58 @@ function winsTempo(move: MoveReview): boolean {
     && !before.attackers(target.square, move.color).includes(move.from as Square))
 }
 
+function developsWithTempo(move: MoveReview): boolean {
+  if (move.phase !== 'opening' || !['n', 'b'].includes(move.piece)) return false
+  const homeRank = move.color === 'w' ? '1' : '8'
+  return move.from[1] === homeRank && move.to[1] !== homeRank && winsTempo(move)
+}
+
+function avoidsTrade(move: MoveReview): boolean {
+  if (move.captured || move.phase !== 'middlegame') return false
+  const board = createPosition(move.beforeFen, move.variant)
+  const canCapture = board.moves({ verbose: true }).some(candidate => Boolean(candidate.captured))
+  const before = winningChance(move.beforeEvaluation, move.color)
+  const after = winningChance(move.evaluation, move.color)
+  return canCapture && before > 55 && after >= before - 1
+}
+
+function pawnStructureScore(move: MoveReview, color: Color, fen: string): number {
+  const pawns = createPosition(fen, move.variant).board().flat().filter((piece): piece is NonNullable<typeof piece> => piece?.type === 'p' && piece.color === color)
+  const files = new Map<string, number>()
+  pawns.forEach(pawn => files.set(pawn.square[0], (files.get(pawn.square[0]) ?? 0) + 1))
+  const doubled = [...files.values()].reduce((sum, count) => sum + Math.max(0, count - 1), 0)
+  const isolated = pawns.filter(pawn => !files.has(String.fromCharCode(pawn.square.charCodeAt(0) - 1))
+    && !files.has(String.fromCharCode(pawn.square.charCodeAt(0) + 1))).length
+  return doubled + isolated
+}
+
+function pawnStructureChange(move: MoveReview, color: Color, direction: 'improves' | 'damages'): boolean {
+  const before = pawnStructureScore(move, color, move.beforeFen)
+  const after = pawnStructureScore(move, color, move.afterFen)
+  return direction === 'improves' ? after < before : after > before
+}
+
+function preventsCastling(move: MoveReview): boolean {
+  if (move.san.startsWith('O-O')) return false
+  const before = move.beforeFen.split(/\s+/)[2] ?? ''
+  const after = move.afterFen.split(/\s+/)[2] ?? ''
+  const opponent = move.color === 'w' ? /[kq]/ : /[KQ]/
+  return [...before].some(right => opponent.test(right) && !after.includes(right))
+}
+
+function improvesPawnStructure(move: MoveReview): boolean {
+  return pawnStructureChange(move, move.color, 'improves')
+}
+
+function damagesPawnStructure(move: MoveReview): boolean {
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  return pawnStructureChange(move, enemy, 'damages')
+}
+
 function passedPawnProtected(move: MoveReview): boolean {
   if (!isPassedPawnMove(move)) return false
   const board = createPosition(move.afterFen, move.variant)
   return board.attackers(move.to as Square, move.color).length > 0
-}
-
-function protectedRookBehindPassedPawn(move: MoveReview): boolean {
-  const board = createPosition(move.afterFen, move.variant)
-  const pieces = board.board().flat().filter(piece => piece !== null)
-  const rooks = pieces.filter(piece => piece.color === move.color && piece.type === 'r')
-  const pawns = pieces.filter(piece => piece.color === move.color && piece.type === 'p')
-  const enemyPawns = pieces.filter(piece => piece.color !== move.color && piece.type === 'p')
-  return rooks.some(rook => pawns.some(pawn => {
-    const forward = move.color === 'w' ? 1 : -1
-    const ahead = (Number(pawn.square[1]) - Number(rook.square[1])) * forward > 0 && pawn.square[0] === rook.square[0]
-    const passed = !enemyPawns.some(enemy => Math.abs(enemy.square.charCodeAt(0) - pawn.square.charCodeAt(0)) <= 1
-      && (Number(enemy.square[1]) - Number(pawn.square[1])) * forward > 0)
-    return ahead && passed
-  }))
 }
 
 function materialTheme(move: MoveReview, theme: 'king-pawn' | 'queen' | 'rook' | 'knight-bishop'): boolean {
@@ -177,6 +263,21 @@ function rookSupportsPassedPawn(move: MoveReview): boolean {
       && (move.color === 'w' ? Number(enemyPawn.square[1]) > Number(pawn.square[1]) : Number(enemyPawn.square[1]) < Number(pawn.square[1])))))
 }
 
+function blocksPassedPawn(move: MoveReview): boolean {
+  if (move.piece !== 'r') return false
+  const board = createPosition(move.afterFen, move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  const pieces = board.board().flat().filter(piece => piece !== null)
+  return pieces.some(pawn => {
+    if (pawn.color !== enemy || pawn.type !== 'p' || pawn.square[0] !== move.to[0]) return false
+    const pawnRank = Number(pawn.square[1])
+    const rookRank = Number(move.to[1])
+    const aheadOfPawn = enemy === 'w' ? rookRank > pawnRank : rookRank < pawnRank
+    const promotionRanksBetween = enemy === 'w' ? rookRank < 8 && pawnRank < rookRank : rookRank > 1 && pawnRank > rookRank
+    return aheadOfPawn && promotionRanksBetween
+  })
+}
+
 function opposition(move: MoveReview): boolean {
   const board = createPosition(move.afterFen, move.variant)
   const kings = board.board().flat().filter(piece => piece?.type === 'k')
@@ -190,6 +291,41 @@ function opposition(move: MoveReview): boolean {
   return !board.get(file + rank as Square)
 }
 
+function blocksAttack(move: MoveReview): boolean {
+  const before = createPosition(move.beforeFen, move.variant)
+  const after = createPosition(move.afterFen, move.variant)
+  return before.isCheck() && !after.isCheck()
+}
+
+function newlyAttackedValuablePiece(move: MoveReview): boolean {
+  const before = createPosition(move.beforeFen, move.variant)
+  const after = createPosition(move.afterFen, move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  return after.board().flat().some(target => target?.color === enemy && target.type !== 'k'
+    && after.attackers(target.square, move.color).includes(move.to as Square)
+    && !before.attackers(target.square, move.color).includes(move.from as Square))
+}
+
+function discoversCheck(move: MoveReview): boolean {
+  const before = createPosition(move.beforeFen, move.variant)
+  const after = createPosition(move.afterFen, move.variant)
+  if (before.isCheck() || !after.isCheck()) return false
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  const king = after.board().flat().find(piece => piece?.color === enemy && piece.type === 'k')
+  return Boolean(king && after.attackers(king.square, move.color).some(square => square !== move.to))
+}
+
+function royalFork(move: MoveReview, insights: string[]): boolean {
+  return insights.some(text => /creating fork pressure/.test(text) && /the king/.test(text) && /(queen|rook)/.test(text))
+}
+
+function defeatsMatingThreat(move: MoveReview): boolean {
+  if (move.beforeEvaluation.mate === null) return false
+  const beforeLosing = move.color === 'w' ? move.beforeEvaluation.mate < 0 : move.beforeEvaluation.mate > 0
+  if (!beforeLosing) return false
+  return move.evaluation.mate === null || (move.color === 'w' ? move.evaluation.mate >= 0 : move.evaluation.mate <= 0)
+}
+
 type Detection = { key: string; label: string; description: string; matches: (move: MoveReview, index: number, moves: MoveReview[], insights: string[]) => boolean }
 
 const detections: Record<SkillTab, Detection[]> = {
@@ -201,6 +337,7 @@ const detections: Record<SkillTab, Detection[]> = {
     { key: 'free-pieces', label: 'Free pieces', description: 'Moves after which the moved piece has no direct defender against a legal capture.', matches: (_, __, ___, insights) => insights.some(text => /can be captured and has no direct defender/.test(text)) },
     { key: 'defends-pieces', label: 'Defends pieces', description: 'A moved piece defends a friendly piece that was under attack.', matches: move => defendsAttackedPiece(move) },
     { key: 'retreats', label: 'Retreats', description: 'Non-pawn moves back toward the mover’s home rank.', matches: move => move.piece !== 'p' && (move.color === 'w' ? Number(move.to[1]) < Number(move.from[1]) : Number(move.to[1]) > Number(move.from[1])) },
+    { key: 'blocks-attacks', label: 'Blocks attacks', description: 'The move legally answers check and removes the attack on the king.', matches: move => blocksAttack(move) },
   ],
   openings: [
     { key: 'develops-pieces', label: 'Develops pieces', description: 'A knight or bishop leaves its home rank in the opening.', matches: move => move.phase === 'opening' && ['n', 'b'].includes(move.piece) && (move.color === 'w' ? move.from[1] === '1' && move.to[1] !== '1' : move.from[1] === '8' && move.to[1] !== '8') },
@@ -215,6 +352,7 @@ const detections: Record<SkillTab, Detection[]> = {
     } },
     { key: 'book-moves', label: 'Book moves', description: 'The move matches a registered opening-book prefix.', matches: move => move.classification === 'book' },
     { key: 'fianchettos', label: 'Fianchettos', description: 'A bishop develops to a standard fianchetto square.', matches: move => move.piece === 'b' && ['b2', 'g2', 'b7', 'g7'].includes(move.to) },
+    { key: 'develops-with-tempo', label: 'Develops with tempo', description: 'An opening minor-piece development creates a new attack on a valuable piece.', matches: move => developsWithTempo(move) },
   ],
   tactics: [
     { key: 'recaptures', label: 'Recaptures', description: 'A capture immediately returns to the square of the previous capture.', matches: (move, index, moves) => Boolean(move.captured && index > 0 && moves[index - 1].captured && moves[index - 1].to === move.to) },
@@ -223,9 +361,14 @@ const detections: Record<SkillTab, Detection[]> = {
     { key: 'knight-forks', label: 'Knight forks', description: 'A knight move creates fork pressure.', matches: (move, _, __, insights) => move.piece === 'n' && insights.some(text => /creating fork pressure/.test(text)) },
     { key: 'pins', label: 'Pins', description: 'The coach identified a new pin in the position.', matches: (_, __, ___, insights) => insights.some(text => / pins the /.test(text)) },
     { key: 'discovered-attacks', label: 'Discovered attacks', description: 'A line piece gains an attack because another piece moved away from its line.', matches: move => discoveredAttack(move) },
+    { key: 'attacks-pinned-pieces', label: 'Attacks pinned pieces', description: 'The moved piece attacks an enemy piece pinned to its king.', matches: move => attacksPinnedPiece(move) },
+    { key: 'traps-pieces', label: 'Traps pieces', description: 'An attacked enemy piece has no legal move in the resulting position.', matches: move => trapsPiece(move) },
     { key: 'removes-defenders', label: 'Removes defenders', description: 'A capture reduces the number of defenders around another valuable enemy piece.', matches: move => removesDefender(move) },
     { key: 'en-passant', label: 'En passant', description: 'A pawn captures diagonally onto an empty square.', matches: move => move.piece === 'p' && move.captured === 'p' && move.from[0] !== move.to[0] && !createPosition(move.beforeFen, move.variant).get(move.to as Square) },
     { key: 'double-checks', label: 'Double checks', description: 'The move attacks the opposing king with at least two pieces.', matches: (move, _, __, ___) => doubleCheck(move) },
+    { key: 'discovered-checks', label: 'Discovered checks', description: 'A non-moving piece delivers check after the move opens its line.', matches: move => discoversCheck(move) },
+    { key: 'defends-checkmates', label: 'Defends checkmates', description: 'The engine’s forced-mate loss is no longer present after the move.', matches: move => defeatsMatingThreat(move) },
+    { key: 'royal-forks', label: 'Royal forks', description: 'The coach identifies fork pressure against a king and another major piece.', matches: (move, _, __, insights) => royalFork(move, insights) },
     { key: 'brilliant-sacrifices', label: 'Brilliant sacrifices', description: 'The independent review classified the move as Brilliant.', matches: move => move.classification === 'brilliant' },
     { key: 'queen-sacrifices', label: 'Queen sacrifices', description: 'The queen is captured on the opponent’s next move.', matches: (move, index, moves) => move.piece === 'q' && moves[index + 1]?.captured === 'q' },
     { key: 'backrank-mates', label: 'Back-rank mates', description: 'A checkmate leaves the opposing king on its home rank.', matches: move => backrankMate(move) },
@@ -236,15 +379,28 @@ const detections: Record<SkillTab, Detection[]> = {
     { key: 'doubles-rooks', label: 'Doubles rooks', description: 'The move connects the mover’s rooks on a clear rank or file.', matches: move => connectedRooks(move) },
     { key: 'equal-trades', label: 'Equal trades', description: 'A capture is immediately recaptured with equal-value pieces.', matches: (move, index, moves) => equalTrade(move, index, moves) },
     { key: 'wins-tempo', label: 'Wins tempo', description: 'The moved piece creates a new attack on a more valuable enemy piece.', matches: move => winsTempo(move) },
-    { key: 'damages-pawn-structure', label: 'Damages pawn structure', description: 'A capture removes an opposing pawn.', matches: move => move.captured === 'p' },
+    { key: 'powerful-bishops', label: 'Powerful bishops', description: 'A bishop move leaves it attacking at least five squares.', matches: move => {
+      if (move.piece !== 'b') return false
+      const board = createPosition(move.afterFen, move.variant)
+      let attacked = 0
+      for (const file of 'abcdefgh') for (const rank of '12345678') if (board.attackers((file + rank) as Square, move.color).includes(move.to as Square)) attacked++
+      return attacked >= 5
+    } },
+    { key: 'damages-pawn-structure', label: 'Damages pawn structure', description: 'The move increases the opponent’s isolated or doubled pawns.', matches: move => damagesPawnStructure(move) },
+    { key: 'improves-pawn-structure', label: 'Improves pawn structure', description: 'The move reduces the mover’s isolated or doubled pawns.', matches: move => improvesPawnStructure(move) },
+    { key: 'prevents-castling', label: 'Prevents castling', description: 'The move removes at least one opponent castling right.', matches: move => preventsCastling(move) },
+    { key: 'avoids-trades', label: 'Avoids trades', description: 'The mover declines a legal capture while preserving a clear advantage.', matches: move => avoidsTrade(move) },
+    { key: 'trading-to-simplify', label: 'Trading to simplify', description: 'An equal-valued recapture sequence reduces material while the mover is ahead.', matches: (move, index, moves) => equalTrade(move, index, moves) && (move.beforeEvaluation.cp * (move.color === 'w' ? 1 : -1)) > 100 },
     { key: 'pawn-storms', label: 'Pawn storms', description: 'A flank pawn advances into the opponent’s half of the board.', matches: move => move.piece === 'p' && wingFiles.has(move.to[0]) && (move.color === 'w' ? Number(move.to[1]) >= 5 : Number(move.to[1]) <= 4) },
     { key: 'center-control', label: 'Center control', description: 'The coach identifies occupation or new control of a central square.', matches: (_, __, ___, insights) => insights.some(text => /in the center/.test(text)) },
+    { key: 'creates-batteries', label: 'Creates batteries', description: 'A moved line piece aligns with another friendly bishop, rook, or queen.', matches: move => createsBattery(move) },
   ],
   endgames: [
     { key: 'promotions', label: 'Promotions', description: 'A pawn promotes to a new piece.', matches: move => Boolean(move.promotion) },
     { key: 'passed-pawns', label: 'Passed pawns', description: 'A pawn advances without an opposing pawn ahead on its file or an adjacent file.', matches: move => isPassedPawnMove(move) },
     { key: 'protected-passed-pawns', label: 'Protected passed pawns', description: 'An advanced passed pawn is defended by another friendly piece.', matches: move => passedPawnProtected(move) },
     { key: 'rook-supports-passed-pawn', label: 'Rook supports passed pawn', description: 'A rook stands behind a friendly passed pawn on the same file.', matches: move => rookSupportsPassedPawn(move) },
+    { key: 'rook-blocks-passed-pawn', label: 'Rook blocks passed pawn', description: 'A rook occupies the promotion path in front of an opposing pawn.', matches: move => blocksPassedPawn(move) },
     { key: 'active-king', label: 'Active king', description: 'The king moves during the engine-classified endgame phase.', matches: move => move.phase === 'endgame' && move.piece === 'k' },
     { key: 'seventh-rank-rook', label: 'Rook on seventh rank', description: 'The rook reaches the opponent’s second or seventh rank.', matches: move => move.piece === 'r' && (move.color === 'w' ? move.to[1] === '7' : move.to[1] === '2') },
     { key: 'opposition', label: 'Opposition', description: 'The kings face each other with one square between them.', matches: move => move.phase === 'endgame' && opposition(move) },
@@ -255,7 +411,8 @@ const detections: Record<SkillTab, Detection[]> = {
     { key: 'queen-checkmates', label: 'Queen checkmates', description: 'A queen delivers checkmate.', matches: move => move.piece === 'q' && checkmateMove(move) },
     { key: 'rook-checkmates', label: 'Rook checkmates', description: 'A rook delivers checkmate.', matches: move => move.piece === 'r' && checkmateMove(move) },
     { key: 'connects-rooks-seventh', label: 'Connects rooks on seventh', description: 'The move connects rooks while one stands on the opponent’s second or seventh rank.', matches: move => connectedRooks(move) && move.piece === 'r' && (move.color === 'w' ? move.to[1] === '7' : move.to[1] === '2') },
-    { key: 'checkmates', label: 'Checkmates', description: 'A recorded move ends in orthodox checkmate.', matches: move => move.san.endsWith('#') && !move.variant },
+    { key: 'ladder-mates', label: 'Ladder mates', description: 'A rook or queen delivers checkmate.', matches: move => ['r', 'q'].includes(move.piece) && checkmateMove(move) },
+    { key: 'checkmates', label: 'Checkmates', description: 'A recorded move ends in checkmate.', matches: move => checkmateMove(move) },
   ],
 }
 

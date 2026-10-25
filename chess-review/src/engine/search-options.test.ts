@@ -37,3 +37,14 @@ test('streamed results reject illegal continuations and never mix MultiPV depths
   assert.equal(result.bestMoveSan, 'e4')
   assert.equal(searchResult(fen, 'chess', records.slice(-1), 1), null)
 })
+
+test('candidate lines sharing the same first move do not become duplicate alternatives', () => {
+  const fen = new Chess().fen()
+  const records = [
+    'info depth 10 multipv 1 score cp 30 pv e2e4 e7e5',
+    'info depth 10 multipv 2 score cp 20 pv e2e4 c7c5',
+  ].map(line => parseInfo(line, fen)!)
+  const result = searchResult(fen, 'chess', records, 2)!
+  assert.equal(result.bestMove, 'e2e4')
+  assert.deepEqual(result.lines.map(line => line.pv[0]), ['e2e4'])
+})
