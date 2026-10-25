@@ -129,6 +129,31 @@
   font-size: 12px;
   line-height: 1;
 }
+.player-captures {
+  display: flex;
+  min-height: 18px;
+  align-items: center;
+  line-height: 1;
+}
+.player-captured-piece {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-left: -11px;
+}
+.player-captured-piece:first-child {
+  margin-left: -2px;
+}
+.player-captured-piece .chess-piece {
+  width: 18px;
+  height: 18px;
+}
+.player-material {
+  margin-left: 4px;
+  color: #c3c2c1;
+  font-size: 12px;
+}
 .player-info > span {
   color: var(--subtle);
   font-size: 10px;
