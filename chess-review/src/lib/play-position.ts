@@ -32,7 +32,7 @@ type Dependencies = {
 
 export function positionOutcome(board: ChessPosition): string | null {
   const outcome = board.variantOutcome?.()
-  if (outcome) return outcome.winner ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins ${outcome.reason === 'third-check' ? 'by delivering the third check.' : outcome.reason === 'king-of-the-hill' ? 'by reaching the hill.' : outcome.reason === 'atomic-win' ? 'by exploding the opposing king.' : outcome.reason === 'giveaway-win' ? 'by reaching Giveaway’s no-move or no-piece win condition.' : 'by eliminating the opposing army.'}` : 'Draw.'
+  if (outcome) return outcome.winner ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins ${outcome.reason === 'third-check' ? 'by delivering the third check.' : outcome.reason === 'king-of-the-hill' ? 'by reaching the hill.' : outcome.reason === 'atomic-win' ? 'by exploding the opposing king.' : outcome.reason === 'giveaway-win' ? 'by reaching Giveaway’s no-move or no-piece win condition.' : outcome.reason === 'racing-kings-win' ? 'by reaching the eighth rank first.' : 'by eliminating the opposing army.'}` : 'Draw.'
   if (board.isCheckmate()) return (board.turn() === 'w' ? 'Black' : 'White') + ' wins by checkmate.'
   if (board.isStalemate()) return 'Draw by stalemate.'
   if (board.isInsufficientMaterial()) return 'Draw by insufficient material.'

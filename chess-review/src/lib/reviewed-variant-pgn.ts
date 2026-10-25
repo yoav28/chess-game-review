@@ -16,7 +16,7 @@ export function reviewedVariantPgn(review: GameReview, result: string, method: s
     if (!/^\w+$/.test(key)) throw new Error('The review contains an invalid PGN header.')
     tree.headers.set(key, value.replace(/[\r\n]/g, ' '))
   }
-  tree.headers.set('Variant', variant === 'threecheck' ? '3-check' : variant === 'kingofthehill' ? 'King of the Hill' : variant === 'atomic' ? 'Atomic' : variant === 'horde' ? 'Horde' : variant === 'crazyhouse' ? 'Crazyhouse' : variant === 'giveaway' ? 'Giveaway' : 'Chess960')
+  tree.headers.set('Variant', variant === 'threecheck' ? '3-check' : variant === 'kingofthehill' ? 'King of the Hill' : variant === 'atomic' ? 'Atomic' : variant === 'horde' ? 'Horde' : variant === 'crazyhouse' ? 'Crazyhouse' : variant === 'giveaway' ? 'Giveaway' : variant === 'racingkings' ? 'Racing Kings' : 'Chess960')
   tree.headers.set('SetUp', '1')
   tree.headers.set('FEN', review.initialFen)
   tree.headers.set('White', review.white.replace(/[\r\n]/g, ' '))

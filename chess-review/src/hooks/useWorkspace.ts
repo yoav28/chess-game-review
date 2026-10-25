@@ -112,7 +112,7 @@ export function useWorkspace() {
   const classificationMark = settings.showClassifications && currentMove && !isVariation && !play.active && (tab === 'review' && !explanation.active || explanation.active && explanation.steps[explanation.currentStep]?.stage === 'played')
     ? { square: currentMove.kingTo ?? currentMove.to, kind: currentMove.classification } : undefined;
   const opening =
-    variant === 'threecheck' ? 'Three-check · three checks win' : variant === 'kingofthehill' ? 'King of the Hill · reach a center square' : variant === 'atomic' ? 'Atomic · captures explode nearby pieces' : variant === 'horde' ? 'Horde · defend the army or capture every piece' : variant === 'crazyhouse' ? 'Crazyhouse · captured pieces return as drops' : variant === 'giveaway' ? 'Giveaway · compulsory captures and no-move wins' : review?.opening?.name ||
+    variant === 'threecheck' ? 'Three-check · three checks win' : variant === 'kingofthehill' ? 'King of the Hill · reach a center square' : variant === 'atomic' ? 'Atomic · captures explode nearby pieces' : variant === 'horde' ? 'Horde · defend the army or capture every piece' : variant === 'crazyhouse' ? 'Crazyhouse · captured pieces return as drops' : variant === 'giveaway' ? 'Giveaway · compulsory captures and no-move wins' : variant === 'racingkings' ? 'Racing Kings · reach the eighth rank without check' : review?.opening?.name ||
     parsed.headers.Opening ||
     (parsed.headers.ECOUrl
       ? decodeURIComponent(parsed.headers.ECOUrl.split("/").pop()!).replaceAll(

@@ -70,7 +70,7 @@ export function variationToSan(fen: string, moves: string[], variant?: ChessVari
 
 export function terminalEvaluation(board: ChessPosition): Evaluation | null {
   const outcome = board.variantOutcome?.()
-  if (outcome) return { cp: outcome.winner === 'w' ? 100000 : outcome.winner === 'b' ? -100000 : 0, mate: 0 }
+  if (outcome) return outcome.winner ? { cp: outcome.winner === 'w' ? 100000 : -100000, mate: 0 } : { cp: 0, mate: null }
   if (board.isCheckmate()) return { cp: board.turn() === 'w' ? -100000 : 100000, mate: 0 }
   if (board.isDraw()) return { cp: 0, mate: null }
   return null

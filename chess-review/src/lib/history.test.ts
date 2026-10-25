@@ -302,3 +302,17 @@ test('Giveaway reports use their own uncalibrated history pool', async () => {
   assert.equal(summary.games, 1)
   assert.match(summary.modelLabel, /Giveaway quality heuristic/)
 })
+
+test('Racing Kings reports use their own uncalibrated history pool', async () => {
+  const { reviewFixture } = await import('../test/review-fixture')
+  const { variantsForPlayer } = await import('./history')
+  const racing = reviewFixture('[White "Ada"]\n[Black "Grace"]\n[Variant "Racing Kings"]\n[FEN "K7/6k1/8/8/8/8/8/8 b - - 0 1"]\n[Result "1/2-1/2"]\n\n1... Kg8 1/2-1/2')
+  racing.variant = 'racingkings'
+  racing.moves.forEach(move => { move.accuracy = 25 })
+  const entries = [{ id: 'racingkings', review: racing }]
+  assert.deepEqual(variantsForPlayer(entries, 'Grace'), ['racingkings'])
+  const summary = playerHistory(entries, 'Grace', 'racingkings')
+  assert.equal(summary.overall.accuracy, 25)
+  assert.equal(summary.games, 1)
+  assert.match(summary.modelLabel, /Racing Kings quality heuristic/)
+})

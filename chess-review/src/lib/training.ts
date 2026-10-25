@@ -4,7 +4,7 @@ import { insightsForMove } from './insights'
 import type { GamePhase, GameReview, MoveReview, ParsedMove } from './review'
 import { isVariantHeuristic, variantLabel } from './variants'
 
-export type TrainingTheme = 'loose-pieces' | 'fork' | 'pin' | 'mate' | 'third-check' | 'king-of-the-hill' | 'atomic' | 'horde' | 'giveaway' | 'development' | 'castling' | 'calculation'
+export type TrainingTheme = 'loose-pieces' | 'fork' | 'pin' | 'mate' | 'third-check' | 'king-of-the-hill' | 'atomic' | 'horde' | 'giveaway' | 'racing-kings' | 'development' | 'castling' | 'calculation'
 
 export type TrainingExercise = {
   ply: number
@@ -78,6 +78,10 @@ function themeFor(move: MoveReview, best: ParsedMove): Pick<TrainingExercise, 't
   if (outcome?.reason === 'giveaway-win') return {
     theme: 'giveaway', title: 'Finish the Giveaway game', evidence: 'The move ends the game by leaving the opponent with no legal moves or pieces.',
     goal: 'In Giveaway, look for compulsory captures and safe ways to give away your remaining pieces.',
+  }
+  if (outcome?.reason === 'racing-kings-win') return {
+    theme: 'racing-kings', title: 'Win the Racing Kings race', evidence: 'The move reaches the eighth rank while the opponent cannot draw by reaching it on the next turn.',
+    goal: 'Race your king upward, avoid giving check, and consider whether the opponent can reach the goal rank immediately after you.',
   }
   if (bestBoard.isCheckmate()) return {
     theme: 'mate', title: 'Finish the mating attack', evidence: 'The engine alternative delivers immediate checkmate.',

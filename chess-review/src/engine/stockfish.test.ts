@@ -329,6 +329,29 @@ test('Fairy-Stockfish reviews Giveaway captures and preserves the variant in exp
   assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
 })
 
+test('Fairy-Stockfish reviews Racing Kings wins and draws through PGN and portable exports', { timeout: 30000 }, async () => {
+  const { readFileSync } = await import('node:fs')
+  const { parsePgn } = await import('../lib/game')
+  const { reviewedPgn } = await import('../lib/report')
+  const { parseReviewTransfer, serializeReviewTransfer } = await import('../lib/review-transfer')
+  for (const [fixture, result] of [['win', '1-0'], ['draw', '1/2-1/2']] as const) {
+    const pgn = readFileSync(new URL(`../test/fixtures/racing-kings-${fixture}.pgn`, import.meta.url), 'utf8')
+    const original = parsePgn(pgn)
+    const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
+    assert.equal(review.variant, 'racingkings')
+    assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12.*Racing Kings/)
+    assert.match(review.accuracyModel, /uncalibrated move-quality heuristic/)
+    assert.deepEqual(review.moves.at(-1)!.evaluation, result === '1-0' ? { cp: 100000, mate: 0 } : { cp: 0, mate: null })
+    const exported = parsePgn(reviewedPgn(review))
+    assert.equal(exported.headers.Variant, 'Racing Kings')
+    assert.deepEqual(exported.positions, original.positions)
+    assert.equal(exported.result, result)
+    const imported = parseReviewTransfer(serializeReviewTransfer(review))
+    assert.equal(imported.variant, 'racingkings')
+    assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
+  }
+})
+
 test('both actual three-check games review and export every counter, position, clock and result', { timeout: 90000 }, async () => {
   const { readFileSync } = await import('node:fs')
   const { parsePgn } = await import('../lib/game')
