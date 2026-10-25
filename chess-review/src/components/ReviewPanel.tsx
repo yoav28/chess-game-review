@@ -178,13 +178,6 @@ export function ReviewPanel({
             <EvaluationGraph review={review} ply={move?.ply ?? 0} onSelect={onSelect} />
           </div>
           <div className="accuracy-report">
-            <div className="report-caption">
-              <h2>Accuracy</h2>
-              <button className="text-button help-method" onClick={onMethod}>
-                How it’s measured
-              </button>
-            </div>
-            <p className="fine-print">{review.variant && isVariantHeuristic(review.variant) ? `${variantLabel(review.variant)} move-quality heuristic · v2. Not calibrated winning probabilities.` : review.accuracyVersion === 2 ? 'Win-chance accuracy · v2' : 'Legacy centipawn accuracy · v1. Review again to update.'}</p>
             <div className="review-player-comparison">
               <span className="review-comparison-label">Players</span>
               <div className="review-player-score review-player-score-0">
@@ -199,7 +192,16 @@ export function ReviewPanel({
               <strong className="review-accuracy review-accuracy-white">{review.whiteAccuracy?.toFixed(1) ?? "—"}</strong>
               <strong className="review-accuracy review-accuracy-black">{review.blackAccuracy?.toFixed(1) ?? "—"}</strong>
             </div>
+            <div className="accuracy-model-note">
+              <span className="fine-print">{review.variant && isVariantHeuristic(review.variant) ? `${variantLabel(review.variant)} heuristic · v2` : review.accuracyVersion === 2 ? 'Win-chance accuracy · v2' : 'Legacy centipawn accuracy · v1'}</span>
+              <button className="text-button help-method" onClick={onMethod}>How it’s measured</button>
+            </div>
           </div>
+          {settings.showSkills && <details className="review-skill-disclosure">
+            <summary><span>Skills</span><span>Performance by skill</span></summary>
+            <SkillBreakdown review={review} onSelect={onSelect} />
+          </details>}
+          <ReviewStats review={review} ply={move?.ply} onSelect={onSelect} />
           <ReviewOverview review={review} games={games} username={username} onSelect={onSelect} onExploreOpening={onExploreOpening} />
           <div className="review-preferences"><label htmlFor="review-focus">Highlights for</label><select id="review-focus" value={focusColor} onChange={event => setFocusColor(event.target.value as 'all' | 'w' | 'b')}><option value="all">Both players</option><option value="w">White</option><option value="b">Black</option></select></div>
           <CoachControls
@@ -234,8 +236,6 @@ export function ReviewPanel({
               {retryableMove && move && <button className="text-button" onClick={() => onPracticePosition(move.ply)}><RotateCcw size={14} /> Retry this move</button>}
             </section>
           )}
-          <ReviewStats review={review} ply={move?.ply} onSelect={onSelect} />
-          {settings.showSkills && <SkillBreakdown review={review} onSelect={onSelect} />}
           <section className="moments">
             <div className="report-caption">
               <h3>Key moments</h3>
@@ -332,11 +332,6 @@ export function ReviewPanel({
               disabled={running}
             >
               <RotateCcw size={12} /> Review again
-            </button>
-          </div>
-          <div className="review-overview-footer">
-            <button className="primary full-width review-start-button" onClick={() => onMoveReview('moves')}>
-              Start Review <ArrowRight size={21} />
             </button>
           </div>
         </>

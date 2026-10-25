@@ -11,7 +11,7 @@ export function ReviewStats({ review, ply, onSelect }: ReviewStatsProps) {
   const categories = Object.keys(classificationLabels) as Classification[];
   return (
     <>
-      <section className="classification-report">
+      <section className="classification-report" aria-label="Move quality classification counts">
         <div className="classification-header">
           <span>Move quality</span>
           <span>White</span>
@@ -23,9 +23,11 @@ export function ReviewStats({ review, ply, onSelect }: ReviewStatsProps) {
               <MoveClassification className="review-classification-icon" classification={category} />
               {classificationLabels[category]}
             </span>
+            <MoveClassification className="classification-center-icon" classification={category} />
             {(["w", "b"] as const).map((color) => (
               <button
                 key={color}
+                className={`classification-count ${color === 'w' ? 'classification-count-white' : 'classification-count-black'} classification-count-${category === 'missed' ? 'miss' : category}`}
                 disabled={!review.counts[color][category]}
                 title={`Find ${color === "w" ? "White" : "Black"} ${classificationLabels[category].toLowerCase()} moves`}
                 onClick={() => {

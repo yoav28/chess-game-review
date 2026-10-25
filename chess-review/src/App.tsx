@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Pause, Play, Settings, SlidersHorizontal, SquarePlus, Star } from "lucide-react";
+import { ArrowLeftRight, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Pause, Play, Search, Settings, SlidersHorizontal, SquarePlus, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppHeader } from "./components/AppChrome";
 import { BoardWorkspace } from "./components/BoardWorkspace";
@@ -39,6 +39,8 @@ function App() {
     practice, variant, boardBestMove, showBestArrow, boardCoachArrows, classificationMark, threat,
   } = useWorkspace();
   const [reviewMode, setReviewMode] = useState<'overview' | 'moves'>('overview');
+  const reviewReportActive = tab === 'review' && Boolean(review);
+  const guidedReviewActive = reviewReportActive && reviewMode === 'moves';
   const favoriteKey = `review-favorite:${game.id}`;
   const [reviewFavorite, setReviewFavorite] = useState(() => readReviewFavorite(favoriteKey));
 
@@ -140,21 +142,21 @@ function App() {
         <button className="board-settings" onClick={() => setDialog("settings")} aria-label="Board settings">
           <Settings size={18} />
         </button>
-        <aside className={`inspector ${tab === 'review' && review && reviewMode === 'moves' ? 'review-step-active' : ''}`}>
+        <aside className={`inspector ${reviewReportActive ? 'review-report-active' : ''} ${guidedReviewActive ? 'review-step-active' : ''}`}>
           <div className="inspector-header">
-            {tab === 'review' && review && reviewMode === 'moves' && <>
-              <button className="inspector-back" aria-label="Back to highlights" onClick={() => setReviewMode('overview')}><ChevronLeft size={23} /></button>
+            {reviewReportActive && <>
+              <button className="inspector-back" aria-label={guidedReviewActive ? 'Back to highlights' : 'Open game library'} onClick={() => guidedReviewActive ? setReviewMode('overview') : setLibraryOpen(true)}><ChevronLeft size={23} /></button>
               <button className="inspector-favorite" aria-label="Favorite review" aria-pressed={reviewFavorite} onClick={() => {
                 const value = !reviewFavorite;
                 setReviewFavorite(value);
                 try { localStorage.setItem(favoriteKey, String(value)); } catch { }
               }}><Star size={20} fill={reviewFavorite ? 'currentColor' : 'none'} /></button>
             </>}
-            <h1>{tab === "review" ? "Game Review" : tab === "history" ? "Saved Games" : tab === "analysis" ? "Analysis" : "Practice"}</h1>
-            {tab === 'review' && review && reviewMode === 'moves' && <button className="inspector-analysis" aria-label="Review settings" onClick={() => setDialog('settings')}><Settings size={19} /></button>}
+            <h1 id={reviewReportActive ? 'review-panel-title' : undefined}>{tab === "review" ? "Game Review" : tab === "history" ? "Saved Games" : tab === "analysis" ? "Analysis" : "Practice"}</h1>
+            {reviewReportActive && <button className="inspector-analysis" aria-label="Analysis" onClick={() => changeWorkspaceTab('analysis')}><Search size={19} /></button>}
           </div>
-          {!(tab === 'review' && review && reviewMode === 'moves') && <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} />}
-          <div className="inspector-body" role="tabpanel" id="workspace-panel" aria-labelledby={`workspace-tab-${tab}`}>
+          {!reviewReportActive && <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} />}
+          <div className="inspector-body" role={reviewReportActive ? 'region' : 'tabpanel'} id={reviewReportActive ? 'review-panel-body' : 'workspace-panel'} aria-labelledby={reviewReportActive ? 'review-panel-title' : `workspace-tab-${tab}`}>
             {explanation.active ? (
               <ExplanationPanel explanation={explanation} onExit={explanation.stop} />
             ) : tab === "review" ? (
@@ -256,7 +258,12 @@ function App() {
             )}
             {cacheNotice && <p className="library-notice">{cacheNotice}</p>}
           </div>
-          {tab === 'review' && review && reviewMode === 'moves' ? (
+          {reviewReportActive && !guidedReviewActive && <div className="review-overview-footer">
+            <button className="primary full-width review-start-button" onClick={() => setReviewMode('moves')}>
+              Start Review <ChevronRight size={22} />
+            </button>
+          </div>}
+          {guidedReviewActive ? (
             <div className="review-navigation">
               <div className="review-navigation-moves">
                 <button aria-label="First move" disabled={safePly === 0} onClick={() => navigate(0)}><ChevronFirst size={22} /></button>
@@ -271,7 +278,7 @@ function App() {
                 <button aria-label="Review settings" onClick={() => setDialog('settings')}><Settings size={18} /></button>
               </div>
             </div>
-          ) : <div className="inspector-bottom">
+          ) : !reviewReportActive ? <div className="inspector-bottom">
             <button
               className="text-button"
               onClick={() => setDialog("settings")}
@@ -282,7 +289,7 @@ function App() {
             <button className="text-button" onClick={() => setDialog("method")}>
               About
             </button>
-          </div>}
+          </div> : null}
         </aside>
       </div>
       <Dialogs
