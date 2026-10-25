@@ -14,6 +14,23 @@
     margin-right: auto;
   }
 }
+@media (min-width: 1101px) {
+  .library-wrapper.open {
+    inset: 16px 16px 16px auto;
+    width: var(--analysis-width);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+  }
+  .library-scrim {
+    display: none;
+  }
+}
+@media (min-width: 1101px) and (max-width: 1250px) {
+  .library-wrapper.open {
+    width: 340px;
+  }
+}
+
 @media (min-width: 1260px) {
   .board-layout {
     width: min(620px, calc(100svh - 96px));

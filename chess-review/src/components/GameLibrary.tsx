@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   BookOpen,
+  Clock3,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -133,7 +134,7 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
   return (
     <aside className="library" aria-label="Game library">
       <div className="section-title">
-        <h2>Your games</h2>
+        <h2>Games</h2>
         <button
           className="icon-button close-library"
           onClick={onClose}
@@ -142,7 +143,13 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
           <X size={18} />
         </button>
       </div>
-      <form
+      <p className="library-heading">Recent games for <strong>{library.username}</strong></p>
+      {reviewableGames.length > 0 && <button className="text-button library-review-next" type="button" disabled={!reviewedLoaded || reviewHistoryError || !unreviewedCount || selectedGameUnreviewed || library.loading} onClick={reviewNextUnreviewed}>
+        {reviewHistoryError ? 'Review history unavailable' : !reviewedLoaded ? 'Checking saved reviews…' : selectedGameUnreviewed ? 'Review this game to continue' : unreviewedCount ? `Review next unreviewed game · ${unreviewedCount.toLocaleString()} left` : `All ${reviewableGames.length.toLocaleString()} reviewable games reviewed`}
+      </button>}
+      <details className="library-import-section">
+        <summary>Import games</summary>
+        <form
         className="import-form"
         onSubmit={(event) => {
           event.preventDefault();
@@ -188,13 +195,8 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
         <button className="text-button" type="button" onClick={() => pgnFile.current?.click()}>
           <ArrowDownToLine size={14} /> Add games from PGN
         </button>
-        {reviewableGames.length > 0 && <>
-          <p className="fine-print">{reviewHistoryError ? 'Saved review history is unavailable.' : reviewedLoaded ? `${reviewableGames.length - unreviewedCount} of ${reviewableGames.length.toLocaleString()} reviewable games reviewed.` : 'Checking saved reviews…'}</p>
-          <button className="text-button" type="button" disabled={!reviewedLoaded || reviewHistoryError || !unreviewedCount || selectedGameUnreviewed || library.loading} onClick={reviewNextUnreviewed}>
-            {reviewHistoryError ? 'Review history unavailable' : !reviewedLoaded ? 'Checking saved reviews…' : selectedGameUnreviewed ? 'Review this game to continue' : unreviewedCount ? `Review next unreviewed game · ${unreviewedCount.toLocaleString()} left` : `All ${reviewableGames.length.toLocaleString()} reviewable games reviewed`}
-          </button>
-        </>}
-      </form>
+        </form>
+      </details>
       {library.loading && (
         <div className="import-status" role="status">
           <div>
@@ -229,6 +231,8 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
       )}
       {library.games.length > 0 ? (
         <>
+          <details className="library-filter-section">
+            <summary>Filter games</summary>
           <div className="library-filters">
             <div className="filter-row"><select aria-label="Game rules filter" value={rules} onChange={event => { setRules(event.target.value); setPage(0); }}>
               <option value="all">All rules · {library.games.length.toLocaleString()}</option>
@@ -298,6 +302,7 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
               </select>
             </div>
           </div>
+          </details>
           <div className="library-count">
             {filtered.length.toLocaleString()} games
             {library.username && <span>@{library.username}</span>}
@@ -308,7 +313,6 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
               .map((game) => {
                 const isWhite =
                   game.white.username.toLowerCase() === library.username;
-                const opponent = isWhite ? game.black : game.white;
                 const me = isWhite ? game.white : game.black;
                 const won = me.result === "win";
                 const drawn = [
@@ -319,6 +323,7 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
                   "50move",
                   "timevsinsufficient",
                 ].includes(me.result);
+                const moveCount = (game.pgn.match(/\d+\./g) ?? []).length;
                 return (
                   <button
                     key={game.id}
@@ -328,27 +333,20 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
                       onClose();
                     }}
                   >
-                    <span
-                      className={`result-mark ${won ? "won" : drawn ? "drawn" : "lost"}`}
-                    >
-                      {won ? "1" : drawn ? "½" : "0"}
+                    <span className="game-row-time">
+                      <Clock3 size={18} />
+                      <span>{game.timeClass === 'daily' ? 'Daily' : game.timeClass}</span>
+                      <small>{formatTimeControl(game.timeControl)}</small>
                     </span>
                     <span className="game-row-main">
-                      <strong>
-                        {opponent.username} <span>{opponent.rating || ""}</span>
-                      </strong>
-                      <span>
-                        {isWhite ? "White" : "Black"} ·{" "}
-                        {game.rules === "chess" ? game.timeClass : rulesLabel(game.rules)} ·{" "}
-                        {formatTimeControl(game.timeControl)}
-                      </span>
+                      <span className="game-row-player"><strong>{game.white.username}</strong>{game.white.rating > 0 && <span className="game-row-rating">({game.white.rating})</span>}</span>
+                      <span className="game-row-player"><strong>{game.black.username}</strong>{game.black.rating > 0 && <span className="game-row-rating">({game.black.rating})</span>}</span>
                     </span>
-                    <time>
-                      {new Date(game.endTime * 1000).toLocaleDateString(
-                        undefined,
-                        { month: "short", day: "numeric" },
-                      )}
-                    </time>
+                    <span className="game-row-result">
+                      <span>{moveCount}</span>
+                      <span className={`result-mark ${won ? "won" : drawn ? "drawn" : "lost"}`}>{won ? "1" : drawn ? "½" : "0"}</span>
+                      <time>{new Date(game.endTime * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</time>
+                    </span>
                   </button>
                 );
               })}
