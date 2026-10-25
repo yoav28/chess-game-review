@@ -109,12 +109,15 @@ export function ImportHomePanel({
           <label htmlFor="home-username">{source === 'chess.com' ? 'Chess.com username' : 'Lichess username'}</label>
           <input id="home-username" value={username} onChange={event => setUsername(event.target.value)} placeholder="Enter username" autoComplete="off" spellCheck={false} required />
           <button className="primary import-home-find" disabled={library.loading || loading}>{loading ? 'Finding games…' : 'Find Games'}</button>
+          <p className="fine-print">{source === 'chess.com' ? 'Public Chess.com archive games. No login needed.' : 'Public Lichess games. No login needed.'}</p>
         </form>}
         {(error || library.error) && <p className="error-message" role="alert">{error || library.error}</p>}
-        {library.loading && <div className="import-home-progress" role="status">
-          <span>{library.progress?.archivesTotal ? `${library.progress.archivesCompleted} / ${library.progress.archivesTotal} months` : 'Finding archives…'}</span>
-          <progress max={library.progress?.archivesTotal || 1} value={library.progress?.archivesCompleted || 0} />
+        {library.notice && <p className="fine-print" role="status">{library.notice}</p>}
+        {library.loading && <div className="import-home-progress">
+          <span role="status">{library.progress?.archivesTotal ? `${library.progress.archivesCompleted} / ${library.progress.archivesTotal} months` : 'Finding archives…'}</span>
+          <progress aria-label="Archive import progress" max={library.progress?.archivesTotal || 1} value={library.progress?.archivesCompleted || 0} />
           <span>{library.progress?.gamesLoaded.toLocaleString() ?? 0} games loaded</span>
+          <button className="secondary" type="button" onClick={library.cancel}>Stop import</button>
         </div>}
       </div>
       {recent.length > 0 || library.games.length > 0 ? <section className="recent-reviews" aria-label="Recent reviews">
