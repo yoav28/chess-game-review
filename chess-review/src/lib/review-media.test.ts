@@ -91,3 +91,16 @@ test('three-check media retain the variant, heuristic label and terminal counter
   assert.match(payload.frames.at(-1).outcome, /third check/)
   assert.doesNotThrow(() => new Script(embedPlayerScript))
 })
+
+test('Crazyhouse replay media preserves both pockets and rejects incomplete drop puzzles', () => {
+  const pgn = readFileSync(new URL('../test/fixtures/crazyhouse-pocket-drop.pgn', import.meta.url), 'utf8')
+  const review = reviewFixture(pgn)
+  const data = reviewImageData(review)
+  assert.equal(data.board.pockets?.()?.b.p, 1)
+  const embed = buildReviewEmbed(review, {})
+  const payload = JSON.parse(embed.document.match(/id="review-data">([\s\S]*?)<\/script>/)![1])
+  assert.equal(payload.frames[4].pockets.w.p, 1)
+  assert.equal(payload.frames[4].pockets.b.p, 1)
+  assert.match(embed.document, /drawPocket\('pocket-top'/)
+  assert.throws(() => buildReviewEmbed(review, {}, { puzzle: true }), /pocket-drop puzzles are not supported/)
+})

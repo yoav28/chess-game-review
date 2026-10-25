@@ -1,6 +1,6 @@
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js'
 import { makeFen } from 'chessops/fen'
-import { Horde } from 'chessops/variant'
+import { Crazyhouse, Horde } from 'chessops/variant'
 import { Chess960Board } from './chess960'
 import { ChessopsBoard } from './chessops-board'
 import { threeCheckInitialFen, type ChessVariant } from './variants'
@@ -17,6 +17,7 @@ export interface PositionMove {
   after: string
   captured?: PieceSymbol
   promotion?: PieceSymbol
+  drop?: PieceSymbol
   uci?: string
   kingTo?: Square
   rookFrom?: Square
@@ -28,6 +29,7 @@ export interface ChessPosition {
   turn(): Color
   get(square: Square): Piece | undefined
   board(): ({ square: Square } & Piece | null)[][]
+  pockets?(): { w: Partial<Record<PieceSymbol, number>>; b: Partial<Record<PieceSymbol, number>> } | null
   moves(options: { square?: Square; verbose: true }): PositionMove[]
   moves(options?: { square?: Square; verbose?: false }): string[]
   move(input: string | { from: string; to: string; promotion?: string }): PositionMove
@@ -50,7 +52,7 @@ export interface ChessPosition {
 }
 
 export function resolveVariant(fen: string, variant?: ChessVariant): ChessVariant {
-  if (variant !== undefined && !['chess', 'chess960', 'threecheck', 'kingofthehill', 'atomic', 'horde'].includes(variant)) throw new Error('Unsupported chess variant.')
+  if (variant !== undefined && !['chess', 'chess960', 'threecheck', 'kingofthehill', 'atomic', 'horde', 'crazyhouse'].includes(variant)) throw new Error('Unsupported chess variant.')
   const fields = fen.split(/\s+/)
   const checks = [fields[4], fields[6]].some(field => field && /^(?:[0-3]\+[0-3]|\+[0-3]\+[0-3])$/.test(field))
   if (checks && variant && variant !== 'threecheck') throw new Error('This position has three-check counters and cannot use other chess rules.')
@@ -61,16 +63,21 @@ export function resolveVariant(fen: string, variant?: ChessVariant): ChessVarian
 
 export function createPosition(fen?: string, variant?: ChessVariant): ChessPosition {
   if (fen === undefined) {
-    if (variant !== undefined && !['chess', 'chess960', 'threecheck', 'kingofthehill', 'atomic', 'horde'].includes(variant)) throw new Error('Unsupported chess variant.')
+    if (variant !== undefined && !['chess', 'chess960', 'threecheck', 'kingofthehill', 'atomic', 'horde', 'crazyhouse'].includes(variant)) throw new Error('Unsupported chess variant.')
     if (variant === 'chess960') throw new Error('Chess960 requires its starting FEN.')
     if (variant === 'threecheck') return new ChessopsBoard(threeCheckInitialFen, 'threecheck')
     if (variant === 'kingofthehill') return new ChessopsBoard(new Chess().fen(), 'kingofthehill')
     if (variant === 'atomic') return new ChessopsBoard(new Chess().fen(), 'atomic')
     if (variant === 'horde') return new ChessopsBoard(makeFen(Horde.default().toSetup()), 'horde')
+    if (variant === 'crazyhouse') return new ChessopsBoard(makeFen(Crazyhouse.default().toSetup()), 'crazyhouse')
     return new Chess()
   }
   const rules = resolveVariant(fen, variant)
-  return rules === 'threecheck' || rules === 'kingofthehill' || rules === 'atomic' || rules === 'horde' ? new ChessopsBoard(fen, rules) : rules === 'chess960' ? new Chess960Board(fen) : new Chess(fen)
+  return rules === 'threecheck' || rules === 'kingofthehill' || rules === 'atomic' || rules === 'horde' || rules === 'crazyhouse' ? new ChessopsBoard(fen, rules) : rules === 'chess960' ? new Chess960Board(fen) : new Chess(fen)
 }
 
 export const positionMoveUci = (move: PositionMove): string => move.uci ?? `${move.from}${move.to}${move.promotion ?? ''}`
+export function moveFromUci(board: ChessPosition, uci: string): PositionMove {
+  if (/^[PNBRQ]@[a-h][1-8]$/i.test(uci)) return board.move(`${uci[0].toUpperCase()}@${uci.slice(2).toLowerCase()}`)
+  return board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+}

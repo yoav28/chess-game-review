@@ -2,7 +2,7 @@ import { Chess, type Color } from 'chess.js'
 import { parsePgn } from './game'
 import { classificationLabels, type GameReview, type MoveReview } from './review'
 import type { Evaluation } from '../engine/types'
-import { createPosition, pgnVariant, type ChessPosition } from './position'
+import { createPosition, moveFromUci, pgnVariant, type ChessPosition } from './position'
 import { reviewedVariantPgn } from './reviewed-variant-pgn'
 
 export type SkillScore = { accuracy: number | null; moves: number }
@@ -60,7 +60,7 @@ function replay(review: GameReview): ChessPosition {
   const board = createPosition(review.initialFen, review.variant ?? pgnVariant(review.pgn))
   for (const move of review.moves) {
     if (board.fen() !== move.beforeFen) throw new Error('The review contains an inconsistent move sequence.')
-    board.move({ from: move.from, to: move.to, promotion: move.promotion })
+    moveFromUci(board, move.uci)
     if (board.fen() !== move.afterFen) throw new Error('The review contains an inconsistent position.')
   }
   return board
@@ -100,7 +100,7 @@ export function reviewedPgn(review: GameReview): string {
   board.setHeader('Annotator', safeHeader(`Open File / ${review.engine}`))
   board.setComment(safeComment(`${comments.get(review.initialFen) ?? ''} ${review.accuracyModel} ${skillMethod}`))
   review.moves.forEach((move, index) => {
-    board.move({ from: move.from, to: move.to, promotion: move.promotion })
+    moveFromUci(board, move.uci)
     const original = (comments.get(board.fen()) ?? '').replace(/\[%(?:eval|clk)\s+[^\]]*\]/gi, '').trim()
     const clock = clocks[index] !== null && clocks[index] !== undefined ? clockTag(clocks[index]) : ''
     board.setComment(safeComment([

@@ -1,4 +1,4 @@
-import { createPosition, type ChessVariant } from './position'
+import { createPosition, moveFromUci, type ChessVariant } from './position'
 
 type Move = { from: string; to: string; kingTo?: string; rookFrom?: string; rookTo?: string }
 export function physicalMove(move: Move): { from: string; to: string } {
@@ -11,8 +11,8 @@ export function continuationArrows(fen: string, moves: readonly string[], varian
   try {
     const board = createPosition(fen, variant)
     for (const uci of moves.slice(0, limit)) {
-      if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) break
-      const move = board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+      if (!/^(?:[a-h][1-8][a-h][1-8][qrbn]?|[PNBRQ]@[a-h][1-8])$/.test(uci)) break
+      const move = moveFromUci(board, uci)
       const arrow = physicalMove(move)
       if (arrow.from !== arrow.to) arrows.push(arrow)
     }

@@ -266,6 +266,50 @@ test('Fairy-Stockfish reviews and exports a Horde army-elimination win', { timeo
   assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
 })
 
+test('Fairy-Stockfish analyzes Crazyhouse pocket drops through review and portable export', { timeout: 30000 }, async () => {
+  const { readFileSync } = await import('node:fs')
+  const { parsePgn } = await import('../lib/game')
+  const { reviewedPgn } = await import('../lib/report')
+  const { parseReviewTransfer, serializeReviewTransfer } = await import('../lib/review-transfer')
+  const pgn = readFileSync(new URL('../test/fixtures/crazyhouse-pocket-drop.pgn', import.meta.url), 'utf8')
+  const original = parsePgn(pgn)
+  const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
+  assert.equal(review.variant, 'crazyhouse')
+  assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12.*Crazyhouse/)
+  assert.match(review.accuracyModel, /uncalibrated move-quality heuristic/)
+  assert.equal(review.moves.at(-1)!.drop, 'p')
+  assert.equal(review.moves.at(-1)!.uci, 'P@e5')
+  const exported = parsePgn(reviewedPgn(review))
+  assert.equal(exported.headers.Variant, 'Crazyhouse')
+  assert.deepEqual(exported.positions, original.positions)
+  assert.equal(exported.moves.at(-1)!.uci, 'P@e5')
+  const imported = parseReviewTransfer(serializeReviewTransfer(review))
+  assert.equal(imported.variant, 'crazyhouse')
+  assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
+})
+
+test('Fairy-Stockfish reviews Crazyhouse pocket drops and preserves them in exports', { timeout: 30000 }, async () => {
+  const { readFileSync } = await import('node:fs')
+  const { parsePgn } = await import('../lib/game')
+  const { reviewedPgn } = await import('../lib/report')
+  const { parseReviewTransfer, serializeReviewTransfer } = await import('../lib/review-transfer')
+  const pgn = readFileSync(new URL('../test/fixtures/crazyhouse-pocket-drop.pgn', import.meta.url), 'utf8')
+  const original = parsePgn(pgn)
+  const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
+  assert.equal(review.variant, 'crazyhouse')
+  assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12.*Crazyhouse/)
+  assert.match(review.accuracyModel, /uncalibrated move-quality heuristic/)
+  assert.equal(review.moves.at(-1)!.drop, 'p')
+  assert.equal(review.moves.at(-1)!.uci, 'P@e5')
+  const exported = parsePgn(reviewedPgn(review))
+  assert.equal(exported.headers.Variant, 'Crazyhouse')
+  assert.deepEqual(exported.positions, original.positions)
+  assert.equal(exported.moves.at(-1)!.uci, 'P@e5')
+  const imported = parseReviewTransfer(serializeReviewTransfer(review))
+  assert.equal(imported.variant, 'crazyhouse')
+  assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
+})
+
 test('both actual three-check games review and export every counter, position, clock and result', { timeout: 90000 }, async () => {
   const { readFileSync } = await import('node:fs')
   const { parsePgn } = await import('../lib/game')
@@ -274,7 +318,10 @@ test('both actual three-check games review and export every counter, position, c
   for (const id of ['78864833399', '61860050863']) {
     const pgn = readFileSync(new URL(`../test/fixtures/three-check-${id}.pgn`, import.meta.url), 'utf8')
     const original = parsePgn(pgn)
-    const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
+    let review
+    let reviewedPositions = 0
+    try { review = await reviewGame(pgn, { depth: 8, timeMs: 500, onProgress: progress => { reviewedPositions = progress.completed } }) }
+    catch (error) { throw new Error(`Three-check game ${id} review failed after ${reviewedPositions} positions: ${ProcessWorker.output.slice(-16).map(item => item.line).join(' | ')}`, { cause: error }) }
     assert.equal(review.variant, 'threecheck')
     assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12/)
     assert.match(review.accuracyModel, /uncalibrated move-quality heuristic/)

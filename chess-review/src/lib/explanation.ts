@@ -1,4 +1,4 @@
-import { createPosition, positionMoveUci, type ChessPosition, type ChessVariant, type PositionMove } from './position'
+import { createPosition, moveFromUci, positionMoveUci, type ChessPosition, type ChessVariant, type PositionMove } from './position'
 import type { MoveReview, ParsedMove } from './review'
 import { insightsForMove } from './insights'
 
@@ -13,8 +13,8 @@ export type ExplanationStep = {
 }
 
 function applyMove(board: ChessPosition, uci: string): PositionMove {
-  if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) throw new Error('The explanation contains an invalid move.')
-  return board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+  if (!/^(?:[a-h][1-8][a-h][1-8][qrbn]?|[PNBRQ]@[a-h][1-8])$/.test(uci)) throw new Error('The explanation contains an invalid move.')
+  return moveFromUci(board, uci)
 }
 
 function describeMove(move: PositionMove, legalMoves: number, ply: number, variant?: ChessVariant): string {
@@ -25,7 +25,7 @@ function describeMove(move: PositionMove, legalMoves: number, ply: number, varia
     from: move.from, to: move.to, legalMoves,
   }
   const names: Record<string, string> = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' }
-  let action = `${move.color === 'w' ? 'White' : 'Black'} plays ${move.san}.`
+  let action = move.drop ? `${move.color === 'w' ? 'White' : 'Black'} drops a ${names[move.drop]} on ${move.to}.` : `${move.color === 'w' ? 'White' : 'Black'} plays ${move.san}.`
   if (move.captured) action += ` The ${names[move.piece]} captures ${move.captured === 'p' ? 'a pawn' : `the ${names[move.captured]}`} on ${move.to}.`
   if (move.promotion) action += ` The pawn promotes to a ${names[move.promotion]}.`
   if (createPosition(move.after, variant).isCheckmate()) action += ' This is checkmate.'

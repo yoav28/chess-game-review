@@ -2,6 +2,7 @@ import type { GameReview } from './review'
 import { createPosition, positionMoveUci } from './position'
 
 export function embedPuzzleData(review: GameReview, start: number) {
+  if (review.variant === 'crazyhouse') throw new Error('Crazyhouse pocket-drop puzzles are not supported yet.')
   if (!Number.isInteger(start) || start < 0) throw new Error('Choose a valid puzzle starting position.')
   const fen = start ? review.moves[start - 1]?.afterFen : review.initialFen
   if (!fen || start >= review.moves.length) throw new Error('Choose a position before the final move to create a puzzle.')

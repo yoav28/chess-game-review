@@ -69,7 +69,7 @@ export function AnalysisPanel({
         </button>
       </div>
       <p className="muted">
-        {variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' ? 'Fairy-Stockfish · classical evaluation · W = forced win' : 'Stockfish 19 Lite'} {analysis ? `· depth ${analysis.depth}` : ""}
+        {variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' || variant === 'crazyhouse' ? 'Fairy-Stockfish · classical evaluation · W = forced win' : 'Stockfish 19 Lite'} {analysis ? `· depth ${analysis.depth}` : ""}
         {busy && <LoaderCircle className="spin inline-icon" size={13} />}
       </p>
       <AnalysisSearchControls settings={settings} onChange={onSettings} busy={busy} stopped={stopped} threads={threads} onStop={onStop} onRun={onRun} />
@@ -122,7 +122,7 @@ export function AnalysisPanel({
       )}
       <ThreatPanel threat={threat} />
       <div className="analysis-tip">
-        <button className="secondary full-width" disabled={!!outcome} onClick={onPlay}>Play this position against {variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' ? 'Fairy-Stockfish' : 'Stockfish'}</button>
+        <button className="secondary full-width" disabled={!!outcome} onClick={onPlay}>Play this position against {variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' || variant === 'crazyhouse' ? 'Fairy-Stockfish' : 'Stockfish'}</button>
         <h3>Try a different move</h3>
         <p>
           Move any piece on the board to explore a legal variation. Right-click

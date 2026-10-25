@@ -274,3 +274,17 @@ test('Horde reports use their own uncalibrated history pool', async () => {
   assert.equal(summary.games, 1)
   assert.match(summary.modelLabel, /Horde quality heuristic/)
 })
+
+test('Crazyhouse reports use their own uncalibrated history pool', async () => {
+  const { reviewFixture } = await import('../test/review-fixture')
+  const { variantsForPlayer } = await import('./history')
+  const crazyhouse = reviewFixture('[White "Ada"]\n[Black "Grace"]\n[Variant "Crazyhouse"]\n\n1. e4 *')
+  crazyhouse.variant = 'crazyhouse'
+  crazyhouse.moves.forEach(move => { move.accuracy = 25 })
+  const entries = [{ id: 'crazyhouse', review: crazyhouse }]
+  assert.deepEqual(variantsForPlayer(entries, 'Ada'), ['crazyhouse'])
+  const summary = playerHistory(entries, 'Ada', 'crazyhouse')
+  assert.equal(summary.overall.accuracy, 25)
+  assert.equal(summary.games, 1)
+  assert.match(summary.modelLabel, /Crazyhouse quality heuristic/)
+})

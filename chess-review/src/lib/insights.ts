@@ -25,6 +25,7 @@ export function insightsForMove(move: ParsedMove): string[] {
     const reason = outcome.reason === 'third-check' ? 'by delivering the third check' : outcome.reason === 'king-of-the-hill' ? 'by reaching the hill' : outcome.reason === 'atomic-win' ? 'by exploding the opposing king' : 'by eliminating the opposing army'
     return [`${outcome.winner === 'w' ? 'White' : 'Black'} wins ${reason}.`]
   }
+  if (move.drop) return []
   if (after.isCheckmate() || move.san.startsWith('O-O')) return []
   const from = move.from as Square
   const to = move.to as Square

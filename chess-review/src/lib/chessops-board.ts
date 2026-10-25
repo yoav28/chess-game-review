@@ -3,10 +3,10 @@ import { attacks } from 'chessops/attacks'
 import { makeFen, parseFen } from 'chessops/fen'
 import { makeSan, parseSan } from 'chessops/san'
 import { charToRole, kingCastlesTo, makeSquare, makeUci, parseSquare, parseUci, roleToChar, rookCastlesTo } from 'chessops/util'
-import { isNormal, type NormalMove } from 'chessops/types'
+import { isDrop, isNormal, type Move, type NormalMove } from 'chessops/types'
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import type { GameMove } from './game'
-import { Atomic, Horde, KingOfTheHill, ThreeCheck } from 'chessops/variant'
+import { Atomic, Crazyhouse, Horde, KingOfTheHill, ThreeCheck } from 'chessops/variant'
 
 type MoveInput = string | { from: string; to: string; promotion?: string }
 type Piece = { square: Square; type: PieceSymbol; color: Color }
@@ -18,10 +18,10 @@ export class ChessopsBoard {
   private played: GameMove[] = []
   private positions: string[]
 
-  constructor(fen: string, private readonly rules: 'chess960' | 'threecheck' | 'kingofthehill' | 'atomic' | 'horde') {
+  constructor(fen: string, private readonly rules: 'chess960' | 'threecheck' | 'kingofthehill' | 'atomic' | 'horde' | 'crazyhouse') {
     try {
       const setup = parseFen(fen).unwrap()
-      if (setup.pockets) throw new Error('Drop-piece variants are unsupported.')
+      if (setup.pockets && rules !== 'crazyhouse') throw new Error('Pocket pieces require Crazyhouse rules.')
       if (rules === 'threecheck' && !setup.remainingChecks || rules !== 'threecheck' && setup.remainingChecks) throw new Error('Missing or unexpected check counters.')
       if (rules === 'threecheck' && setup.remainingChecks) {
         const { white, black } = setup.remainingChecks
@@ -31,10 +31,10 @@ export class ChessopsBoard {
           if (![0, 7, 56, 63].includes(rook) || king?.role !== 'king' || king.color !== (rook < 8 ? 'white' : 'black')) throw new Error('Combined Chess960 and three-check castling is unsupported.')
         }
       }
-      this.position = (rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : rules === 'atomic' ? Atomic.fromSetup(setup) : rules === 'horde' ? Horde.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
+      this.position = (rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : rules === 'atomic' ? Atomic.fromSetup(setup) : rules === 'horde' ? Horde.fromSetup(setup) : rules === 'crazyhouse' ? Crazyhouse.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
       if (!setup.castlingRights.equals(this.position.castles.castlingRights)) throw new Error('Invalid castling rights.')
     }
-    catch { throw new Error(rules === 'chess960' ? 'Invalid Chess960 FEN. A legal position with both kings is required.' : rules === 'threecheck' ? 'Invalid three-check FEN. Legal kings, check counters, and standard castling are required.' : rules === 'kingofthehill' ? 'Invalid King of the Hill FEN. A legal position with both kings is required.' : rules === 'atomic' ? 'Invalid Atomic FEN. A legal position with both kings is required.' : 'Invalid Horde FEN. One legal king and the Horde setup are required.') }
+    catch { throw new Error(rules === 'chess960' ? 'Invalid Chess960 FEN. A legal position with both kings is required.' : rules === 'threecheck' ? 'Invalid three-check FEN. Legal kings, check counters, and standard castling are required.' : rules === 'kingofthehill' ? 'Invalid King of the Hill FEN. A legal position with both kings is required.' : rules === 'atomic' ? 'Invalid Atomic FEN. A legal position with both kings is required.' : rules === 'horde' ? 'Invalid Horde FEN. One legal king and the Horde setup are required.' : 'Invalid Crazyhouse FEN. A legal position and pocket pieces are required.') }
     this.positions = [this.fen()]
   }
 
@@ -55,6 +55,14 @@ export class ChessopsBoard {
   }
   board(): (Piece | null)[][] {
     return Array.from({ length: 8 }, (_, rank) => Array.from({ length: 8 }, (_, file) => this.get(square((7 - rank) * 8 + file)) ?? null))
+  }
+  pockets(): { w: Partial<Record<PieceSymbol, number>>; b: Partial<Record<PieceSymbol, number>> } | null {
+    const pockets = this.position.pockets
+    if (!pockets) return null
+    const read = (side: typeof pockets.white) => Object.fromEntries(([
+      ['p', 'pawn'], ['n', 'knight'], ['b', 'bishop'], ['r', 'rook'], ['q', 'queen'],
+    ] as const).flatMap(([piece, role]) => side[role] > 0 ? [[piece, side[role]]] : [])) as Partial<Record<PieceSymbol, number>>
+    return { w: read(pockets.white), b: read(pockets.black) }
   }
   isCheck(): boolean { return this.position.isCheck() }
   isCheckmate(): boolean { return this.position.isCheckmate() }
@@ -99,8 +107,8 @@ export class ChessopsBoard {
     return piece
   }
 
-  private legal(squareName?: Square): NormalMove[] {
-    const result: NormalMove[] = []
+  private legal(squareName?: Square): Move[] {
+    const result: Move[] = []
     for (const [from, destinations] of this.position.allDests()) {
       if (squareName && makeSquare(from) !== squareName) continue
       for (const to of destinations) {
@@ -111,26 +119,41 @@ export class ChessopsBoard {
         }
       }
     }
+    if (!squareName && this.rules === 'crazyhouse') {
+      const house = this.position as Crazyhouse
+      const pocket = house.pockets?.[house.turn]
+      if (pocket) for (const [char, role] of [['p', 'pawn'], ['n', 'knight'], ['b', 'bishop'], ['r', 'rook'], ['q', 'queen']] as const) {
+        if (pocket[role] <= 0) continue
+        for (const to of house.dropDests()) {
+          const move = { role: charToRole(char), to }
+          if (house.isLegal(move)) result.push(move)
+        }
+      }
+    }
     return result
   }
 
-  private describe(move: NormalMove): GameMove {
-    const normalized = normalizeMove(this.position, move) as NormalMove
-    const piece = this.position.board.get(normalized.from)!
-    const side = castlingSide(this.position, normalized)
-    const ep = piece.role === 'pawn' && normalized.to === this.position.epSquare && !this.position.board.has(normalized.to)
-    const captured = side ? undefined : ep ? 'p' : this.position.board.get(normalized.to)?.role
+  private describe(move: Move): GameMove {
+    const drop = isDrop(move)
+    const normal = drop ? undefined : normalizeMove(this.position, move as NormalMove) as NormalMove
+    const role = drop ? move.role : this.position.board.get(normal!.from)!.role
+    const side = normal ? castlingSide(this.position, normal) : undefined
+    const ep = normal && role === 'pawn' && normal.to === this.position.epSquare && !this.position.board.has(normal.to)
+    const captured = drop ? undefined : side ? undefined : ep ? 'p' : this.position.board.get(move.to)?.role
     const after = this.position.clone()
-    after.play(normalized)
-    const flags = side ? side === 'h' ? 'k' : 'q' : ep ? 'e' : `${captured ? 'c' : piece.role === 'pawn' && Math.abs(normalized.from - normalized.to) === 16 ? 'b' : normalized.promotion ? '' : 'n'}${normalized.promotion ? 'p' : ''}`
+    after.play(move)
+    const flags = drop ? 'd' : side ? side === 'h' ? 'k' : 'q' : ep ? 'e' : `${captured ? 'c' : role === 'pawn' && Math.abs(normal!.from - move.to) === 16 ? 'b' : normal!.promotion ? '' : 'n'}${normal!.promotion ? 'p' : ''}`
     const next = new ChessopsBoard(makeFen(after.toSetup()), this.rules)
-    const destination = side && this.rules === 'threecheck' ? kingCastlesTo(piece.color, side) : normalized.to
+    const destination = side && this.rules === 'threecheck' ? kingCastlesTo(this.position.turn, side) : move.to
+    const from = drop ? move.to : normal!.from
+    const san = drop ? `${roleToChar(role).toUpperCase()}@${makeSquare(move.to)}` : makeSan(this.position, move)
+    const uci = drop || this.rules === 'chess960' ? makeUci(move) : `${makeSquare(normal!.from)}${makeSquare(destination)}${normal!.promotion ? roleToChar(normal!.promotion) : ''}`
     return {
-      ply: this.played.length + 1, san: makeSan(this.position, normalized), uci: this.rules === 'chess960' ? makeUci(normalized) : `${makeSquare(normalized.from)}${makeSquare(destination)}${normalized.promotion ? roleToChar(normalized.promotion) : ''}`,
-      color: color(piece.color), piece: roleToChar(piece.role), from: square(normalized.from), to: square(destination),
+      ply: this.played.length + 1, san, uci,
+      color: color(this.position.turn), piece: roleToChar(role), from: square(from), to: square(destination), drop: drop ? roleToChar(role) : undefined,
       captured: captured === 'p' ? 'p' : captured ? roleToChar(captured) : undefined,
-      promotion: normalized.promotion ? roleToChar(normalized.promotion) : undefined, flags, before: this.fen(), after: next.fen(),
-      ...(side ? { kingTo: square(kingCastlesTo(piece.color, side)), rookFrom: square(normalized.to), rookTo: square(rookCastlesTo(piece.color, side)) } : {}),
+      promotion: normal?.promotion ? roleToChar(normal.promotion) : undefined, flags, before: this.fen(), after: next.fen(),
+      ...(side && normal ? { kingTo: square(kingCastlesTo(this.position.turn, side)), rookFrom: square(normal.to), rookTo: square(rookCastlesTo(this.position.turn, side)) } : {}),
     }
   }
 
@@ -143,14 +166,12 @@ export class ChessopsBoard {
 
   move(input: MoveInput): GameMove {
     const move = typeof input === 'string'
-      ? (/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(input) ? parseUci(input) : parseSan(this.position, input.replace(/0/g, 'O').replace(/[!?]+$/, '')))
+      ? (/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(input) ? parseUci(input) : /^[PNBRQ]@[a-h][1-8]$/i.test(input) ? parseUci(`${input[0].toUpperCase()}@${input.slice(2).toLowerCase()}`) : parseSan(this.position, input.replace(/0/g, 'O').replace(/[!?]+$/, '')))
       : parseUci(`${input.from}${input.to}${input.promotion ?? ''}`)
-    const illegal = this.rules === 'chess960' ? 'Illegal Chess960 move.' : this.rules === 'threecheck' ? 'Illegal three-check move.' : this.rules === 'kingofthehill' ? 'Illegal King of the Hill move.' : this.rules === 'atomic' ? 'Illegal Atomic move.' : 'Illegal Horde move.'
-    if (!move || !isNormal(move)) throw new Error(illegal)
-    const normalized = normalizeMove(this.position, move) as NormalMove
-    if (!this.position.isLegal(normalized)) throw new Error(illegal)
-    const record = this.describe(normalized)
-    this.position.play(normalized)
+    const illegal = this.rules === 'chess960' ? 'Illegal Chess960 move.' : this.rules === 'threecheck' ? 'Illegal three-check move.' : this.rules === 'kingofthehill' ? 'Illegal King of the Hill move.' : this.rules === 'atomic' ? 'Illegal Atomic move.' : this.rules === 'horde' ? 'Illegal Horde move.' : 'Illegal Crazyhouse move.'
+    if (!move || !this.position.isLegal(move)) throw new Error(illegal)
+    const record = this.describe(move)
+    this.position.play(move)
     this.played.push(record)
     this.positions.push(record.after)
     return { ...record }
@@ -163,7 +184,7 @@ export class ChessopsBoard {
     const move = this.played.pop()
     if (!move) return null
     const setup = parseFen(move.before).unwrap()
-    this.position = (this.rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : this.rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : this.rules === 'atomic' ? Atomic.fromSetup(setup) : this.rules === 'horde' ? Horde.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
+    this.position = (this.rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : this.rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : this.rules === 'atomic' ? Atomic.fromSetup(setup) : this.rules === 'horde' ? Horde.fromSetup(setup) : this.rules === 'crazyhouse' ? Crazyhouse.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
     this.positions.pop()
     return { ...move }
   }

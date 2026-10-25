@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent } from 'react'
-import { createPosition, type ChessVariant } from '../lib/position'
+import { createPosition, positionMoveUci, type ChessVariant } from '../lib/position'
 import { variantLabel } from '../lib/variants'
 import type { PieceSymbol, Square } from 'chess.js'
 import { classificationGlyph } from '../lib/classification'
@@ -34,6 +34,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
   const { appearance } = useBoardAppearance()
   const chess = useMemo(() => createPosition(fen, variant), [fen, variant])
   const [selected, setSelected] = useState<Square | null>(null)
+  const [selectedDrop, setSelectedDrop] = useState<PieceSymbol | null>(null)
   const [promotion, setPromotion] = useState<Annotation | null>(null)
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [focusIndex, setFocusIndex] = useState(56)
@@ -46,18 +47,31 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
     const rank = orientation === 'w' ? 8 - Math.floor(index / 8) : 1 + Math.floor(index / 8)
     return `${files[file]}${rank}` as Square
   }), [orientation])
-  const legalMoves = selected ? chess.moves({ square: selected, verbose: true }) : []
+  const pockets = chess.pockets?.()
+  const crazyhouse = variant === 'crazyhouse'
+  const legalMoves = selectedDrop ? chess.moves({ verbose: true }).filter(move => move.drop === selectedDrop) : selected ? chess.moves({ square: selected, verbose: true }) : []
   const outcome = chess.variantOutcome?.()
   const turnDescription = outcome ? outcome.winner ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins under ${variantLabel(variant)} rules.` : 'Drawn position.' : chess.isCheckmate() ? `${chess.turn() === 'w' ? 'Black' : 'White'} wins by checkmate.` : chess.isDraw() ? 'Drawn position.' : `${chess.turn() === 'w' ? 'White' : 'Black'} to move.`
 
   useEffect(() => {
     setSelected(null)
+    setSelectedDrop(null)
     setPromotion(null)
     setAnnotations([])
-  }, [fen])
+  }, [fen, variant])
 
   function attemptMove(from: string, to: string) {
-    if (disabled || !onMove || !/^[a-h][1-8]$/.test(from) || !/^[a-h][1-8]$/.test(to)) return false
+    if (disabled || !onMove || !/^[a-h][1-8]$/.test(to)) return false
+    if (selectedDrop) {
+      const move = chess.moves({ verbose: true }).find(candidate => candidate.drop === selectedDrop && candidate.to === to)
+      if (!move) return false
+      onMove(positionMoveUci(move))
+      setSelected(null)
+      setSelectedDrop(null)
+      setAnnotations([])
+      return true
+    }
+    if (!/^[a-h][1-8]$/.test(from)) return false
     const candidates = chess.moves({ square: from as Square, verbose: true }).filter(move => move.to === to)
     if (!candidates.length) return false
     if (candidates.some(move => move.promotion)) setPromotion({ from, to })
@@ -72,7 +86,9 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
   function selectSquare(square: Square) {
     if (disabled || promotion || dragged.current) return
     setAnnotations([])
+    if (selectedDrop && attemptMove(square, square)) return
     if (selected && attemptMove(selected, square)) return
+    setSelectedDrop(null)
     const piece = chess.get(square)
     setSelected(piece?.color === chess.turn() && selected !== square ? square : null)
   }
@@ -108,13 +124,25 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
     return { x: (index % 8) * 100 + 50, y: Math.floor(index / 8) * 100 + 50 }
   }
 
+  function pocket(color: 'w' | 'b') {
+    const pieces = pockets?.[color] ?? {}
+    const entries = Object.entries(pieces) as [PieceSymbol, number][]
+    return <div className={`board-pocket ${color === 'w' ? 'board-pocket-white' : 'board-pocket-black'}`} role="group" aria-label={`${color === 'w' ? 'White' : 'Black'} pocket`}>
+      {entries.map(([type, count]) => <button type="button" key={type} className={`board-pocket-piece ${selectedDrop === type && chess.turn() === color ? 'board-pocket-selected' : ''}`} aria-label={`Drop ${color === 'w' ? 'white' : 'black'} ${pieceNames[type]}, ${count} available`} aria-pressed={selectedDrop === type && chess.turn() === color} disabled={disabled || !onMove || chess.turn() !== color} onClick={() => { setSelected(null); setSelectedDrop(current => current === type ? null : type) }}>
+        <Piece type={type} color={color} set={appearance.pieceSet} /><span>{count}</span>
+      </button>)}
+    </div>
+  }
+
   const visibleArrows: (Annotation & { kind: 'annotation' | 'best' | 'coach' | 'threat' })[] = annotations.filter(item => item.from !== item.to).map(item => ({ ...item, kind: 'annotation' }))
   if (showBestMove && bestMove && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(bestMove)) visibleArrows.push({ from: bestMove.slice(0, 2), to: bestMove.slice(2, 4), kind: 'best' })
   visibleArrows.push(...coachArrows.filter(item => /^[a-h][1-8]$/.test(item.from) && /^[a-h][1-8]$/.test(item.to) && item.from !== item.to).map(item => ({ ...item, kind: 'coach' as const })))
   if (threatArrow && /^[a-h][1-8]$/.test(threatArrow.from) && /^[a-h][1-8]$/.test(threatArrow.to) && threatArrow.from !== threatArrow.to) visibleArrows.push({ ...threatArrow, kind: 'threat' })
 
   return (
-    <div className="review-board" style={boardAppearanceStyle(appearance) as CSSProperties} onContextMenu={event => event.preventDefault()}>
+    <div className={`review-board${crazyhouse ? ' crazyhouse-board' : ''}`} style={boardAppearanceStyle(appearance) as CSSProperties} onContextMenu={event => event.preventDefault()}>
+      {crazyhouse && pocket(orientation === 'w' ? 'b' : 'w')}
+      <div className="board-area">
       <div className="board-squares" role="grid" aria-label={`Chessboard, ${orientation === 'w' ? 'white' : 'black'} perspective. ${turnDescription} Use arrow keys to navigate, Enter to select a piece and destination.`}>
         {squares.map((square, index) => {
           const piece = chess.get(square)
@@ -183,6 +211,8 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
           </div>
         </div>
       )}
+      </div>
+      {crazyhouse && pocket(orientation === 'w' ? 'w' : 'b')}
     </div>
   )
 }

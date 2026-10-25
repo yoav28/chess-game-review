@@ -129,5 +129,5 @@ test('native Chess960 export preserves setup, black move numbers, source comment
 test('Chess960 export refuses a review whose saved UCI disagrees with the source game', () => {
   const review = fixture('[Variant "Chess960"]\n[FEN "4k3/8/8/8/8/8/8/5K1R w H - 0 1"]\n\n1. O-O *')
   review.moves[0].uci = 'f1e1'
-  assert.throws(() => reviewedPgn(review), /do not match/)
+  assert.throws(() => reviewedPgn(review), /inconsistent position/)
 })

@@ -1,5 +1,5 @@
 import type { Color, PieceSymbol, Square } from 'chess.js'
-import { createPosition } from './position'
+import { createPosition, moveFromUci } from './position'
 import { insightsForMove } from './insights'
 import type { GamePhase, GameReview, MoveReview, ParsedMove } from './review'
 import { isVariantHeuristic, variantLabel } from './variants'
@@ -32,7 +32,7 @@ function alternative(move: MoveReview): ParsedMove | null {
   if (!move.bestMove || move.bestMove === move.uci) return null
   try {
     const board = createPosition(move.beforeFen, move.variant)
-    const played = board.move({ from: move.bestMove.slice(0, 2), to: move.bestMove.slice(2, 4), promotion: move.bestMove[4] })
+    const played = moveFromUci(board, move.bestMove)
     return {
       ...move, san: played.san, uci: move.bestMove, afterFen: board.fen(),
       from: played.from, to: played.to, piece: played.piece, captured: played.captured, promotion: played.promotion,

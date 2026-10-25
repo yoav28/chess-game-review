@@ -1,4 +1,4 @@
-import { createPosition, type ChessPosition, type ChessVariant } from '../lib/position'
+import { createPosition, moveFromUci, type ChessPosition, type ChessVariant } from '../lib/position'
 import type { AnalysisOptions, EngineLine, Evaluation } from './types'
 
 export function parseInfo(line: string, fen: string, variant?: ChessVariant): EngineLine | null {
@@ -12,7 +12,7 @@ export function parseInfo(line: string, fen: string, variant?: ChessVariant): En
   const evaluation: Evaluation = score[1] === 'cp'
     ? { cp: value, mate: null }
     : { cp: rawValue === 0 ? -100000 * direction : (value > 0 ? 1 : -1) * (100000 - Math.min(Math.abs(value), 999)), mate: value }
-  const moves = pv[1].trim().split(/\s+/).filter(move => /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(move))
+  const moves = pv[1].trim().split(/\s+/).filter(move => /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(move) || /^[PNBRQ]@[a-h][1-8]$/.test(move))
   if (!moves.length) return null
   return {
     rank: Number(line.match(/\bmultipv (\d+)/)?.[1] ?? 1),
@@ -39,7 +39,7 @@ export function boardWithHistory(fen: string, history?: AnalysisOptions['history
   if (!history) return createPosition(fen, variant)
   const board = createPosition(history.initialFen, variant)
   for (const uci of history.moves) {
-    board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+    moveFromUci(board, uci)
   }
   if (board.fen() !== createPosition(fen, variant).fen()) throw new Error('The supplied move history does not match this position.')
   return board
@@ -59,7 +59,7 @@ export function variationToSan(fen: string, moves: string[], variant?: ChessVari
   const san: string[] = []
   for (const move of moves) {
     try {
-      const played = board.move({ from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4] })
+      const played = moveFromUci(board, move)
       san.push(played.san)
     } catch {
       break

@@ -1,13 +1,18 @@
 import type { Color } from 'chess.js'
-import { createPosition, type ChessVariant } from './position'
+import { createPosition, moveFromUci, type ChessVariant } from './position'
 import type { PositionAnalysis } from '../engine/types'
 import type { ParsedMove } from './review'
 
 const values = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }
 
 function material(fen: string, color: Color, variant?: ChessVariant): number {
-  return createPosition(fen, variant).board().flat().reduce((total, piece) => piece
+  const board = createPosition(fen, variant)
+  const onBoard = board.board().flat().reduce((total, piece) => piece
     ? total + (piece.color === color ? 1 : -1) * values[piece.type] : total, 0)
+  const pockets = board.pockets?.()
+  if (!pockets) return onBoard
+  const inPocket = (side: 'w' | 'b') => Object.entries(pockets[side]).reduce((total, [type, count]) => total + values[type as keyof typeof values] * (count ?? 0), 0)
+  return onBoard + (color === 'w' ? inPocket('w') - inPocket('b') : inPocket('b') - inPocket('w'))
 }
 
 export function isSoundSacrifice(move: ParsedMove, before: PositionAnalysis, after: PositionAnalysis): boolean {
@@ -17,7 +22,7 @@ export function isSoundSacrifice(move: ParsedMove, before: PositionAnalysis, aft
   const board = createPosition(move.afterFen, move.variant)
   const replyUci = after.pv[0]
   try {
-    const reply = board.move({ from: replyUci.slice(0, 2), to: replyUci.slice(2, 4), promotion: replyUci[4] })
+    const reply = moveFromUci(board, replyUci)
     if (reply.to !== move.to || !reply.captured || values[reply.captured] < 3) return false
     return material(board.fen(), move.color, move.variant) <= material(move.beforeFen, move.color, move.variant) - 2
   } catch {

@@ -18,6 +18,20 @@ function pause() {
 }
 function draw() {
   const frame = puzzleFrame(), ranks = frame.fen.split(' ')[0].split('/'), cells = [];
+  const drawPocket = (id, color) => {
+    const container = el(id), pieces = frame.pockets && frame.pockets[color];
+    container.replaceChildren();
+    if (!pieces || !Object.values(pieces).some(count => count > 0)) return;
+    const label = document.createElement('small'); label.textContent = color === 'w' ? 'White pocket' : 'Black pocket'; container.append(label);
+    for (const type of ['p','n','b','r','q']) {
+      const count = pieces[type]; if (!count) continue;
+      const item = document.createElement('div'), image = document.createElement('img'), total = document.createElement('span');
+      item.className = 'pocket-piece'; image.alt = ''; image.src = data.artwork[color + type]; total.textContent = String(count);
+      item.append(image, total); container.append(item);
+    }
+  };
+  const topColor = orientation === 'w' ? 'b' : 'w';
+  drawPocket('pocket-top', topColor); drawPocket('pocket-bottom', topColor === 'w' ? 'b' : 'w');
   for (const rank of ranks) {
     for (const character of rank) {
       if (/[1-8]/.test(character)) cells.push(...Array(Number(character)).fill(''));

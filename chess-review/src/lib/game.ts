@@ -32,6 +32,7 @@ export interface GameMove {
   to: Square
   captured?: PieceSymbol
   promotion?: PieceSymbol
+  drop?: PieceSymbol
   flags: string
   before: string
   after: string
@@ -91,6 +92,7 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
   if (variant === 'kingofthehill' || identified === 'kingofthehill') return parseVariantPgn(pgn, 'kingofthehill')
   if (variant === 'atomic' || identified === 'atomic') return parseVariantPgn(pgn, 'atomic')
   if (variant === 'horde' || identified === 'horde') return parseVariantPgn(pgn, 'horde')
+  if (variant === 'crazyhouse' || identified === 'crazyhouse') return parseVariantPgn(pgn, 'crazyhouse')
   if (variant === 'chess960' || identified === 'chess960') return parseChess960Pgn(pgn)
   const chess = new Chess()
   try {
@@ -121,12 +123,12 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
 }
 
 export function engineRules(rules: string): ChessVariant | null {
-  return rules === 'threecheck' ? 'threecheck' : rules === 'kingofthehill' ? 'kingofthehill' : rules === 'atomic' ? 'atomic' : rules === 'horde' ? 'horde' : rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
+  return rules === 'threecheck' ? 'threecheck' : rules === 'kingofthehill' ? 'kingofthehill' : rules === 'atomic' ? 'atomic' : rules === 'horde' ? 'horde' : rules === 'crazyhouse' ? 'crazyhouse' : rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
 }
 
 export function parseGame(game: GameRecord): ParsedGame {
   const variant = engineRules(game.rules)
-  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, Chess960, three-check, King of the Hill, Atomic, and Horde.`)
+  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, Chess960, three-check, King of the Hill, Atomic, Horde, and Crazyhouse.`)
   return parsePgn(game.pgn, variant)
 }
 

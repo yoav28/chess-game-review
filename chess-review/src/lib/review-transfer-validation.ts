@@ -1,11 +1,11 @@
 import type { EngineLine, Evaluation, PositionAnalysis } from '../engine/types'
 import { parsePgn } from './game'
-import { createPosition, positionMoveUci, type ChessVariant } from './position'
+import { createPosition, moveFromUci, positionMoveUci, type ChessVariant } from './position'
 import { classificationLabels, type Classification, type GameReview, type MoveReview } from './review'
 
 const labels = Object.keys(classificationLabels) as Classification[]
 const phases = ['opening', 'middlegame', 'endgame']
-const uci = /^[a-h][1-8][a-h][1-8][qrbn]?$/
+const uci = /^(?:[a-h][1-8][a-h][1-8][qrbn]?|[PNBRQ]@[a-h][1-8])$/
 const square = /^[a-h][1-8]$/
 
 function requireValue(condition: unknown, field: string): asserts condition {
@@ -55,7 +55,7 @@ function pv(value: unknown, sans: unknown, fen: string, rules: ChessVariant, bud
   const board = createPosition(fen, rules)
   value.forEach((move, index) => {
     requireValue(typeof move === 'string' && uci.test(move), field)
-    const played = board.move({ from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4] })
+    const played = moveFromUci(board, move)
     requireValue(positionMoveUci(played) === move && sans[index] === played.san, `${field} legal SAN`)
   })
 }
@@ -65,7 +65,7 @@ function bestMove(data: Record<string, unknown>, fen: string, rules: ChessVarian
   if (data.bestMove === null) requireValue(data.bestMoveSan === null && data.pv.length === 0, `${field} missing best move`)
   else {
     requireValue(typeof data.bestMove === 'string' && uci.test(data.bestMove), `${field} best move`)
-    const played = createPosition(fen, rules).move({ from: data.bestMove.slice(0, 2), to: data.bestMove.slice(2, 4), promotion: data.bestMove[4] })
+    const played = moveFromUci(createPosition(fen, rules), data.bestMove)
     requireValue(positionMoveUci(played) === data.bestMove && played.san === data.bestMoveSan && data.pv[0] === data.bestMove, `${field} best move SAN`)
   }
 }
@@ -132,10 +132,10 @@ export function validateTransferredReview(value: unknown): GameReview {
   let previousEvaluation = data.initialAnalysis.evaluation
   const board = createPosition(parsed.initialFen, rules)
   for (const [index, item] of data.moves.entries()) {
-    const move = record(item, ['variant', 'ply', 'san', 'uci', 'beforeFen', 'afterFen', 'color', 'piece', 'captured', 'promotion', 'from', 'to', 'legalMoves', 'bookName', 'kingTo', 'rookFrom', 'rookTo', 'classification', 'centipawnLoss', 'winningChanceLoss', 'accuracy', 'beforeEvaluation', 'evaluation', 'bestMove', 'bestMoveSan', 'pv', 'pvSan', 'alternativeLine', 'depth', 'phase', 'explanation'], `move ${index + 1}`)
+    const move = record(item, ['variant', 'ply', 'san', 'uci', 'beforeFen', 'afterFen', 'color', 'piece', 'captured', 'promotion', 'drop', 'from', 'to', 'legalMoves', 'bookName', 'kingTo', 'rookFrom', 'rookTo', 'classification', 'centipawnLoss', 'winningChanceLoss', 'accuracy', 'beforeEvaluation', 'evaluation', 'bestMove', 'bestMoveSan', 'pv', 'pvSan', 'alternativeLine', 'depth', 'phase', 'explanation'], `move ${index + 1}`)
     const original = parsed.moves[index]
     variant(move.variant, rules, 'move variant')
-    for (const [key, expected] of Object.entries({ ply: index + 1, san: original.san, uci: original.uci, beforeFen: original.before, afterFen: original.after, color: original.color, piece: original.piece, captured: original.captured, promotion: original.promotion, from: original.from, to: original.to })) requireValue(move[key] === expected, `move ${index + 1} ${key} does not match PGN`)
+    for (const [key, expected] of Object.entries({ ply: index + 1, san: original.san, uci: original.uci, beforeFen: original.before, afterFen: original.after, color: original.color, piece: original.piece, captured: original.captured, promotion: original.promotion, drop: original.drop, from: original.from, to: original.to })) requireValue(move[key] === expected, `move ${index + 1} ${key} does not match PGN`)
     for (const key of ['kingTo', 'rookFrom', 'rookTo']) {
       if (move[key] !== undefined) requireValue(typeof move[key] === 'string' && square.test(move[key] as string), `castling ${key}`)
     }

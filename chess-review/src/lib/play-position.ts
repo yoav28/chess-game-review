@@ -1,5 +1,5 @@
 import type { Color } from 'chess.js'
-import { createPosition, positionMoveUci, resolveVariant, type ChessPosition, type ChessVariant } from './position'
+import { createPosition, moveFromUci, positionMoveUci, resolveVariant, type ChessPosition, type ChessVariant } from './position'
 import { boardWithHistory } from '../engine/protocol'
 import { analyzePosition } from '../engine/stockfish'
 import type { AnalysisOptions } from '../engine/types'
@@ -90,7 +90,7 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
       if (!owns()) return
       if (!result.bestMove || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(result.bestMove)) throw new Error('The engine did not return a legal reply. Try again.')
       const uci = result.bestMove
-      currentBoard.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+      moveFromUci(currentBoard, uci)
     } catch (error) {
       if (owns()) state = { ...state, error: error instanceof Error ? error.message : 'The engine could not play this position.' }
     } finally {
@@ -134,7 +134,7 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
       if (!live || !state.active || !board || state.thinking || positionOutcome(board) || board.turn() !== state.playerColor) return false
       try {
         if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) throw new Error('Choose a legal move and a promotion piece when needed.')
-        board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+        moveFromUci(board, uci)
         userMoves.push(board.history().length)
         state = { ...state, error: '' }
         emit()

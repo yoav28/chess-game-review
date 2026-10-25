@@ -26,6 +26,7 @@ export type ParsedMove = {
   piece: string
   captured?: string
   promotion?: string
+  drop?: string
   from: string
   to: string
   legalMoves: number
@@ -113,7 +114,7 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
     return {
       variant: rules, ply: index + 1, san: move.san, uci: move.uci,
       beforeFen: move.before, afterFen: move.after, color: move.color, piece: move.piece,
-      captured: move.captured, promotion: move.promotion, from: move.from, to: move.to, legalMoves,
+      captured: move.captured, promotion: move.promotion, drop: move.drop, from: move.from, to: move.to, legalMoves,
       kingTo: move.kingTo, rookFrom: move.rookFrom, rookTo: move.rookTo,
       bookName: opening?.book ? opening.opening?.name ?? 'Opening book line' : undefined,
     }
@@ -170,7 +171,7 @@ function evaluationText(evaluation: Evaluation, move: ParsedMove): string {
 
 export function explainMove(move: ParsedMove, classification: Classification, before: PositionAnalysis, after: PositionAnalysis): string {
   const names: Record<string, string> = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' }
-  let action = `${move.san} moves the ${names[move.piece]} from ${move.from} to ${move.to}.`
+  let action = move.drop ? `${move.san} drops a ${names[move.drop]} on ${move.to}.` : `${move.san} moves the ${names[move.piece]} from ${move.from} to ${move.to}.`
   if (move.captured) action = `${move.san} captures ${move.captured === 'p' ? 'a pawn' : `the ${names[move.captured]}`} on ${move.to}.`
   if (move.san.startsWith('O-O')) {
     const movement = move.kingTo === move.from ? `The king stays on ${move.from} while the rook moves from ${move.rookFrom} to ${move.rookTo}.`

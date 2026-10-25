@@ -3,7 +3,7 @@ import { boardWithHistory, terminalEvaluation } from '../engine/protocol'
 import { analyzePosition } from '../engine/stockfish'
 import type { AnalysisOptions, Evaluation, PositionAnalysis } from '../engine/types'
 import type { GameReview, MoveReview } from './review'
-import { createPosition, type ChessPosition } from './position'
+import { createPosition, moveFromUci, type ChessPosition } from './position'
 import { isVariantHeuristic, variantLabel } from './variants'
 
 export type PracticeColor = 'all' | Color
@@ -21,7 +21,7 @@ export type PracticeState = {
 type Dependencies = { analyze?: typeof analyzePosition; review?: GameReview | null; depth?: number; timeMs?: number }
 type AttemptResult = { accepted: boolean; fen: string; san: string; feedback: string }
 const errors = new Set(['inaccuracy', 'mistake', 'blunder', 'missed'])
-const uciPattern = /^[a-h][1-8][a-h][1-8][qrbn]?$/
+const uciPattern = /^(?:[a-h][1-8][a-h][1-8][qrbn]?|[PNBRQ]@[a-h][1-8])$/
 
 export const initialPracticeState: PracticeState = {
   practiceIndex: 0, practiceColor: 'all', practiceStatus: 'thinking', hint: false,
@@ -30,7 +30,7 @@ export const initialPracticeState: PracticeState = {
 
 function moveOn(board: ChessPosition, uci: string) {
   if (!uciPattern.test(uci)) throw new Error('Choose a legal move and a promotion piece when needed.')
-  return board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+  return moveFromUci(board, uci)
 }
 
 export function practiceMoves(review: GameReview | null, color: PracticeColor): MoveReview[] {
