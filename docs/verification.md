@@ -25,7 +25,7 @@ These checks used the local app. Hosted execution of the new version has not bee
 
 | Flow | Observed result |
 | --- | --- |
-| Import home | The home link opens the Chess.com username form with “Find Games,” a public-archive/no-login note, and recent saved reviews. It wires into the all-month archive importer; the page now shows live month/game progress, Stop, and the importer’s final status. |
+| Import home, full archive, and first review | In the Codex browser, submitted public username MagnusCarlsen through the home form; the page showed 67 / 67 archive months and “All 9,973 public games imported.” The queue opened a 171-ply unreviewed game, whose local Fast review completed all 172 positions. The library then showed 3 reviewed and 9,970 unreviewed games. Standard review settings were restored afterward. This used the public archive and changed local review storage only. |
 | Complete username refresh | Importing MagnusCarlsen restored the cached library, then completed all 67 / 67 returned archive requests and displayed “All 9,973 public games imported.” |
 | Completed import-status restoration | A fresh 67-month MagnusCarlsen import saved 9,973 games and complete status. After reload, all 9,973 games returned with the notice “All 67 public archive months are imported.” |
 | Selected library and review restoration | After selecting the account’s reviewed WildemarFreire game, reloading restored the 23-game public/PGN-merged library, that same 27-ply game, and its saved 90.5 / 80.3 v2 report without requesting the archive list again. |
