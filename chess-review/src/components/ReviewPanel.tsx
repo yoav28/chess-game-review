@@ -375,7 +375,7 @@ function ReviewMoveStep({
   const finished = ply >= review.moves.length;
   const retryable = move && ['inaccuracy', 'mistake', 'blunder', 'missed'].includes(move.classification);
   const message = move
-    ? coachText(move, settings.coachDetail, settings.coachProfile)
+    ? coachText(move, 'concise', settings.coachProfile)
     : 'Choose Next to review the first move, or move a piece to explore the position.';
   const title = move
     ? `${move.san} is ${classificationLabels[move.classification] === 'Book' ? 'a book move' : `a ${classificationLabels[move.classification].toLowerCase()}`}`

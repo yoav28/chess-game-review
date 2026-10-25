@@ -236,6 +236,15 @@
   padding: 16px;
   min-height: 0;
 }
+@media (min-width: 1260px) {
+  .workspace {
+    width: calc(100% - 178px);
+  }
+  .board-workspace {
+    width: calc(100% + 8px);
+    margin-left: -4px;
+  }
+}
 .library-wrapper {
   display: none;
   position: fixed;

@@ -14,6 +14,12 @@
     margin-right: auto;
   }
 }
+@media (min-width: 1260px) {
+  .board-layout {
+    width: min(620px, calc(100svh - 96px));
+  }
+}
+
 @media (max-width: 1250px) {
   .workspace {
     grid-template-columns: minmax(0, 1fr) 340px;

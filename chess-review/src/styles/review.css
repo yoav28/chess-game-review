@@ -39,6 +39,9 @@
 .inspector:has(.review-step-panel) .inspector-tabs {
   display: none;
 }
+.inspector:has(.review-step-panel) .review-content {
+  padding: 22px 0 12px;
+}
 .inspector-body {
   flex: 1;
   overflow: auto;
@@ -377,10 +380,11 @@
   padding: 0 0 20px;
 }
 .review-step-coach {
-  margin-bottom: 0;
+  width: calc(100% - 38px);
+  margin: 0 14px 0 24px;
 }
 .review-step-coach .review-coach-bubble {
-  min-height: 98px;
+  min-height: 120px;
   padding: 12px 16px;
 }
 .review-step-title {
@@ -423,7 +427,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 28px 0 12px;
+  padding: 28px 0 19px;
+  margin: 0 14px 0 24px;
 }
 .review-step-retry {
   min-height: 40px;
@@ -437,8 +442,8 @@
 .review-step-next {
   flex: 1;
   min-width: 0;
-  height: 40px;
-  min-height: 40px;
+  height: 48px;
+  min-height: 48px;
   margin-left: auto;
   border-radius: 4px;
   font-size: 16px;
@@ -476,9 +481,18 @@
   border-bottom: 1px solid #ffffff12;
   color: var(--muted);
   font-size: 12px;
+  margin: 0;
+}
+.review-game-heading,
+.review-step-moves {
+  margin: 0;
+}
+.review-step-panel > .review-analysis-graph {
+  margin-right: 4px;
+  margin-left: 11px;
 }
 .review-step-moves .move-list {
-  max-height: 100px;
+  max-height: 95px;
 }
 .review-step-moves .starting-position {
   display: none;
