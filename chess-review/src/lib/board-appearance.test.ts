@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
 import { boardThemes, defaultBoardAppearance, normalizeBoardAppearance, pieceSets } from './board-appearance'
 import { pieceArtwork } from './piece-artwork'
 import { drawReviewBoard } from './review-board-image'
@@ -12,17 +13,20 @@ test('appearance accepts only supported choices and migrates missing or corrupt 
 })
 
 test('all original piece sets contain twelve self-contained and visually distinct SVGs', async () => {
-  const sets = await Promise.all((Object.keys(pieceSets) as (keyof typeof pieceSets)[]).map(set => pieceArtwork(set)))
+  const loadPng = async (path: string) => new Uint8Array(readFileSync(new URL(`../../public${path}`, import.meta.url)))
+  const sets = await Promise.all((Object.keys(pieceSets) as (keyof typeof pieceSets)[]).map(set => pieceArtwork(set, loadPng)))
   for (const [index, artwork] of sets.entries()) {
     assert.equal(Object.keys(artwork).length, 12)
     for (const [key, svg] of Object.entries(artwork)) {
       assert.match(key, /^[wb][pnbrqk]$/)
       assert.match(svg, /xmlns="http:\/\/www.w3.org\/2000\/svg"/)
       assert.match(svg, new RegExp(`data-piece-set="${Object.keys(pieceSets)[index]}"`))
-      assert.ok(!/<(?:image|script)|https?:\/\/(?!www.w3.org)/.test(svg))
+      assert.ok(!/<script|https?:\/\/(?!www.w3.org)/.test(svg))
+      if (index === 0) assert.match(svg, /<image href="data:image\/png;base64,[A-Za-z0-9+/=]+"/)
+      else assert.ok(!/<image\b/.test(svg))
     }
   }
-  for (const key of Object.keys(sets[0])) assert.equal(new Set(sets.map(set => set[key])).size, 3)
+  for (const key of Object.keys(sets[0])) assert.equal(new Set(sets.map(set => set[key])).size, Object.keys(pieceSets).length)
 })
 
 test('concurrent exports keep separate artwork caches when the selected set changes', async () => {

@@ -6,6 +6,7 @@ import { reviewFixture } from '../test/review-fixture'
 import { reviewImageData, reviewImageGraph } from './review-image'
 import { reviewAnimationFrames } from './review-animation'
 import { buildReviewEmbed } from './review-embed'
+import { pieceArtwork } from './piece-artwork'
 import { readFileSync } from 'node:fs'
 
 test('image metadata keeps model, recorded depth, starting selection and imported provenance', () => {
@@ -76,6 +77,16 @@ test('offline embed escapes user metadata, contains all frames, and restricts if
   assert.match(embed.iframe, /srcdoc="&lt;!doctype/)
   assert.match(embed.document, /default-src 'none'/)
   assert.ok(!embed.document.includes(`<title>${attack}`))
+})
+
+test('Classic PNG pieces become self-contained artwork in offline replay exports', async () => {
+  const loadPng = async (path: string) => new Uint8Array(readFileSync(new URL(`../../public${path}`, import.meta.url)))
+  const embed = buildReviewEmbed(reviewFixture(), await pieceArtwork('classic', loadPng))
+  const payload = JSON.parse(embed.document.match(/id="review-data">([\s\S]*?)<\/script>/)![1])
+  for (const piece of Object.values(payload.artwork) as string[]) {
+    assert.match(decodeURIComponent(piece), /<image href="data:image\/png;base64,[A-Za-z0-9+/=]+"/)
+    assert.doesNotMatch(decodeURIComponent(piece), /src="\/pieces\/classic\//)
+  }
 })
 
 test('three-check media retain the variant, heuristic label and terminal counters', () => {
