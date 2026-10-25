@@ -68,7 +68,7 @@ function replay(review: GameReview): ChessPosition {
 
 function gameResult(review: GameReview, board: ChessPosition): string {
   const outcome = board.variantOutcome?.()
-  if (outcome) return outcome.winner === 'w' ? '1-0' : '0-1'
+  if (outcome) return outcome.winner === 'w' ? '1-0' : outcome.winner === 'b' ? '0-1' : '1/2-1/2'
   if (board.isCheckmate()) return board.turn() === 'w' ? '0-1' : '1-0'
   if (/^(?:1-0|0-1|1\/2-1\/2)$/.test(review.result)) return review.result
   if (board.isStalemate() || board.isInsufficientMaterial()) return '1/2-1/2'

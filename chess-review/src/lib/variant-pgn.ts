@@ -1,3 +1,4 @@
+import { Chess } from 'chess.js'
 import { ChessopsBoard } from './chessops-board'
 import type { GameMove, ParsedGame } from './game'
 import { pgnVariant, threeCheckInitialFen, variantLabel } from './variants'
@@ -10,7 +11,7 @@ function clock(comment: string): number | undefined {
   return parts.reduce((seconds, value) => seconds * 60 + value, 0)
 }
 
-export function parseVariantPgn(pgn: string, variant: 'chess960' | 'threecheck'): ParsedGame {
+export function parseVariantPgn(pgn: string, variant: 'chess960' | 'threecheck' | 'kingofthehill'): ParsedGame {
   const name = variantLabel(variant)
   if (!pgn.trim()) throw new Error(`The ${name} PGN is empty.`)
   const source = pgn.replace(/^\uFEFF/, '')
@@ -19,7 +20,7 @@ export function parseVariantPgn(pgn: string, variant: 'chess960' | 'threecheck')
     try { if (pgnVariant(pgn) !== variant) throw new Error('Variant mismatch.') }
     catch { throw new Error(`This PGN does not identify a ${name} game.`) }
   }
-  const start = headers.FEN ?? (variant === 'threecheck' ? threeCheckInitialFen : undefined)
+  const start = headers.FEN ?? (variant === 'threecheck' ? threeCheckInitialFen : variant === 'kingofthehill' ? new Chess().fen() : undefined)
   if (!start) throw new Error('Chess960 PGNs require their starting FEN; standard chess is never assumed.')
   const board = new ChessopsBoard(start, variant)
   const initialFen = board.fen()

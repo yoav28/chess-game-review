@@ -1,6 +1,7 @@
 import { Chess, type Color } from 'chess.js'
 import { parsePgn as parseGamePgn } from './game'
 import { createPosition, type ChessVariant } from './position'
+import { isVariantHeuristic, variantLabel } from './variants'
 import { StockfishEngine } from '../engine/stockfish'
 import { terminalEvaluation } from '../engine/protocol'
 import type { EngineLine, Evaluation, PositionAnalysis, ReviewOptions } from '../engine/types'
@@ -154,11 +155,12 @@ export function gamePhase(fen: string, ply: number, variant?: ChessVariant): Gam
 }
 
 function evaluationText(evaluation: Evaluation, move: ParsedMove): string {
-  if (move.variant === 'threecheck' && evaluation.mate !== null) {
-    if (evaluation.mate === 0 && createPosition(move.afterFen, move.variant).variantOutcome?.()) return ''
-    if (evaluation.mate !== 0) return `${evaluation.cp > 0 ? 'White' : 'Black'} has a forced win in ${Math.abs(evaluation.mate)} with best play under three-check rules.`
+  if (move.variant && isVariantHeuristic(move.variant) && evaluation.mate !== null) {
+    const outcome = evaluation.mate === 0 ? createPosition(move.afterFen, move.variant).variantOutcome?.() : null
+    if (outcome) return `${outcome.winner === 'w' ? 'White' : 'Black'} wins under ${variantLabel(move.variant)} rules.`
+    if (evaluation.mate !== 0) return `${evaluation.cp > 0 ? 'White' : 'Black'} has a forced win in ${Math.abs(evaluation.mate)} with best play under ${variantLabel(move.variant)} rules.`
   }
-  if (move.variant === 'threecheck' && evaluation.mate === null) return evaluation.cp === 0 ? 'The variant engine evaluates this position as roughly equal.' : `The variant engine favors ${evaluation.cp > 0 ? 'White' : 'Black'} (White-relative score ${(evaluation.cp / 100).toFixed(2)} pawn units).`
+  if (move.variant && isVariantHeuristic(move.variant) && evaluation.mate === null) return evaluation.cp === 0 ? `The ${variantLabel(move.variant)} engine evaluates this position as roughly equal.` : `The ${variantLabel(move.variant)} engine favors ${evaluation.cp > 0 ? 'White' : 'Black'} (White-relative score ${(evaluation.cp / 100).toFixed(2)} pawn units).`
   if (evaluation.mate === 0) return 'Checkmate ends the game.'
   if (evaluation.mate !== null) return `${evaluation.mate > 0 ? 'White' : 'Black'} has a forced mate in ${Math.abs(evaluation.mate)} with best play.`
   const score = Math.abs(evaluation.cp)
@@ -189,7 +191,7 @@ export function explainMove(move: ParsedMove, classification: Classification, be
     inaccuracy: ' A more accurate move would preserve more of the position’s value.',
     mistake: ' This gives the opponent a significantly better position.', blunder: ' This sharply changes the evaluation in the opponent’s favor.',
     missed: before.evaluation.mate !== null && winningChance(before.evaluation, move.color) === 100
-      ? ` The previously found ${move.variant === 'threecheck' ? 'forced win' : 'mate'} is no longer found, and the engine’s winning-chance estimate falls below 90%.`
+      ? ` The previously found ${move.variant && isVariantHeuristic(move.variant) ? 'forced variant win' : 'mate'} is no longer found, and the engine’s winning-chance estimate falls below 90%.`
       : ' This lets a winning opportunity slip away.',
   }[classification]
   const insights = insightsForMove(move)
@@ -237,11 +239,11 @@ export function buildReview(game: ParsedGame, positions: PositionAnalysis[], sea
   return {
     version: 1, variant: game.variant ?? 'chess', pgn: game.pgn, headers: game.headers, initialFen: game.initialFen,
     white: game.headers.White || 'White', black: game.headers.Black || 'Black', result: game.headers.Result || '*',
-    opening: game.variant !== 'chess960' && game.initialFen === new Chess().fen() ? openingForMoves(game.moves.map(move => move.san)).opening : null,
+    opening: game.variant === 'chess' && game.initialFen === new Chess().fen() ? openingForMoves(game.moves.map(move => move.san)).opening : null,
     moves, whiteAccuracy: average(moves, 'w'), blackAccuracy: average(moves, 'b'), phases, keyMoments, counts,
-    initialAnalysis: positions[0], engine: `${game.variant === 'threecheck' ? 'Fairy-Stockfish wasm 1.1.12 · three-check · classical evaluation' : 'Stockfish 19 lite'} · ${threads === 1 ? 'single thread' : `${threads} threads`}`,
+    initialAnalysis: positions[0], engine: `${game.variant && isVariantHeuristic(game.variant) ? `Fairy-Stockfish wasm 1.1.12 · ${variantLabel(game.variant)} · classical evaluation` : 'Stockfish 19 lite'} · ${threads === 1 ? 'single thread' : `${threads} threads`}`,
     accuracyVersion: 2,
-    accuracyModel: `${game.variant === 'threecheck' ? 'Three-check scores apply the same formula to Fairy-Stockfish classical scores as a move-quality heuristic. These are not calibrated three-check winning probabilities. ' : ''}${accuracyMethod} Brilliant means a best move with a material sacrifice and a favorable engine evaluation; Great means only the best of two candidates preserves equality or a win. These are depth-dependent heuristics. Book matches exact prefixes in 3,865 Lichess opening lines covering all 500 ECO codes; it does not imply the move is strongest or cover every possible opening.`,
+    accuracyModel: `${game.variant && isVariantHeuristic(game.variant) ? `${variantLabel(game.variant)} scores use Fairy-Stockfish classical evaluation and the same bounded formula as an uncalibrated move-quality heuristic. They are not winning probabilities. ` : ''}${accuracyMethod} Brilliant means a best move with a material sacrifice and a favorable engine evaluation; Great means only the best of two candidates preserves equality or a win. These are depth-dependent heuristics. Book matches exact prefixes in 3,865 Lichess opening lines covering all 500 ECO codes; it does not imply the move is strongest or cover every possible opening.`,
     coachMethod: insightMethod,
     analyzedAt: new Date().toISOString(),
   }

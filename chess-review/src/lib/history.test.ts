@@ -232,3 +232,17 @@ test('explicit rules pools keep three-check heuristics separate from standard ac
   assert.match(summary.modelLabel, /Three-check quality heuristic/)
   assert.equal(sortedSavedReviews(entries).length, 2)
 })
+
+test('King of the Hill reports have their own uncalibrated history pool', async () => {
+  const { reviewFixture } = await import('../test/review-fixture')
+  const { variantsForPlayer } = await import('./history')
+  const hill = reviewFixture('[White "Ada"]\n[Black "Grace"]\n[Variant "King of the Hill"]\n\n1. e4 e5 2. Nf3 Nc6 *')
+  hill.variant = 'kingofthehill'
+  hill.moves.forEach(move => { move.accuracy = 25 })
+  const entries = [{ id: 'hill', review: hill }]
+  assert.deepEqual(variantsForPlayer(entries, 'Ada'), ['kingofthehill'])
+  const summary = playerHistory(entries, 'Ada', 'kingofthehill')
+  assert.equal(summary.overall.accuracy, 25)
+  assert.equal(summary.games, 1)
+  assert.match(summary.modelLabel, /King of the Hill quality heuristic/)
+})

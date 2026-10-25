@@ -6,7 +6,7 @@ import { charToRole, kingCastlesTo, makeSquare, makeUci, parseSquare, parseUci, 
 import { isNormal, type NormalMove } from 'chessops/types'
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import type { GameMove } from './game'
-import { ThreeCheck } from 'chessops/variant'
+import { KingOfTheHill, ThreeCheck } from 'chessops/variant'
 
 type MoveInput = string | { from: string; to: string; promotion?: string }
 type Piece = { square: Square; type: PieceSymbol; color: Color }
@@ -18,11 +18,11 @@ export class ChessopsBoard {
   private played: GameMove[] = []
   private positions: string[]
 
-  constructor(fen: string, private readonly rules: 'chess960' | 'threecheck') {
+  constructor(fen: string, private readonly rules: 'chess960' | 'threecheck' | 'kingofthehill') {
     try {
       const setup = parseFen(fen).unwrap()
       if (setup.pockets) throw new Error('Drop-piece variants are unsupported.')
-      if (rules === 'threecheck' && !setup.remainingChecks || rules === 'chess960' && setup.remainingChecks) throw new Error('Missing or unexpected check counters.')
+      if (rules === 'threecheck' && !setup.remainingChecks || rules !== 'threecheck' && setup.remainingChecks) throw new Error('Missing or unexpected check counters.')
       if (rules === 'threecheck' && setup.remainingChecks) {
         const { white, black } = setup.remainingChecks
         if (white === 0 && black === 0 || white === 0 && setup.turn !== 'black' || black === 0 && setup.turn !== 'white') throw new Error('Invalid third-check outcome.')
@@ -31,10 +31,10 @@ export class ChessopsBoard {
           if (![0, 7, 56, 63].includes(rook) || king?.role !== 'king' || king.color !== (rook < 8 ? 'white' : 'black')) throw new Error('Combined Chess960 and three-check castling is unsupported.')
         }
       }
-      this.position = (rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
+      this.position = (rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
       if (!setup.castlingRights.equals(this.position.castles.castlingRights)) throw new Error('Invalid castling rights.')
     }
-    catch { throw new Error(rules === 'chess960' ? 'Invalid Chess960 FEN. A legal position with both kings is required.' : 'Invalid three-check FEN. Legal kings, check counters, and standard castling are required.') }
+    catch { throw new Error(rules === 'chess960' ? 'Invalid Chess960 FEN. A legal position with both kings is required.' : rules === 'threecheck' ? 'Invalid three-check FEN. Legal kings, check counters, and standard castling are required.' : 'Invalid King of the Hill FEN. A legal position with both kings is required.') }
     this.positions = [this.fen()]
   }
 
@@ -42,7 +42,7 @@ export class ChessopsBoard {
     const setup = this.position.toSetup()
     const parts = makeFen(setup).split(' ')
     if (this.rules === 'threecheck') return [...parts.slice(0, 4), String(setup.halfmoves), String(setup.fullmoves), `+${3 - setup.remainingChecks!.white}+${3 - setup.remainingChecks!.black}`].join(' ')
-    parts[2] = [...setup.castlingRights].sort((a, b) => Math.floor(a / 8) - Math.floor(b / 8) || b % 8 - a % 8)
+    if (this.rules === 'chess960') parts[2] = [...setup.castlingRights].sort((a, b) => Math.floor(a / 8) - Math.floor(b / 8) || b % 8 - a % 8)
       .map(rook => { const file = makeSquare(rook)[0]; return rook < 8 ? file.toUpperCase() : file }).join('') || '-'
     return parts.join(' ')
   }
@@ -67,9 +67,12 @@ export class ChessopsBoard {
   }
   isDraw(): boolean { return !this.variantOutcome() && (this.isStalemate() || this.isInsufficientMaterial() || this.isDrawByFiftyMoves() || this.isThreefoldRepetition()) }
   isGameOver(): boolean { return !!this.variantOutcome() || this.isCheckmate() || this.isDraw() }
-  variantOutcome(): { winner: Color; reason: 'third-check' } | null {
-    const outcome = this.rules === 'threecheck' ? this.position.variantOutcome() : undefined
-    return outcome?.winner ? { winner: color(outcome.winner), reason: 'third-check' } : null
+  variantOutcome(): { winner?: Color; reason: 'third-check' | 'king-of-the-hill' } | null {
+    const outcome = this.rules === 'threecheck' || this.rules === 'kingofthehill' ? this.position.variantOutcome() : undefined
+    if (!outcome) return null
+    return this.rules === 'threecheck'
+      ? { winner: outcome.winner ? color(outcome.winner) : undefined, reason: 'third-check' }
+      : { winner: outcome.winner ? color(outcome.winner) : undefined, reason: 'king-of-the-hill' }
   }
   checksRemaining(): { w: number; b: number } | null {
     const checks = this.position.remainingChecks
@@ -138,7 +141,7 @@ export class ChessopsBoard {
     const move = typeof input === 'string'
       ? (/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(input) ? parseUci(input) : parseSan(this.position, input.replace(/0/g, 'O').replace(/[!?]+$/, '')))
       : parseUci(`${input.from}${input.to}${input.promotion ?? ''}`)
-    const illegal = this.rules === 'chess960' ? 'Illegal Chess960 move.' : 'Illegal three-check move.'
+    const illegal = this.rules === 'chess960' ? 'Illegal Chess960 move.' : this.rules === 'threecheck' ? 'Illegal three-check move.' : 'Illegal King of the Hill move.'
     if (!move || !isNormal(move)) throw new Error(illegal)
     const normalized = normalizeMove(this.position, move) as NormalMove
     if (!this.position.isLegal(normalized)) throw new Error(illegal)
@@ -155,7 +158,8 @@ export class ChessopsBoard {
   undo(): GameMove | null {
     const move = this.played.pop()
     if (!move) return null
-    this.position = (this.rules === 'threecheck' ? ThreeCheck.fromSetup(parseFen(move.before).unwrap()) : Chess.fromSetup(parseFen(move.before).unwrap())).unwrap()
+    const setup = parseFen(move.before).unwrap()
+    this.position = (this.rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : this.rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
     this.positions.pop()
     return { ...move }
   }

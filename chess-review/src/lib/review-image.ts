@@ -2,7 +2,7 @@ import type { Color, PieceSymbol } from 'chess.js'
 import type { Evaluation } from '../engine/types'
 import { classificationLabels, type Classification, type GameReview } from './review'
 import { createPosition } from './position'
-import { variantLabel } from './variants'
+import { isVariantHeuristic, variantLabel } from './variants'
 import { drawReviewBoard, loadReviewPieceImages } from './review-board-image'
 import { normalizeBoardAppearance, type BoardAppearance } from './board-appearance'
 
@@ -25,7 +25,7 @@ export function reviewImageData(review: GameReview, options: ReviewImageOptions 
   const depths = review.moves.map(item => item.depth).filter(value => Number.isInteger(value) && value > 0)
   const minimum = depths.length ? Math.min(...depths) : null
   const maximum = depths.length ? Math.max(...depths) : null
-  const model = review.variant === 'threecheck' ? 'Three-check quality heuristic v2 · uncalibrated for this variant' : review.accuracyVersion === 2 ? 'Win-chance move accuracy v2 · arithmetic mean' : 'Legacy centipawn move accuracy v1'
+  const model = review.variant && isVariantHeuristic(review.variant) ? `${variantLabel(review.variant)} quality heuristic v2 · uncalibrated for this variant` : review.accuracyVersion === 2 ? 'Win-chance move accuracy v2 · arithmetic mean' : 'Legacy centipawn move accuracy v1'
   const counts = (Object.keys(classificationLabels) as Classification[]).map(classification => ({
     label: classificationLabels[classification], white: review.moves.filter(item => item.color === 'w' && item.classification === classification).length,
     black: review.moves.filter(item => item.color === 'b' && item.classification === classification).length,
@@ -37,7 +37,7 @@ export function reviewImageData(review: GameReview, options: ReviewImageOptions 
     white: clean(review.white), black: clean(review.black), whiteAccuracy: score(review.whiteAccuracy), blackAccuracy: score(review.blackAccuracy),
     result: ['1-0', '0-1', '1/2-1/2'].includes(review.result) ? review.result : 'Unfinished',
     positionLabel: move ? `Position after ${move.beforeFen.split(' ')[5]}${move.color === 'w' ? '.' : '…'} ${move.san}` : 'Starting position',
-    selection: move ? `${move.san} · ${classificationLabels[move.classification]}${board.variantOutcome?.() ? ' · Third-check win' : ''}` : 'Before the first move',
+    selection: move ? `${move.san} · ${classificationLabels[move.classification]}${board.variantOutcome?.() ? ` · ${variantLabel(review.variant)} win` : ''}` : 'Before the first move',
     opening: review.opening ? `${review.opening.name} · ${review.opening.eco}` : review.variant !== 'chess' && review.variant ? `${variantLabel(review.variant)} · standard opening book does not apply` : 'No named opening recorded',
     engine: clean(review.engine), depth: minimum === null ? 'Recorded depth unavailable' : `Recorded depth ${minimum === maximum ? minimum : `${minimum}–${maximum}`}`,
     imported: Boolean(review.importedAt), provenance: review.importedAt ? 'Imported report · scores supplied in a file, not reanalyzed here' : 'Independent Open File review · engine estimates depend on search limits',

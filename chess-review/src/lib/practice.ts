@@ -4,6 +4,7 @@ import { analyzePosition } from '../engine/stockfish'
 import type { AnalysisOptions, Evaluation, PositionAnalysis } from '../engine/types'
 import type { GameReview, MoveReview } from './review'
 import { createPosition, type ChessPosition } from './position'
+import { isVariantHeuristic, variantLabel } from './variants'
 
 export type PracticeColor = 'all' | Color
 export type PracticeState = {
@@ -55,8 +56,8 @@ function position(review: GameReview, move: MoveReview) {
   return { board, history }
 }
 
-const evaluationText = ({ cp, mate }: Evaluation, threecheck = false) => mate === 0 ? `${threecheck ? 'variant win' : 'checkmate'} (${cp > 0 ? 'White' : 'Black'} wins)`
-  : mate !== null ? `${mate > 0 ? 'White' : 'Black'} ${threecheck ? 'wins' : 'mates'} in ${Math.abs(mate)}` : `${cp >= 0 ? '+' : ''}${(cp / 100).toFixed(2)}`
+const evaluationText = ({ cp, mate }: Evaluation, variant?: GameReview['variant']) => mate === 0 ? `${variant && isVariantHeuristic(variant) ? `${variantLabel(variant)} win` : 'checkmate'} (${cp > 0 ? 'White' : 'Black'} wins)`
+  : mate !== null ? `${mate > 0 ? 'White' : 'Black'} ${variant && isVariantHeuristic(variant) ? 'wins' : 'mates'} in ${Math.abs(mate)}` : `${cp >= 0 ? '+' : ''}${(cp / 100).toFixed(2)}`
 const mateFor = (evaluation: Evaluation, color: Color) => evaluation.mate !== null && evaluation.cp * (color === 'w' ? 1 : -1) > 0
 const validEvaluation = (evaluation: Evaluation) => Number.isFinite(evaluation.cp) && (evaluation.mate === null || Number.isFinite(evaluation.mate))
 const abortCheck = (signal?: AbortSignal) => { if (signal?.aborted) throw new DOMException('Practice analysis cancelled', 'AbortError') }
@@ -82,10 +83,10 @@ export async function assessPracticeAttempt(review: GameReview, move: MoveReview
   const preservesMate = !mateFor(before.evaluation, move.color) || mateFor(evaluation, move.color)
   const accepted = loss <= 30 && preservesMate
   const verdict = accepted ? 'preserves the position within the 0.30-pawn practice tolerance'
-    : !preservesMate ? `loses the ${variant === 'threecheck' ? 'forced winning line' : 'mating sequence'} found before the move` : 'gives up more than the 0.30-pawn practice tolerance'
+    : !preservesMate ? `loses the ${variant && isVariantHeuristic(variant) ? 'forced variant-winning line' : 'mating sequence'} found before the move` : 'gives up more than the 0.30-pawn practice tolerance'
   return {
     accepted, fen, san: played.san,
-    feedback: `${played.san} ${verdict}. White’s evaluation: ${evaluationText(before.evaluation, variant === 'threecheck')} → ${evaluationText(evaluation, variant === 'threecheck')}; loss ${Math.min(2000, loss) / 100}${loss > 2000 ? '+' : ''} pawns. Engine first choice: ${bestSan}. Budget: depth ${depth}, ${timeMs} ms per position; reached depths ${before.depth}/${after.depth}. This is a search estimate.`,
+    feedback: `${played.san} ${verdict}. White’s evaluation: ${evaluationText(before.evaluation, variant)} → ${evaluationText(evaluation, variant)}; loss ${Math.min(2000, loss) / 100}${loss > 2000 ? '+' : ''} pawns. Engine first choice: ${bestSan}. Budget: depth ${depth}, ${timeMs} ms per position; reached depths ${before.depth}/${after.depth}. This is a search estimate.`,
   }
 }
 

@@ -1,6 +1,6 @@
 # Open File
 
-An independent chess review application built with React, TypeScript, Vite, chess.js, Chess960/three-check rules using chessops, local Stockfish 19 Lite, and Fairy-Stockfish. Choose a Chess.com username, import every available public archive, and review standard, material-odds, Chess960, or three-check games in your browser. An Opera Game sample is included.
+An independent chess review application built with React, TypeScript, Vite, chess.js, variant rules using chessops, local Stockfish 19 Lite, and Fairy-Stockfish. Choose a Chess.com username, import every available public archive, and review standard, material-odds, Chess960, three-check, or King of the Hill games in your browser. An Opera Game sample is included.
 
 The latest work is local. The [previous private deployment](https://open-file-chess-review.woolly-rice-1868.chatgpt.site) is an older release and has not been updated with the features below. No current changes have been pushed or redeployed. See [verification.md](docs/verification.md) for recorded checks and their limits.
 
@@ -36,7 +36,7 @@ The application provides:
 
 - Full-game Stockfish review with progress, cancellation, adjustable depth/time/thread count, per-player accuracy, classifications, key moments, opening/middlegame/endgame reports, and best/second engine lines for each move. Reports record the engine profile; a different thread count can produce different search results.
 - Position analysis streams scored lines using one to eight available threads. Choose 3–30 seconds or Unlimited, stop to retain the latest scored lines, or start a fresh search. Changing the position, variant, or search settings cancels the previous worker. Full-game reviews, practice, and engine play retain their own budgets.
-- Standard chess, material-odds games with their recorded custom starts, Chess960, and three-check replay, review, variations, engine continuation, and reviewed PGN export. Three-check tracks checks given and ends immediately on the third check. Chess960 uses king-to-rook engine UCI for castling while showing the physical king/rook destinations correctly.
+- Standard chess, material-odds games with their recorded custom starts, Chess960, three-check, and King of the Hill replay, review, variations, engine continuation, and reviewed PGN export. Three-check tracks checks given and ends immediately on the third check; King of the Hill ends when a king reaches a center square. Variant-engine scores are labeled as uncalibrated quality heuristics. Chess960 uses king-to-rook engine UCI for castling while showing the physical king/rook destinations correctly.
 - Four original board palettes (Sage, Walnut, Graphite, High contrast), three original piece sets (Classic, Geometric, Letters), and optional coordinates. Preferences persist locally and apply to the live board, promotion choices, PNG reports, animated GIFs, and offline HTML/iframe replays or puzzles. Appearance controls are available in Settings and the embed exporter.
 - Board clocks, estimated time spent where sufficient PGN clock/control data exists, promotion choices, orientation and keyboard controls, right-click arrows/circles, and classification highlights.
 - Evaluation bar/graph, one to five configurable candidate lines, playable variations, and return to the recorded game.
@@ -57,7 +57,7 @@ The application provides:
 
 The importer requests Chess.com’s public archive index and every returned monthly archive, newest first. Requests are sequential, with retries, progress, cancellation, and deduplication by game URL. Multi-game PGN files are stored separately in the browser and merged into the selected username’s library. There is no application backend, Chess.com login requirement, or API key.
 
-“All games” means games exposed by the public API’s archive list. Private, deleted, unpublished, or otherwise unavailable games cannot be recovered. Other variants remain in the library with original-PGN export and an explicit unsupported-review message.
+"All games" means games exposed by the public API’s archive list. Private, deleted, unpublished, or otherwise unavailable games cannot be recovered. Crazyhouse and other unsupported variants remain in the library with original-PGN export and an explicit unsupported-review message.
 
 The selected username, saved games, and last selected library game restore when the app reopens; saved reviews reopen with that game, and the library scrolls to the selected game’s page. Choosing **Import all games** checks every archive for updates; partial batches remain usable after a stopped or failed import, and the library marks the archive import incomplete until a later run finishes. IndexedDB stores libraries and reviews; localStorage stores the selected username, game selection, settings, and compact import status. Storage failures are shown, and clearing site data removes local records.
 
@@ -88,7 +88,7 @@ Full Chess.com parity has not been established. Proprietary scoring and Game Rat
 
 A separate [stratified rating study](docs/rating-validation-v2.md) reviewed 800 September games. Its 495.80-point held-out error and ±906.35-point empirical interval failed the unchanged release gates; no rating estimate is enabled. Offline embeds do not reproduce Chess.com forum codes, cloud diagram storage, or selectable proprietary piece sets. Offline recorded-move puzzles provide the corresponding interactive practice flow; alternate good moves are not accepted as the recorded move.
 
-The imported MagnusCarlsen library contains 9,648 standard games, 317 Chess960 games, six material-odds games, and two three-check games. All four groups now have appropriate rules and engine support. Both actual three-check PGNs completed browser review, and their original counters, positions, clocks, and results survived reviewed exports. This verifies the imported sample, not every possible variant or malformed PGN.
+The imported MagnusCarlsen library contains 9,648 standard games, 317 Chess960 games, six material-odds games, and two three-check games. All four groups now have appropriate rules and engine support; King of the Hill also has a separate rules and Fairy-Stockfish path. Both actual three-check PGNs completed browser review, and their original counters, positions, clocks, and results survived reviewed exports. This verifies the imported sample, not every possible variant or malformed PGN.
 
 ## Architecture
 
@@ -123,7 +123,7 @@ The multithreaded Lite JavaScript and WebAssembly files are also copied unmodifi
 
 ## Chessops distribution and source
 
-The Chess960 and three-check adapters use [`chessops@0.15.1`](https://github.com/niklasf/chessops), licensed under GPL-3.0-or-later. The unmodified license is included at `chess-review/public/licenses/CHESSOPS-COPYING.txt`; [CHESSOPS-SOURCE.txt](chess-review/public/licenses/CHESSOPS-SOURCE.txt) identifies the upstream source and exact release. The installed artifact is the [0.15.1 npm tarball](https://registry.npmjs.org/chessops/-/chessops-0.15.1.tgz), with its exact package bytes pinned by `package-lock.json` integrity. The license/source files are included in the static production output.
+The Chess960, three-check, and King of the Hill adapters use [`chessops@0.15.1`](https://github.com/niklasf/chessops), licensed under GPL-3.0-or-later. The unmodified license is included at `chess-review/public/licenses/CHESSOPS-COPYING.txt`; [CHESSOPS-SOURCE.txt](chess-review/public/licenses/CHESSOPS-SOURCE.txt) identifies the upstream source and exact release. The installed artifact is the [0.15.1 npm tarball](https://registry.npmjs.org/chessops/-/chessops-0.15.1.tgz), with its exact package bytes pinned by `package-lock.json` integrity. The license/source files are included in the static production output.
 
 GIF encoding uses [`gifenc@1.0.3`](https://github.com/mattdesl/gifenc), pinned in `package-lock.json`. Its MIT license and source information are included in `chess-review/public/licenses/GIFENC-LICENSE.txt` and `GIFENC-SOURCE.txt`. The encoder and SVG serialization runtime load when exporting; game analysis does not require them.
 

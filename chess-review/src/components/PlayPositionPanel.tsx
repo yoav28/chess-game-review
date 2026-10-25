@@ -10,7 +10,7 @@ export function PlayPositionPanel({ play, onExit }: { play: PlayPosition; onExit
 
   return <div className="analysis-content play-position-content">
     <div className="report-caption"><h2>Play this position</h2></div>
-    <p className="muted">Continue against {play.variant === 'threecheck' ? 'Fairy-Stockfish' : 'Stockfish 19 Lite'}, without a clock.</p>
+    <p className="muted">Continue against {play.variant === 'threecheck' || play.variant === 'kingofthehill' ? 'Fairy-Stockfish' : 'Stockfish 19 Lite'}, without a clock.</p>
     <div className="play-position-side"><label htmlFor={sideId}>Play as</label><select id={sideId} value={play.playerColor} onChange={event => play.setPlayerColor(event.target.value as 'w' | 'b')}><option value="w">White</option><option value="b">Black</option></select></div>
     <p className="play-position-status" role="status">{play.thinking && <LoaderCircle className="spin" size={16} />}{status}</p>
     {play.error && <div className="play-position-error"><p className="error-message" role="alert">{play.error}</p>{!play.thinking && play.turn !== play.playerColor && !play.outcome && <button className="secondary" onClick={play.retry}>Try engine again</button>}</div>}

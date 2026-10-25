@@ -23,7 +23,7 @@ export type PlayerHistory = {
   trend: { recent: HistoryScore; earlier: HistoryScore; delta: number } | null
 }
 
-export const historyMethod = 'Saved reviews on this browser only. Statistics count each exact PGN and variant once, preferring the newest accuracy model, then a locally generated report over an imported report, then the latest analysis date. Duplicate rows remain reopenable. Player statistics use that player’s newest available accuracy model; legacy centipawn scores are never pooled with win-chance scores. Accuracy pools actual move scores, with move and game sample counts. Opening and Endgame use recorded phases; Tactics includes captures, checks, and promotions; Strategy includes quiet middlegame moves. Categories can overlap. The interface selects one rules pool before computing statistics. Time groups estimate duration as base + 40 increments and separate game variants. Three-check scores are an uncalibrated quality heuristic, not winning probabilities. Trend compares equally sized recent and preceding groups (up to five games each), requires at least four scored games in the same model with valid PGN dates and a distinct date boundary, and uses game dates rather than review dates. Different review depths can affect comparisons. These scores are not ratings.'
+export const historyMethod = 'Saved reviews on this browser only. Statistics count each exact PGN and variant once, preferring the newest accuracy model, then a locally generated report over an imported report, then the latest analysis date. Duplicate rows remain reopenable. Player statistics use that player’s newest available accuracy model; legacy centipawn scores are never pooled with win-chance scores. Accuracy pools actual move scores, with move and game sample counts. Opening and Endgame use recorded phases; Tactics includes captures, checks, and promotions; Strategy includes quiet middlegame moves. Categories can overlap. The interface selects one rules pool before computing statistics. Time groups estimate duration as base + 40 increments and separate game variants. Three-check and King of the Hill scores are uncalibrated quality heuristics, not winning probabilities. Trend compares equally sized recent and preceding groups (up to five games each), requires at least four scored games in the same model with valid PGN dates and a distinct date boundary, and uses game dates rather than review dates. Different review depths can affect comparisons. These scores are not ratings.'
 
 const normalize = (name: string) => name.trim().toLocaleLowerCase()
 const round = (value: number) => Math.round(value * 10) / 10
@@ -35,7 +35,7 @@ export function reviewAccuracyVersion(review: GameReview): number {
 }
 
 export function accuracyModelLabel(version: number, variant?: ChessVariant): string {
-  if (variant === 'threecheck') return 'Three-check quality heuristic (v2)'
+  if (variant === 'threecheck' || variant === 'kingofthehill') return `${variantLabel(variant)} quality heuristic (v2)`
   return version === 2 ? 'Win-chance accuracy (v2)' : version === 1 ? 'Legacy centipawn accuracy (v1)' : `Accuracy model v${version}`
 }
 
@@ -92,12 +92,12 @@ export function historyTimeClass(control?: string): string {
   return seconds < 180 ? 'Bullet' : seconds < 600 ? 'Blitz' : 'Rapid'
 }
 
-export const reviewVariant = (review: GameReview): ChessVariant => review.variant ?? (/^(?:3-?check|Three-?check|Three Check)$/i.test(review.headers.Variant ?? '') ? 'threecheck' : /^(?:Chess960|Fischerandom|Fischer Random|Freestyle)$/i.test(review.headers.Variant ?? '') ? 'chess960' : 'chess')
+export const reviewVariant = (review: GameReview): ChessVariant => review.variant ?? (/^(?:3-?check|Three-?check|Three Check)$/i.test(review.headers.Variant ?? '') ? 'threecheck' : /^(?:King of the Hill|KingOfTheHill|KOTH)$/i.test(review.headers.Variant ?? '') ? 'kingofthehill' : /^(?:Chess960|Fischerandom|Fischer Random|Freestyle)$/i.test(review.headers.Variant ?? '') ? 'chess960' : 'chess')
 const timeGroup = (review: GameReview) => `${historyTimeClass(review.headers.TimeControl)}${reviewVariant(review) !== 'chess' ? ` · ${variantLabel(reviewVariant(review))}` : ''}`
 
 export function variantsForPlayer(entries: SavedReview[], playerName: string): ChessVariant[] {
   const player = normalize(playerName)
-  return (['chess', 'chess960', 'threecheck'] as ChessVariant[]).filter(variant => entries.some(({ review }) => reviewVariant(review) === variant && [normalize(review.white), normalize(review.black)].includes(player)))
+  return (['chess', 'chess960', 'threecheck', 'kingofthehill'] as ChessVariant[]).filter(variant => entries.some(({ review }) => reviewVariant(review) === variant && [normalize(review.white), normalize(review.black)].includes(player)))
 }
 
 function uniqueStatisticReviews(entries: SavedReview[]): SavedReview[] {

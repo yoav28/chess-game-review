@@ -24,7 +24,7 @@ function analysisFacts(move: MoveReview): string {
   const facts: string[] = []
   if (Number.isInteger(move.depth) && move.depth > 0) facts.push(`Search depth ${move.depth}.`)
   if (typeof move.winningChanceLoss === 'number' && Number.isFinite(move.winningChanceLoss) && move.winningChanceLoss >= 0) {
-    facts.push(move.variant === 'threecheck' ? `Recorded heuristic loss: ${Number(move.winningChanceLoss.toFixed(2))} points.` : `Recorded winning-chance loss: ${Number(move.winningChanceLoss.toFixed(2))} percentage points.`)
+    facts.push(move.variant === 'threecheck' || move.variant === 'kingofthehill' ? `Recorded heuristic loss: ${Number(move.winningChanceLoss.toFixed(2))} points.` : `Recorded winning-chance loss: ${Number(move.winningChanceLoss.toFixed(2))} percentage points.`)
   } else if (Number.isFinite(move.centipawnLoss) && move.centipawnLoss >= 0) {
     facts.push(`Recorded centipawn loss: ${move.centipawnLoss}.`)
   }

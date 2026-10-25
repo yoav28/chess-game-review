@@ -4,6 +4,7 @@ import { reviewAnimationFrames } from './review-animation'
 import { pieceArtwork } from './piece-artwork'
 import { embedPlayerScript } from './embed-player'
 import { createPosition } from './position'
+import { isVariantHeuristic, variantLabel } from './variants'
 import { positionOutcome } from './play-position'
 import { embedPuzzleData } from './embed-puzzle'
 import { boardThemes, normalizeBoardAppearance, type BoardAppearance } from './board-appearance'
@@ -20,7 +21,7 @@ export function buildReviewEmbed(review: GameReview, artwork: Record<string, str
   const selected = Number.isFinite(options.ply) ? Math.max(0, Math.min(review.moves.length, Math.round(options.ply!))) : options.puzzle ? 0 : review.moves.length
   const payload = {
     white: review.white, black: review.black, result: review.result, imported: Boolean(review.importedAt),
-    model: review.variant === 'threecheck' ? 'Three-check quality heuristic v2 (uncalibrated)' : review.accuracyVersion === 2 ? 'Win-chance accuracy v2' : 'Legacy accuracy v1', whiteAccuracy: review.whiteAccuracy, blackAccuracy: review.blackAccuracy,
+    model: review.variant && isVariantHeuristic(review.variant) ? `${variantLabel(review.variant)} quality heuristic v2 (uncalibrated)` : review.accuracyVersion === 2 ? 'Win-chance accuracy v2' : 'Legacy accuracy v1', whiteAccuracy: review.whiteAccuracy, blackAccuracy: review.blackAccuracy,
     frames: frames.map(frame => ({ ...frame, outcome: positionOutcome(createPosition(frame.fen, review.variant)), explanation: frame.ply ? review.moves[frame.ply - 1].explanation : 'Before the first recorded move.' })),
     artwork: Object.fromEntries(Object.entries(artwork).filter(([key]) => /^[wb][pnbrqk]$/.test(key)).map(([key, svg]) => [key, `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`])),
     selected, orientation: options.orientation ?? 'w', coordinates: appearance.coordinates, appearance,

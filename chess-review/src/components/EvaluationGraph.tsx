@@ -4,8 +4,9 @@ import type { ChessVariant } from "../lib/position";
 
 export function evaluationLabel(evaluation?: Evaluation | null, variant?: ChessVariant) {
   if (!evaluation) return "—";
+  const variantScore = variant === 'threecheck' || variant === 'kingofthehill';
   if (evaluation.mate !== null)
-    return evaluation.mate === 0 ? variant === 'threecheck' ? 'Win' : '#' : `${variant === 'threecheck' ? 'W' : 'M'}${Math.abs(evaluation.mate)}`;
+    return evaluation.mate === 0 ? variantScore ? 'Win' : '#' : `${variantScore ? 'W' : 'M'}${Math.abs(evaluation.mate)}`;
   return `${evaluation.cp >= 0 ? "+" : ""}${(evaluation.cp / 100).toFixed(1)}`;
 }
 

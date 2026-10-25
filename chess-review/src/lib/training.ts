@@ -2,8 +2,9 @@ import type { Color, PieceSymbol, Square } from 'chess.js'
 import { createPosition } from './position'
 import { insightsForMove } from './insights'
 import type { GamePhase, GameReview, MoveReview, ParsedMove } from './review'
+import { isVariantHeuristic, variantLabel } from './variants'
 
-export type TrainingTheme = 'loose-pieces' | 'fork' | 'pin' | 'mate' | 'third-check' | 'development' | 'castling' | 'calculation'
+export type TrainingTheme = 'loose-pieces' | 'fork' | 'pin' | 'mate' | 'third-check' | 'king-of-the-hill' | 'development' | 'castling' | 'calculation'
 
 export type TrainingExercise = {
   ply: number
@@ -25,7 +26,7 @@ const names: Record<PieceSymbol, string> = { p: 'pawn', n: 'knight', b: 'bishop'
 const errors = new Set(['inaccuracy', 'mistake', 'blunder', 'missed'])
 const chanceLoss = (move: MoveReview): number | undefined => typeof move.winningChanceLoss === 'number' && Number.isFinite(move.winningChanceLoss) && move.winningChanceLoss >= 0 && move.winningChanceLoss <= 100 ? move.winningChanceLoss : undefined
 const rankLoss = (move: MoveReview): number => chanceLoss(move) ?? move.centipawnLoss / 100
-const lossDescription = (move: MoveReview): string => chanceLoss(move) !== undefined ? `${chanceLoss(move)!.toFixed(1)} ${move.variant === 'threecheck' ? 'heuristic points' : 'winning-chance points'}` : `${(move.centipawnLoss / 100).toFixed(2)} pawns of engine evaluation`
+const lossDescription = (move: MoveReview): string => chanceLoss(move) !== undefined ? `${chanceLoss(move)!.toFixed(1)} ${move.variant === 'threecheck' || move.variant === 'kingofthehill' ? 'heuristic points' : 'winning-chance points'}` : `${(move.centipawnLoss / 100).toFixed(2)} pawns of engine evaluation`
 
 function alternative(move: MoveReview): ParsedMove | null {
   if (!move.bestMove || move.bestMove === move.uci) return null
@@ -57,17 +58,22 @@ function loosePiece(move: MoveReview): string | null {
 
 function themeFor(move: MoveReview, best: ParsedMove): Pick<TrainingExercise, 'theme' | 'title' | 'evidence' | 'goal'> {
   const bestBoard = createPosition(best.afterFen, best.variant)
-  if (bestBoard.variantOutcome?.()) return {
+  const outcome = bestBoard.variantOutcome?.()
+  if (outcome?.reason === 'third-check') return {
     theme: 'third-check', title: 'Deliver the third check', evidence: 'The engine alternative wins immediately by giving the third check.',
     goal: 'Find a legal check that completes the three-check win condition.',
+  }
+  if (outcome?.reason === 'king-of-the-hill') return {
+    theme: 'king-of-the-hill', title: 'Reach the hill', evidence: 'The engine alternative wins immediately by moving the king to a center square.',
+    goal: 'Find a legal king move to one of the four center squares.',
   }
   if (bestBoard.isCheckmate()) return {
     theme: 'mate', title: 'Finish the mating attack', evidence: 'The engine alternative delivers immediate checkmate.',
     goal: 'Find a move that leaves the opponent in check with no legal escape.',
   }
   const direction = move.color === 'w' ? 1 : -1
-  if (move.variant === 'threecheck' && move.beforeEvaluation.mate !== null && move.beforeEvaluation.cp * direction > 0) return {
-    theme: 'calculation', title: 'Keep the forced winning line', evidence: `The variant engine found a forced win in ${Math.abs(move.beforeEvaluation.mate)} before this move.`,
+  if (move.variant && isVariantHeuristic(move.variant) && move.beforeEvaluation.mate !== null && move.beforeEvaluation.cp * direction > 0) return {
+    theme: 'calculation', title: 'Keep the forced winning line', evidence: `The ${variantLabel(move.variant)} engine found a forced win in ${Math.abs(move.beforeEvaluation.mate)} before this move.`,
     goal: 'Compare forcing checks and calculate the engine’s preferred winning continuation.',
   }
   if (move.beforeEvaluation.mate !== null && move.beforeEvaluation.mate * direction > 0) return {

@@ -194,6 +194,34 @@ test('real variant engine finds a third-check win that is not standard checkmate
   }
 })
 
+test('Fairy-Stockfish reviews and exports a King of the Hill center-square win', { timeout: 30000 }, async () => {
+  const { parsePgn } = await import('../lib/game')
+  const { reviewedPgn } = await import('../lib/report')
+  const { parseReviewTransfer, serializeReviewTransfer } = await import('../lib/review-transfer')
+  const pgn = `[Event "King of the Hill"]
+[Variant "King of the Hill"]
+[SetUp "1"]
+[FEN "7k/8/8/8/8/2K5/8/8 w - - 0 1"]
+[Result "1-0"]
+
+1. Kd4 1-0`
+  const original = parsePgn(pgn)
+  const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
+  assert.equal(review.variant, 'kingofthehill')
+  assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12.*King of the Hill/)
+  assert.match(review.accuracyModel, /uncalibrated move-quality heuristic/)
+  assert.equal(review.opening, null)
+  assert.deepEqual(review.moves.at(-1)!.evaluation, { cp: 100000, mate: 0 })
+  const exported = parsePgn(reviewedPgn(review))
+  assert.equal(exported.headers.Variant, 'King of the Hill')
+  assert.deepEqual(exported.positions, original.positions)
+  assert.deepEqual(exported.clocks, original.clocks)
+  assert.equal(exported.result, '1-0')
+  const imported = parseReviewTransfer(serializeReviewTransfer(review))
+  assert.equal(imported.variant, 'kingofthehill')
+  assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
+})
+
 test('both actual three-check games review and export every counter, position, clock and result', { timeout: 90000 }, async () => {
   const { readFileSync } = await import('node:fs')
   const { parsePgn } = await import('../lib/game')
@@ -205,7 +233,7 @@ test('both actual three-check games review and export every counter, position, c
     const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
     assert.equal(review.variant, 'threecheck')
     assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12/)
-    assert.match(review.accuracyModel, /not calibrated three-check/)
+    assert.match(review.accuracyModel, /uncalibrated move-quality heuristic/)
     assert.equal(review.opening, null)
     const exported = parsePgn(reviewedPgn(review))
     assert.deepEqual(exported.positions, original.positions)
@@ -214,7 +242,7 @@ test('both actual three-check games review and export every counter, position, c
     const transferred = parseReviewTransfer(serializeReviewTransfer(review))
     assert.deepEqual(transferred.moves, JSON.parse(JSON.stringify(review.moves)))
     if (id === '78864833399') {
-      assert.match(review.moves.at(-1)!.explanation, /third check and wins/)
+      assert.match(review.moves.at(-1)!.explanation, /third check/)
       assert.doesNotMatch(review.moves.at(-1)!.explanation, /Checkmate ends/)
     }
   }

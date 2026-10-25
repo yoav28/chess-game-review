@@ -48,7 +48,7 @@ export function Dialogs({
       ) {
         const variant = resolveVariant(source);
         const board = createPosition(source, variant);
-        source = `[Event "Position analysis"]\n[White "White"]\n[Black "Black"]\n[Result "*"]\n[SetUp "1"]\n[FEN "${board.fen()}"]${variant === 'threecheck' ? '\n[Variant "3-check"]' : variant === 'chess960' ? '\n[Variant "Chess960"]' : ''}\n\n*`;
+        source = `[Event "Position analysis"]\n[White "White"]\n[Black "Black"]\n[Result "*"]\n[SetUp "1"]\n[FEN "${board.fen()}"]${variant === 'threecheck' ? '\n[Variant "3-check"]' : variant === 'chess960' ? '\n[Variant "Chess960"]' : variant === 'kingofthehill' ? '\n[Variant "King of the Hill"]' : ''}\n\n*`;
       }
       onImport(gameFromPgn(source));
       setPgn("");
@@ -128,7 +128,7 @@ export function Dialogs({
               </button>
             </div>
             <p className="fine-print">
-              Standard chess, material-odds positions, Chess960, and three-check. For multiple games, paste one game at a time.
+              Standard chess, material-odds positions, Chess960, three-check, and King of the Hill. For multiple games, paste one game at a time.
             </p>
           </>
         ) : dialog === "settings" ? (
@@ -137,10 +137,10 @@ export function Dialogs({
           <div className="method-copy">
             <p>
               Open File is an independent chess review app. Stockfish 19 Lite and
-              the Fairy-Stockfish three-check engine run on your device; games come from Chess.com’s public archives.
+              Fairy-Stockfish variant engines run on your device; games come from Chess.com’s public archives.
             </p>
             <h3>Win-chance accuracy · v2</h3>
-            <p>Three-check applies this formula to the variant engine’s scores as an uncalibrated move-quality heuristic. Its numbers are not measured three-check winning probabilities. W denotes a forced win under those rules, and the third check ends the game immediately.</p>
+            <p>Three-check and King of the Hill apply this formula to Fairy-Stockfish classical scores as uncalibrated move-quality heuristics. Their numbers are not measured winning probabilities. W denotes a forced variant win; three-check ends on the third check, and King of the Hill ends when a king reaches a center square.</p>
             <p>
               New reviews use Lichess’s published per-move formula. Win chance
               = 100 / (1 + exp(−0.00368208 × centipawns)). Loss is the decrease in
@@ -182,7 +182,7 @@ export function Dialogs({
               engine results. Deeper analysis may find a different continuation.
             </p>
             <p>
-              This app reviews standard chess, material odds, Chess960, and three-check; other imported
+              This app reviews standard chess, material odds, Chess960, three-check, and King of the Hill; other imported
               variants remain available for PGN export. Public archives contain completed games and may update with
               a delay. Browser storage retains games and reviews on this device;
               clearing site data removes them.

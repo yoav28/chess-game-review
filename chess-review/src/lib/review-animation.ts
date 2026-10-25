@@ -3,6 +3,7 @@ import type { GameReview } from './review'
 import { parsePgn } from './game'
 import { drawReviewBoard, loadReviewPieceImages } from './review-board-image'
 import { createPosition } from './position'
+import { variantLabel } from './variants'
 import { normalizeBoardAppearance, type BoardAppearance } from './board-appearance'
 
 export function reviewAnimationFrames(review: GameReview, options: { from?: number; to?: number; delayMs?: number } = {}) {
@@ -38,7 +39,7 @@ export async function createReviewAnimation(review: GameReview, options: Partial
     abort()
     context.fillStyle = '#20221f'; context.fillRect(0, 0, 720, 790)
     context.fillStyle = '#eeeede'; context.font = '18px system-ui, sans-serif'
-    const title = `${review.white} vs ${review.black}${review.variant === 'threecheck' ? ' · Three-check' : ''}`
+    const title = `${review.white} vs ${review.black}${review.variant && review.variant !== 'chess' ? ` · ${variantLabel(review.variant)}` : ''}`
     context.fillText(title.length > 65 ? `${title.slice(0, 62)}…` : title, 40, 32, 640)
     drawReviewBoard(context, { fen: frame.fen, variant: review.variant, orientation: options.orientation, lastMove: frame.lastMove }, pieces, { x: 40, y: 50, size: 640, ...appearance })
     context.fillStyle = '#bdd09b'; context.font = '20px system-ui, sans-serif'

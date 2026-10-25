@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent } from 'react'
 import { createPosition, type ChessVariant } from '../lib/position'
+import { variantLabel } from '../lib/variants'
 import type { PieceSymbol, Square } from 'chess.js'
 import { classificationGlyph } from '../lib/classification'
 import { classificationLabels, type Classification } from '../lib/review'
@@ -47,7 +48,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
   }), [orientation])
   const legalMoves = selected ? chess.moves({ square: selected, verbose: true }) : []
   const outcome = chess.variantOutcome?.()
-  const turnDescription = outcome ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins by the third check.` : chess.isCheckmate() ? `${chess.turn() === 'w' ? 'Black' : 'White'} wins by checkmate.` : chess.isDraw() ? 'Drawn position.' : `${chess.turn() === 'w' ? 'White' : 'Black'} to move.`
+  const turnDescription = outcome ? outcome.winner ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins under ${variantLabel(variant)} rules.` : 'Drawn position.' : chess.isCheckmate() ? `${chess.turn() === 'w' ? 'Black' : 'White'} wins by checkmate.` : chess.isDraw() ? 'Drawn position.' : `${chess.turn() === 'w' ? 'White' : 'Black'} to move.`
 
   useEffect(() => {
     setSelected(null)

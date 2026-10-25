@@ -15,6 +15,7 @@ import {
   type MoveReview,
 } from "../lib/review";
 import type { ReviewProgress } from "../engine/types";
+import { isVariantHeuristic, variantLabel } from "../lib/variants";
 import { classificationGlyph } from "./MoveList";
 import { evaluationLabel } from "./EvaluationGraph";
 import { CoachControls } from "./CoachControls";
@@ -157,7 +158,7 @@ export function ReviewPanel({
                 How it’s measured
               </button>
             </div>
-            <p className="fine-print">{review.variant === 'threecheck' ? 'Three-check move-quality heuristic · v2. Not calibrated winning probabilities.' : review.accuracyVersion === 2 ? 'Win-chance accuracy · v2' : 'Legacy centipawn accuracy · v1. Review again to update.'}</p>
+            <p className="fine-print">{review.variant && isVariantHeuristic(review.variant) ? `${variantLabel(review.variant)} move-quality heuristic · v2. Not calibrated winning probabilities.` : review.accuracyVersion === 2 ? 'Win-chance accuracy · v2' : 'Legacy centipawn accuracy · v1. Review again to update.'}</p>
             <div className="accuracy-players">
               <div>
                 <span className="player-dot white" />
@@ -304,7 +305,7 @@ export function ReviewPanel({
       {!engineRules(game.rules) && (
         <p className="error-message">
           This is a {game.rules} game. Its PGN is available for export; this
-          engine reviews standard chess, material odds, Chess960, and three-check.
+          engine reviews standard chess, material odds, Chess960, three-check, and King of the Hill.
         </p>
       )}
       {!review && (

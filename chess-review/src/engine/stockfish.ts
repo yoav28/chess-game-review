@@ -1,6 +1,7 @@
 import { boardWithHistory, engineFen, parseInfo, terminalEvaluation } from './protocol'
 import type { AnalysisOptions, EngineLine, PositionAnalysis } from './types'
 import { resolveVariant, type ChessVariant } from '../lib/position'
+import { usesVariantEngine } from '../lib/variants'
 import { engineThreads, searchCommand } from './search-options'
 import { searchResult } from './search-results'
 
@@ -17,12 +18,13 @@ export class StockfishEngine {
   private searchStarted = false
   readonly threads: number
   private abort = () => this.dispose(new DOMException('Analysis cancelled', 'AbortError'))
+  private get variantEngine() { return usesVariantEngine(this.rules) }
 
   constructor(signal?: AbortSignal, private readonly rules: ChessVariant = 'chess', threads = 1) {
     this.signal = signal
     this.threads = engineThreads(threads)
-    if ((rules === 'threecheck' || this.threads > 1) && globalThis.crossOriginIsolated === false) throw new Error('This engine configuration needs WebAssembly threads and cross-origin isolation headers.')
-    this.worker = new Worker(new URL(rules === 'threecheck' ? 'engine/fairy/bridge.js' : this.threads > 1 ? 'engine/stockfish-19-lite.js' : 'engine/stockfish-19-lite-single.js', document.baseURI))
+    if ((this.variantEngine || this.threads > 1) && globalThis.crossOriginIsolated === false) throw new Error('This engine configuration needs WebAssembly threads and cross-origin isolation headers.')
+    this.worker = new Worker(new URL(this.variantEngine ? 'engine/fairy/bridge.js' : this.threads > 1 ? 'engine/stockfish-19-lite.js' : 'engine/stockfish-19-lite-single.js', document.baseURI))
     this.worker.addEventListener('error', () => this.dispose(new Error('Stockfish could not load. Check that the engine files are available.')))
     this.worker.addEventListener('messageerror', () => this.dispose(new Error('Stockfish returned an unreadable response.')))
     signal?.addEventListener('abort', this.abort, { once: true })
@@ -32,11 +34,11 @@ export class StockfishEngine {
 
   private async initialize() {
     await this.waitFor(line => line === 'uciok', 'uci', 30000)
-    if (this.rules === 'threecheck') {
-      this.worker.postMessage('setoption name UCI_Variant value 3check')
+    if (this.variantEngine) {
+      this.worker.postMessage(`setoption name UCI_Variant value ${this.rules === 'threecheck' ? '3check' : 'kingofthehill'}`)
       this.worker.postMessage('setoption name Use NNUE value false')
     }
-    if (this.rules === 'threecheck' || this.threads > 1) this.worker.postMessage(`setoption name Threads value ${this.threads}`)
+    if (this.variantEngine || this.threads > 1) this.worker.postMessage(`setoption name Threads value ${this.threads}`)
     this.worker.postMessage('setoption name Hash value 32')
     await this.waitFor(line => line === 'readyok', 'isready', 30000)
   }
@@ -84,7 +86,7 @@ export class StockfishEngine {
     await this.ready
     if (this.disposed || this.stopRequested) throw new DOMException('Analysis cancelled', 'AbortError')
     const variant = resolveVariant(fen, options.variant)
-    if ((variant === 'threecheck') !== (this.rules === 'threecheck')) throw new Error('The selected engine does not match this game variant.')
+    if (variant !== this.rules) throw new Error('The selected engine does not match this game variant.')
     const board = boardWithHistory(fen, options.history, variant)
     const terminal = terminalEvaluation(board)
     if (terminal) return { fen, variant, evaluation: terminal, bestMove: null, bestMoveSan: null, pv: [], pvSan: [], depth: 0, lines: [] }
@@ -93,7 +95,7 @@ export class StockfishEngine {
     const candidates = Math.min(multiPv, board.moves().length)
     const search = searchCommand(options)
     let lastUpdate = 0
-    this.worker.postMessage(`setoption name UCI_Chess960 value ${variant === 'chess960' ? 'true' : 'false'}`)
+    if (!this.variantEngine) this.worker.postMessage(`setoption name UCI_Chess960 value ${variant === 'chess960' ? 'true' : 'false'}`)
     this.worker.postMessage(`setoption name MultiPV value ${multiPv}`)
     this.worker.postMessage(options.history
       ? `position fen ${engineFen(options.history.initialFen, variant)} moves ${options.history.moves.join(' ')}`
