@@ -104,6 +104,7 @@ function App() {
           isVariation={isVariation && !explanation.active}
           variationSans={variationState.sans}
           onOpenLibrary={() => setLibraryOpen(true)}
+          onSettings={() => setDialog("settings")}
           onMove={boardMove}
           onFlip={() => setOrientation((value) => (value === "w" ? "b" : "w"))}
           onCopyPosition={copyPosition}

@@ -14,6 +14,7 @@ import {
   Menu,
   Pause,
   Play,
+  Settings,
   X,
 } from "lucide-react";
 import Board from "./Board";
@@ -51,6 +52,7 @@ type BoardWorkspaceProps = {
   isVariation: boolean;
   variationSans: string[];
   onOpenLibrary: () => void;
+  onSettings: () => void;
   onMove: (uci: string) => void;
   onFlip: () => void;
   onCopyPosition: () => void;
@@ -85,6 +87,7 @@ export function BoardWorkspace({
   isVariation,
   variationSans,
   onOpenLibrary,
+  onSettings,
   onMove,
   onFlip,
   onCopyPosition,
@@ -154,6 +157,9 @@ export function BoardWorkspace({
       ) : (
         <>
           <div className="board-layout">
+            <button className="board-settings" onClick={onSettings} aria-label="Board settings">
+              <Settings size={18} />
+            </button>
             <div className="board-player-top">
               <PlayerBar
                 hideClock={practice || isVariation}
