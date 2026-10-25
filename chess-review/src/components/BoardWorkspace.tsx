@@ -45,6 +45,7 @@ type BoardWorkspaceProps = {
   showTimeSpent: boolean;
   showMoves: boolean;
   showTimeline: boolean;
+  showBoardToolbar: boolean;
   disabled: boolean;
   evaluation?: Evaluation;
   playing: boolean;
@@ -79,6 +80,7 @@ export function BoardWorkspace({
   showTimeSpent,
   showMoves,
   showTimeline,
+  showBoardToolbar,
   disabled,
   evaluation,
   playing,
@@ -208,7 +210,7 @@ export function BoardWorkspace({
               />
             </div>
           </div>
-          <div className="board-toolbar">
+          {showBoardToolbar && <div className="board-toolbar">
             <div>
               <button
                 className="icon-button"
@@ -289,7 +291,7 @@ export function BoardWorkspace({
             <span className="move-position">
               {ply} / {parsed.moves.length}
             </span>
-          </div>
+          </div>}
           {isVariation && !practice && (
             <div className="variation-toolbar">
               <span>Variation: {variationSans.join(" ")}</span>

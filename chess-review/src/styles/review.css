@@ -109,6 +109,61 @@
 .inspector-bottom .text-button {
   font-size: 10px;
 }
+.review-navigation {
+  flex: none;
+  padding: 16px 8px 12px;
+  background: #21201d;
+}
+.review-navigation-moves {
+  display: flex;
+  gap: 7px;
+}
+.review-navigation-moves > button {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #32312e;
+  color: #b3b2b1;
+  font-size: 24px;
+}
+.review-navigation-moves > button:hover:not(:disabled) {
+  background: #403e3b;
+  color: #fff;
+}
+.review-navigation-moves > button:disabled {
+  opacity: .35;
+}
+.review-navigation-actions {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding-top: 7px;
+}
+.review-navigation-actions > button {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  color: #b3b2b1;
+  font-size: 13px;
+  font-weight: 700;
+}
+.review-navigation-actions > button:first-child {
+  margin-right: auto;
+}
+.review-navigation-actions > button:last-child {
+  margin-left: auto;
+}
+.review-navigation-actions > button:hover {
+  color: #fff;
+}
 .report-caption {
   display: flex;
   align-items: center;
@@ -140,13 +195,35 @@
   margin: 0;
   padding: 0;
 }
+.review-analysis-graph .graph-heading {
+  display: none;
+}
+.review-analysis-graph .evaluation-graph > svg {
+  height: 78px;
+  border-radius: 2px;
+  background: #fff;
+}
+.review-analysis-graph .evaluation-graph polygon {
+  fill: #777;
+  opacity: .18;
+}
+.review-analysis-graph .evaluation-graph polyline {
+  stroke: #454440;
+}
+.review-analysis-graph .evaluation-graph line:first-of-type {
+  stroke: #c9c8c5;
+}
+.review-analysis-graph .evaluation-graph line:last-of-type {
+  stroke: #454440;
+}
 .review-analysis-graph .evaluation-graph > input {
   left: 0;
   width: 100%;
-  top: 25px;
+  top: 0;
+  height: 78px;
 }
-.review-analysis-graph .graph-heading span:last-child {
-  font-size: 9px;
+.review-step-moves .move-pair {
+  min-height: 30px;
 }
 .review-coach {
   display: flex;

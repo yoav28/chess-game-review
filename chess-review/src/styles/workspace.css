@@ -110,6 +110,14 @@
   font-weight: 400;
   color: var(--muted);
 }
+.player-info strong > .player-title {
+  padding: 1px 3px;
+  border-radius: 2px;
+  background: #b33430;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
 .player-info > span {
   color: var(--subtle);
   font-size: 10px;

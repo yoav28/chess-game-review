@@ -3,6 +3,8 @@ import type { Color } from 'chess.js'
 import type { ChessPosition } from '../lib/position'
 import { formatClock, type GameRecord, type ParsedGame } from '../lib/game'
 import type { GameReview } from '../lib/review'
+import { usePlayerProfile } from '../hooks/usePlayerProfile'
+import { PlayerAvatar } from './PlayerAvatar'
 
 type PlayerBarProps = {
   color: Color
@@ -16,6 +18,7 @@ type PlayerBarProps = {
 
 export function PlayerBar({ color, game, parsed, ply, review, board, hideClock }: PlayerBarProps) {
   const player = color === 'w' ? game.white : game.black
+  const profile = usePlayerProfile(player.username)
   const lastClock = parsed.moves
     .slice(0, ply)
     .filter(move => move.color === color)
@@ -29,10 +32,11 @@ export function PlayerBar({ color, game, parsed, ply, review, board, hideClock }
 
   return (
     <div className="player-bar">
-      <img className="player-avatar" src={`/players/${color === 'w' ? 'white' : 'black'}.png`} alt="" />
+      <PlayerAvatar className="player-avatar" color={color} name={player.username} size={40} />
       <div className="player-info">
         <strong>
           {player.username} <span>{player.rating ? `(${player.rating})` : ''}</span>
+          {profile?.title && <span className="player-title">{profile.title}</span>}
         </strong>
         <span>
           {color === 'w' ? 'White' : 'Black'}

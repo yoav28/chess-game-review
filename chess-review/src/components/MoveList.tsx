@@ -29,8 +29,13 @@ export function MoveList({
   const list = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = list.current;
+    if (!container) return;
+    if (ply === 0) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     const button = selected.current;
-    if (!container || !button) return;
+    if (!button) return;
     container.scrollTo({
       top:
         button.offsetTop - container.clientHeight / 2 + button.clientHeight / 2,

@@ -16,6 +16,7 @@ import {
 import type { ReviewProgress } from "../engine/types";
 import { isVariantHeuristic, variantLabel } from "../lib/variants";
 import MoveClassification from "./move-classifications/MoveClassification";
+import { PlayerAvatar } from "./PlayerAvatar";
 import { EvaluationGraph, evaluationLabel } from "./EvaluationGraph";
 import { MoveList } from "./MoveList";
 import { CoachControls } from "./CoachControls";
@@ -186,11 +187,11 @@ export function ReviewPanel({
               <span className="review-comparison-label">Players</span>
               <div className="review-player-score review-player-score-0">
                 <p className="review-player-name">{game.white.username}</p>
-                <img className="review-player-avatar" src="/players/white.png" alt={game.white.username} />
+                <PlayerAvatar className="review-player-avatar" color="w" name={game.white.username} size={64} />
               </div>
               <div className="review-player-score review-player-score-1">
                 <p className="review-player-name">{game.black.username}</p>
-                <img className="review-player-avatar" src="/players/black.png" alt={game.black.username} />
+                <PlayerAvatar className="review-player-avatar" color="b" name={game.black.username} size={64} />
               </div>
               <span className="review-comparison-label review-accuracy-label">Accuracy</span>
               <strong className="review-accuracy review-accuracy-white">{review.whiteAccuracy?.toFixed(1) ?? "—"}</strong>

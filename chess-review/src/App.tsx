@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, Settings, SlidersHorizontal, Star } from "lucide-react";
+import { ArrowLeftRight, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Pause, Play, Settings, SlidersHorizontal, SquarePlus, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppHeader } from "./components/AppChrome";
 import { BoardWorkspace } from "./components/BoardWorkspace";
@@ -60,6 +60,12 @@ function App() {
     }
   };
 
+  const togglePlayback = () => {
+    setVariation([]);
+    if (safePly === parsed.moves.length) setPly(0);
+    setPlaying(value => !value);
+  };
+
   return (
     <BoardAppearanceContext.Provider value={{ appearance: settings, onChange: patch => setSettings(normalizeSettings({ ...settings, ...patch })) }}>
     <div className="app-shell">
@@ -105,6 +111,7 @@ function App() {
           showTimeSpent={settings.showTimeSpent}
           showMoves={tab !== "review"}
           showTimeline={tab !== "review"}
+          showBoardToolbar={!(tab === 'review' && reviewMode === 'moves')}
           disabled={
             explanation.active || (tab === "practice" && (practiceBusy || ["solved", "revealed"].includes(practiceStatus))) ||
             (play.active && (play.thinking || Boolean(play.outcome) || play.turn !== play.playerColor))
@@ -118,11 +125,7 @@ function App() {
           onFlip={() => setOrientation((value) => (value === "w" ? "b" : "w"))}
           onCopyPosition={copyPosition}
           onNavigate={navigate}
-          onAutoplay={() => {
-            setVariation([]);
-            if (safePly === parsed.moves.length) setPly(0);
-            setPlaying((value) => !value);
-          }}
+          onAutoplay={togglePlayback}
           onUndoVariation={() => setVariation((value) => value.slice(0, -1))}
           onReturnToGame={() => setVariation([])}
           onSelectMove={(next) => {
@@ -249,7 +252,22 @@ function App() {
             )}
             {cacheNotice && <p className="library-notice">{cacheNotice}</p>}
           </div>
-          <div className="inspector-bottom">
+          {tab === 'review' && review && reviewMode === 'moves' ? (
+            <div className="review-navigation">
+              <div className="review-navigation-moves">
+                <button aria-label="First move" disabled={safePly === 0} onClick={() => navigate(0)}><ChevronFirst size={22} /></button>
+                <button aria-label="Previous move" disabled={safePly === 0} onClick={() => navigate(safePly - 1)}><ChevronLeft size={22} /></button>
+                <button aria-label={playing ? 'Pause review' : 'Play review'} onClick={togglePlayback}>{playing ? <Pause size={20} /> : <Play size={20} fill="currentColor" />}</button>
+                <button aria-label="Next move" disabled={safePly >= parsed.moves.length} onClick={() => navigate(safePly + 1)}><ChevronRight size={22} /></button>
+                <button aria-label="Final move" disabled={safePly >= parsed.moves.length} onClick={() => navigate(parsed.moves.length)}><ChevronLast size={22} /></button>
+              </div>
+              <div className="review-navigation-actions">
+                <button aria-label="Flip board" onClick={() => setOrientation(value => value === 'w' ? 'b' : 'w')}><ArrowLeftRight size={18} /></button>
+                <button aria-label="Open game library" onClick={() => setLibraryOpen(true)}><SquarePlus size={17} /> New</button>
+                <button aria-label="Review settings" onClick={() => setDialog('settings')}><Settings size={18} /></button>
+              </div>
+            </div>
+          ) : <div className="inspector-bottom">
             <button
               className="text-button"
               onClick={() => setDialog("settings")}
@@ -260,7 +278,7 @@ function App() {
             <button className="text-button" onClick={() => setDialog("method")}>
               About
             </button>
-          </div>
+          </div>}
         </aside>
       </div>
       <Dialogs
