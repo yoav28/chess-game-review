@@ -70,8 +70,6 @@ export function MoveList({
                 onClick={() => onSelect(move.ply)}
                 aria-label={`Move ${row.number} ${color === "w" ? "White" : "Black"} ${move.san}${rating ? `, ${classificationLabels[rating.classification]}` : ""}`}
               >
-                <span>{move.san}</span>
-                {showTimeSpent && elapsed[move.ply - 1] != null && <span className="move-time" title="Time spent on this move">{`${elapsed[move.ply - 1]!.toFixed(elapsed[move.ply - 1]! < 10 ? 1 : 0)}s`}</span>}
                 {rating && (
                   <span
                     className={`move-glyph ${rating.classification}`}
@@ -80,6 +78,8 @@ export function MoveList({
                     {classificationGlyph[rating.classification]}
                   </span>
                 )}
+                <Notation color={move.color} san={move.san} />
+                {showTimeSpent && elapsed[move.ply - 1] != null && <MoveTime color={move.color} seconds={elapsed[move.ply - 1]!} />}
               </button>
             ) : (
               <span key={color} />
@@ -88,5 +88,29 @@ export function MoveList({
         </div>
       ))}
     </div>
+  );
+}
+
+const figurines: Record<GameMove["color"], Record<string, string>> = {
+  w: { K: "Ā", Q: "Į", R: "Ľ", B: "Ă", N: "Ç" },
+  b: { K: "Ą", Q: "Ķ", R: "Ļ", B: "Ä", N: "Ė" },
+};
+
+function Notation({ san, color }: { san: string; color: GameMove["color"] }) {
+  return (
+    <span className="move-notation">
+      {san.split(/([KQRBN])/).map((part, index) => figurines[color][part]
+        ? <span key={index}><span className="sr-only">{part}</span><span aria-hidden="true" className="move-notation-piece">{figurines[color][part]}</span></span>
+        : <span key={index}>{part}</span>)}
+    </span>
+  );
+}
+
+function MoveTime({ color, seconds }: { color: GameMove["color"]; seconds: number }) {
+  return (
+    <span className={`move-time move-time-${color}`} title="Time spent on this move">
+      <span className="move-time-bar" style={{ width: `${Math.min(32, Math.max(2, seconds))}px` }} />
+      <span className="move-time-value">{`${seconds.toFixed(seconds < 10 ? 1 : 0)}s`}</span>
+    </span>
   );
 }

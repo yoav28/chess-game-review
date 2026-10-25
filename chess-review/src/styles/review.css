@@ -1,13 +1,14 @@
 .inspector {
   background: #262522;
-  border-left: 1px solid var(--border);
+  border: 1px solid #21201e;
+  border-radius: 5px;
   min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 .inspector-tabs {
-  display: none;
+  display: flex;
   border-bottom: 1px solid var(--border);
   padding: 0 22px;
   flex-shrink: 0;
@@ -26,7 +27,7 @@
 .inspector-tabs button[aria-selected="true"]:after {
   content: "";
   position: absolute;
-  height: 2px;
+  height: 3px;
   background: var(--accent);
   bottom: -1px;
   left: 13px;
@@ -47,16 +48,17 @@
   padding: 23px 24px;
 }
 .review-intro {
-  padding: 21px 0 5px;
+  padding: 12px 0 5px;
 }
 .review-intro-symbol {
   color: var(--accent);
   margin-bottom: 23px;
 }
 .review-intro h2 {
-  font-size: 21px;
+  font-family: "Chess Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 22px;
   letter-spacing: -0.5px;
-  font-weight: 500;
+  font-weight: 700;
   max-width: 250px;
   line-height: 1.5;
   margin-bottom: 12px;
@@ -84,9 +86,9 @@
   color: #81b64c;
 }
 .review-intro .primary {
-  min-height: 45px;
-  font-size: 13px;
-  justify-content: space-between;
+  min-height: 48px;
+  font-size: 18px;
+  justify-content: center;
   padding: 12px 17px;
 }
 .review-intro .fine-print {
@@ -141,47 +143,134 @@
   padding-bottom: 24px;
   border-bottom: 1px solid var(--border);
 }
-.accuracy-players {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 21px;
+.review-analysis-graph {
+  margin: 0 0 18px;
 }
-.accuracy-players > div {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.review-analysis-graph .evaluation-graph {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
-.player-dot {
-  height: 10px;
+.review-analysis-graph .evaluation-graph > input {
+  left: 0;
+  width: 100%;
+  top: 25px;
+}
+.review-analysis-graph .graph-heading span:last-child {
+  font-size: 9px;
+}
+.review-coach {
+  display: flex;
+  min-height: 64px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+.review-coach-avatar {
+  width: 90px;
+  height: 90px;
+  flex: none;
+  object-fit: contain;
+}
+.review-coach-bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fff;
+  color: #363532;
+  font-size: 14px;
+  line-height: 20px;
+}
+.review-coach-bubble::before {
+  position: absolute;
+  top: 14px;
+  left: -7px;
   width: 10px;
-  display: inline-block;
-  border: 1px solid #56534e;
-  border-radius: 2px;
-  flex-shrink: 0;
+  height: 10px;
+  background: #fff;
+  content: "";
+  transform: rotate(45deg);
 }
-.player-dot.white {
-  background: #eeeed2;
+.review-player-comparison {
+  display: grid;
+  grid-template-columns: 2.5fr 1fr 1fr 1fr .5fr;
+  align-items: center;
+  row-gap: 8px;
+  margin-top: 16px;
 }
-.player-dot.black {
-  background: #262522;
+.review-comparison-label {
+  color: #b3b2b1;
+  font-size: 14px;
 }
-.accuracy-players > div > span:nth-child(2) {
-  font-size: 12px;
-  color: var(--muted);
-  max-width: 200px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.review-player-score {
+  display: flex;
+  min-width: 0;
+  min-height: 90px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.review-player-score-0 {
+  grid-column: 2;
+}
+.review-player-score-1 {
+  grid-column: 4;
+}
+.review-player-name {
+  max-width: 128px;
   overflow: hidden;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.accuracy-players strong {
-  margin-left: auto;
-  color: var(--accent);
-  font-size: 29px;
-  font-weight: 500;
+.review-player-avatar {
+  display: flex;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-family: "Chess Sans", sans-serif;
+  font-size: 48px;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -1px;
+}
+.review-player-avatar.white {
+  background: #fff;
+  color: #363532;
+}
+.review-player-avatar.black {
+  background: #403f3c;
+  color: #fff;
+}
+.review-accuracy-label {
+  grid-column: 1;
+}
+.review-accuracy {
+  min-width: 64px;
+  height: 36px;
+  justify-self: center;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-family: "Chess Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 26px;
+  text-align: center;
+}
+.review-accuracy-white {
+  grid-column: 2;
+  background: #fff;
+  color: #262522;
+}
+.review-accuracy-black {
+  grid-column: 4;
+  background: #403f3c;
+  color: #fff;
 }
 .coach {
   padding: 23px 0 24px;
@@ -490,5 +579,8 @@
 .coach-actions>.secondary{margin-top:0;font-size:11px;width:auto}
 .coach-identity{display:flex;align-items:center;gap:9px;padding-top:16px;color:var(--muted);font-size:10px}
 .coach-identity>span:first-child{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:var(--surface-high);color:var(--accent);font-size:23px;border-radius:4px}
-.move-time{margin-left:auto;margin-right:9px;font-size:9px;color:var(--subtle);font-weight:400;font-variant-numeric:tabular-nums}
+.move-time{display:flex;min-width:66px;min-height:12px;align-items:center;justify-content:flex-end;gap:4px;margin-left:auto;color:var(--subtle);font-size:10px;font-weight:700;line-height:12px;font-variant-numeric:tabular-nums}
+.move-time-bar{height:10px;flex-shrink:0;border-radius:2px;background:#dededd}
+.move-time-b .move-time-bar{background:#595855}
+.move-time-value{width:25px;flex-shrink:0}
 .practice-content .practice-analysis-note{font-size:11px;line-height:1.8;margin:15px 0;color:var(--muted)}

@@ -8,7 +8,7 @@
   padding: 25px 22px 21px;
 }
 .close-library {
-  display: none;
+  display: inline-flex;
 }
 .import-form {
   padding: 0 22px 23px;

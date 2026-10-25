@@ -54,12 +54,10 @@ function App() {
     <BoardAppearanceContext.Provider value={{ appearance: settings, onChange: patch => setSettings(normalizeSettings({ ...settings, ...patch })) }}>
     <div className="app-shell">
       <AppHeader
-        activeTab={tab}
-        libraryOpen={libraryOpen}
+        username={library.username}
         onImport={() => setDialog("import")}
-        onLibrary={() => setLibraryOpen(true)}
+        onLibrary={() => setLibraryOpen(value => !value)}
         onSettings={() => setDialog("settings")}
-        onTabChange={changeWorkspaceTab}
       />
       <div className="workspace">
         <div className={`library-wrapper ${libraryOpen ? "open" : ""}`}>
@@ -67,7 +65,7 @@ function App() {
             library={library}
             selectedId={game.id}
             reviewedGameId={review?.pgn === game.pgn ? game.id : undefined}
-            onSelect={selectGame}
+            onSelect={selected => { selectGame(selected); setLibraryOpen(false); }}
             onClose={() => setLibraryOpen(false)}
           />
         </div>
@@ -94,6 +92,7 @@ function App() {
           threatArrow={threat.result?.arrow ?? undefined}
           classification={classificationMark}
           showTimeSpent={settings.showTimeSpent}
+          showTimeline={tab !== "review"}
           disabled={
             explanation.active || (tab === "practice" && (practiceBusy || ["solved", "revealed"].includes(practiceStatus))) ||
             (play.active && (play.thinking || Boolean(play.outcome) || play.turn !== play.playerColor))
@@ -120,6 +119,9 @@ function App() {
           }}
         />
         <aside className="inspector">
+          <div className="inspector-header">
+            <h1>{tab === "review" ? "Game Review" : tab === "history" ? "Saved Games" : tab === "analysis" ? "Analysis" : "Practice"}</h1>
+          </div>
           <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} />
           <div className="inspector-body" role="tabpanel" id="workspace-panel" aria-labelledby={`workspace-tab-${tab}`}>
             {explanation.active ? (

@@ -1,65 +1,79 @@
-import { Activity, ArrowRight, Bookmark, ClipboardCheck, Dumbbell, FolderOpen, Library, Settings as SettingsIcon } from "lucide-react";
-import type { WorkspaceTab } from "./WorkspaceTabs";
+import { ArrowRight, Bell, ChevronDown, ChevronUp, FolderOpen, Mail, Search, Settings as SettingsIcon, Users } from "lucide-react";
+import { useState } from "react";
 
-type AppHeaderProps = {
-  activeTab: WorkspaceTab;
-  libraryOpen: boolean;
-  onImport: () => void;
-  onLibrary: () => void;
-  onSettings: () => void;
-  onTabChange: (tab: WorkspaceTab) => void;
-};
+type AppHeaderProps = { onImport: () => void; onLibrary: () => void; onSettings: () => void; username: string };
 
-export function AppHeader({ activeTab, libraryOpen, onImport, onLibrary, onSettings, onTabChange }: AppHeaderProps) {
+const navigation = [
+  { label: "Play", path: "play", icon: "play-white" },
+  { label: "Puzzles", path: "puzzles", icon: "puzzle-piece" },
+  { label: "Learn", path: "learn", icon: "lessons" },
+  { label: "Train", path: "train", icon: "training" },
+  { label: "Watch", path: "watch", icon: "binoculars" },
+  { label: "Community", path: "community", icon: "friends" },
+  { label: "Other", path: "other", icon: "ellipsis" },
+];
+
+export function AppHeader({ onImport, onLibrary, onSettings, username }: AppHeaderProps) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const profileUrl = username
+    ? `https://www.chess.com/member/${encodeURIComponent(username)}`
+    : "https://www.chess.com/login";
+
   return (
-      <header className="app-header">
-        <div className="brand">
-          <svg viewBox="0 0 32 32" aria-hidden="true">
-            <path
-              d="M5 5h5v6h12V5h5v13l-4 4v4H9v-4l-4-4zM7 29h18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span>
-            open file<span className="brand-period">.</span>
-          </span>
-          <span className="brand-divider" />
-          <span className="product-label">Game review</span>
+    <aside className="app-header site-sidebar">
+      <a aria-label="Game Review home" className="site-logo" href="/">
+        <img alt="Chess.com" src="/navigation/logo.svg" />
+      </a>
+      <nav aria-label="Main navigation" className="app-navigation site-navigation">
+        {navigation.slice(0, 3).map(({ label, path, icon }) => (
+          <a className="site-navigation-link" href={`https://www.chess.com/${path}`} key={path} rel="noreferrer" target="_blank">
+            <img alt="" src={`/navigation/${icon}.svg`} />
+            <span>{label}</span>
+          </a>
+        ))}
+        <button
+          aria-controls="site-more-menu"
+          aria-expanded={moreOpen}
+          className="site-navigation-link site-more-button"
+          onClick={() => setMoreOpen(!moreOpen)}
+          type="button"
+        >
+          {moreOpen ? <ChevronUp /> : <ChevronDown />}
+          <span>More</span>
+        </button>
+        {moreOpen && (
+          <div id="site-more-menu">
+            {navigation.slice(3).map(({ label, path, icon }) => (
+              <a className="site-navigation-link" href={`https://www.chess.com/${path}`} key={path} rel="noreferrer" target="_blank">
+                <img alt="" src={`/navigation/${icon}.svg`} />
+                <span>{label}</span>
+              </a>
+            ))}
+          </div>
+        )}
+        <a className="site-navigation-link site-free-trial" href="https://www.chess.com/membership" rel="noreferrer" target="_blank">
+          <img alt="" src="/navigation/diamond.svg" />
+          <span>Free Trial</span>
+        </a>
+      </nav>
+      <div className="site-sidebar-bottom">
+        <button aria-label="Search games" className="site-search" onClick={onLibrary}>
+          <Search />
+          <span>Search</span>
+        </button>
+        <a className="site-profile" href={profileUrl} rel="noreferrer" target="_blank">
+          <img src="/players/white.png" alt="" />
+          <span>{username || "Profile"}</span>
+        </a>
+        <div className="site-footer-icons">
+          <a aria-label="Friends" href="https://www.chess.com/friends" rel="noreferrer" target="_blank"><Users /></a>
+          <a aria-label="Messages" href="https://www.chess.com/messages" rel="noreferrer" target="_blank"><Mail /></a>
+          <a aria-label="Notifications" href="https://www.chess.com/alerts" rel="noreferrer" target="_blank"><Bell /></a>
+          <button aria-label="Load PGN" onClick={onImport}><FolderOpen /></button>
+          <button aria-label="Review settings" onClick={onSettings}><SettingsIcon /></button>
         </div>
-        <nav className="app-navigation" aria-label="Workspace">
-          <button aria-label="Games" className={libraryOpen ? "active" : ""} aria-current={libraryOpen ? "page" : undefined} onClick={onLibrary}>
-            <Library size={21} /><span>Games</span>
-          </button>
-          <button aria-label="Review" className={activeTab === "review" ? "active" : ""} aria-current={activeTab === "review" ? "page" : undefined} onClick={() => onTabChange("review")}>
-            <ClipboardCheck size={21} /><span>Review</span>
-          </button>
-          <button aria-label="Analysis" className={activeTab === "analysis" ? "active" : ""} aria-current={activeTab === "analysis" ? "page" : undefined} onClick={() => onTabChange("analysis")}>
-            <Activity size={21} /><span>Analysis</span>
-          </button>
-          <button aria-label="Practice" className={activeTab === "practice" ? "active" : ""} aria-current={activeTab === "practice" ? "page" : undefined} onClick={() => onTabChange("practice")}>
-            <Dumbbell size={21} /><span>Practice</span>
-          </button>
-          <button aria-label="Saved" className={activeTab === "history" ? "active" : ""} aria-current={activeTab === "history" ? "page" : undefined} onClick={() => onTabChange("history")}>
-            <Bookmark size={21} /><span>Saved</span>
-          </button>
-        </nav>
-        <div className="header-actions">
-          <button aria-label="Load PGN" className="secondary" onClick={onImport}>
-            <FolderOpen size={16} />
-            <span>Load PGN</span>
-          </button>
-          <button
-            className="icon-button"
-            onClick={onSettings}
-            aria-label="Review settings"
-          >
-            <SettingsIcon size={19} />
-          </button>
-        </div>
-      </header>
+      </div>
+    </aside>
   );
 }
 

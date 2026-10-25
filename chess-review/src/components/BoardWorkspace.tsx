@@ -43,6 +43,7 @@ type BoardWorkspaceProps = {
   threatArrow?: { from: string; to: string };
   classification?: { square: string; kind: Classification };
   showTimeSpent: boolean;
+  showTimeline: boolean;
   disabled: boolean;
   evaluation?: Evaluation;
   playing: boolean;
@@ -75,6 +76,7 @@ export function BoardWorkspace({
   threatArrow,
   classification,
   showTimeSpent,
+  showTimeline,
   disabled,
   evaluation,
   playing,
@@ -149,7 +151,7 @@ export function BoardWorkspace({
         </div>
       ) : (
         <>
-          <div className="board-area">
+          <div className="board-layout">
             <div className="board-player-top">
               <PlayerBar
                 hideClock={practice || isVariation}
@@ -297,7 +299,7 @@ export function BoardWorkspace({
               </button>
             </div>
           )}
-          <EvaluationGraph review={review} ply={ply} onSelect={onSelectMove} />
+          {showTimeline && <EvaluationGraph review={review} ply={ply} onSelect={onSelectMove} />}
           <div className="moves-heading">
             <h2>Moves</h2>
             <span>

@@ -1,3 +1,4 @@
+import { Clock3 } from 'lucide-react'
 import type { Color } from 'chess.js'
 import type { ChessPosition } from '../lib/position'
 import { formatClock, type GameRecord, type ParsedGame } from '../lib/game'
@@ -28,9 +29,7 @@ export function PlayerBar({ color, game, parsed, ply, review, board, hideClock }
 
   return (
     <div className="player-bar">
-      <div className={`player-avatar ${color}`} aria-hidden="true">
-        {color === 'w' ? '♔' : '♚'}
-      </div>
+      <img className="player-avatar" src={`/players/${color === 'w' ? 'white' : 'black'}.png`} alt="" />
       <div className="player-info">
         <strong>
           {player.username} <span>{player.rating ? `(${player.rating})` : ''}</span>
@@ -41,8 +40,9 @@ export function PlayerBar({ color, game, parsed, ply, review, board, hideClock }
           {checks && ` · ${3 - checks[color]}/3 checks`}
         </span>
       </div>
-      <div className={`player-clock ${!board.isGameOver() && board.turn() === color ? 'turn' : ''}`}>
-        {hideClock ? '—' : formatClock(lastClock ?? (Number.isFinite(initialClock) && initialClock > 0 ? initialClock : undefined))}
+      <div className={`player-clock player-clock-${color} ${!board.isGameOver() && board.turn() === color ? 'turn' : ''}`}>
+        <Clock3 size={20} />
+        <span>{hideClock ? '—' : formatClock(lastClock ?? (Number.isFinite(initialClock) && initialClock > 0 ? initialClock : undefined))}</span>
       </div>
     </div>
   )

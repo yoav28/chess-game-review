@@ -4,9 +4,7 @@ import {
   ChevronRight,
   Lightbulb,
   RotateCcw,
-  Sparkles,
   Square,
-  Target,
 } from "lucide-react";
 import { engineRules, type GameRecord } from "../lib/game";
 import {
@@ -17,7 +15,7 @@ import {
 import type { ReviewProgress } from "../engine/types";
 import { isVariantHeuristic, variantLabel } from "../lib/variants";
 import { classificationGlyph } from "./MoveList";
-import { evaluationLabel } from "./EvaluationGraph";
+import { EvaluationGraph, evaluationLabel } from "./EvaluationGraph";
 import { CoachControls } from "./CoachControls";
 import { SkillBreakdown } from "./SkillBreakdown";
 import { ReviewStats } from "./ReviewStats";
@@ -117,40 +115,27 @@ export function ReviewPanel({
       )}
       {!review ? (
         <div className="review-intro">
-          <div className="review-intro-symbol">
-            <Sparkles size={29} strokeWidth={1.4} />
-          </div>
-          <h2>Review this game</h2>
-          <p>
-            Check every move, find the turning points, and practice the moves
-            you missed.
-          </p>
-          <div className="review-features">
-            <span>
-              <Target size={16} /> Accuracy & move quality
-            </span>
-            <span>
-              <Lightbulb size={16} /> Explanations & best lines
-            </span>
-            <span>
-              <RotateCcw size={16} /> Practice your mistakes
-            </span>
-          </div>
           <button
             className="primary full-width"
             onClick={onStart}
             disabled={running || !engineRules(game.rules)}
           >
-            {running ? "Analyzing…" : "Review this game"}{" "}
+            {running ? "Analyzing…" : "Start Review"}{" "}
             <ArrowRight size={17} />
           </button>
-          <p className="fine-print">
-            Local engine analysis. No review limit.
-          </p>
         </div>
       ) : (
         <>
           {review.importedAt && <p className="fine-print" role="note">Imported report. Scores and explanations came from the file; no engine analysis was rerun here. Use Review again to calculate a new report.</p>}
+          {settings.showCoachAvatar && (
+            <div className="review-coach">
+              <img className="review-coach-avatar" src="/coach/default.png" alt="" />
+              <div className="review-coach-bubble">Let’s look at the key moments from this game.</div>
+            </div>
+          )}
+          <div className="review-analysis-graph">
+            <EvaluationGraph review={review} ply={move?.ply ?? 0} onSelect={onSelect} />
+          </div>
           <div className="accuracy-report">
             <div className="report-caption">
               <h2>Accuracy</h2>
@@ -159,22 +144,23 @@ export function ReviewPanel({
               </button>
             </div>
             <p className="fine-print">{review.variant && isVariantHeuristic(review.variant) ? `${variantLabel(review.variant)} move-quality heuristic · v2. Not calibrated winning probabilities.` : review.accuracyVersion === 2 ? 'Win-chance accuracy · v2' : 'Legacy centipawn accuracy · v1. Review again to update.'}</p>
-            <div className="accuracy-players">
-              <div>
-                <span className="player-dot white" />
-                <span>{game.white.username}</span>
-                <strong>{review.whiteAccuracy?.toFixed(1) ?? "—"}</strong>
+            <div className="review-player-comparison">
+              <span className="review-comparison-label">Players</span>
+              <div className="review-player-score review-player-score-0">
+                <p className="review-player-name">{game.white.username}</p>
+                <div className="review-player-avatar white" aria-hidden="true">♔</div>
               </div>
-              <div>
-                <span className="player-dot black" />
-                <span>{game.black.username}</span>
-                <strong>{review.blackAccuracy?.toFixed(1) ?? "—"}</strong>
+              <div className="review-player-score review-player-score-1">
+                <p className="review-player-name">{game.black.username}</p>
+                <div className="review-player-avatar black" aria-hidden="true">♚</div>
               </div>
+              <span className="review-comparison-label review-accuracy-label">Accuracy</span>
+              <strong className="review-accuracy review-accuracy-white">{review.whiteAccuracy?.toFixed(1) ?? "—"}</strong>
+              <strong className="review-accuracy review-accuracy-black">{review.blackAccuracy?.toFixed(1) ?? "—"}</strong>
             </div>
           </div>
           <ReviewOverview review={review} games={games} username={username} onSelect={onSelect} onExploreOpening={onExploreOpening} />
           <div className="review-preferences"><label htmlFor="review-focus">Highlights for</label><select id="review-focus" value={focusColor} onChange={event => setFocusColor(event.target.value as 'all' | 'w' | 'b')}><option value="all">Both players</option><option value="w">White</option><option value="b">Black</option></select></div>
-          {settings.showCoachAvatar && <div className="coach-identity"><span aria-hidden="true">♞</span><span>Open File coach</span></div>}
           <CoachControls
             key={game.id}
             review={review}
