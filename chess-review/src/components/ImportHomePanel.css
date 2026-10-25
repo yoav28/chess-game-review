@@ -24,6 +24,11 @@
   background: #2c2b27;
   color: #fff;
 }
+.import-home-tabs .chesscom-import-icon {
+  width: 15px;
+  height: 20px;
+  flex: none;
+}
 .import-home-tabs button[aria-selected="true"] {
   border-color: #81b64c;
   color: #fff;
