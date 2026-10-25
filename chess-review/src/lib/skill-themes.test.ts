@@ -48,3 +48,17 @@ test('tactical and endgame themes use recorded legal moves and board facts', () 
   assert.deepEqual(themeCounts(promotion, 'endgames').promotions, { w: [1], b: [] })
   assert.deepEqual(themeCounts(promotion, 'endgames')['passed-pawns'], { w: [1], b: [] })
 })
+
+test('passed-pawn and fianchetto themes require the recorded destination and setup', () => {
+  const sameRankEnemyPawn = reviewFixture('[FEN "7k/8/8/2p5/3P4/8/8/K7 w - - 0 1"]\n\n1. d5 *')
+  assert.deepEqual(themeCounts(sameRankEnemyPawn, 'endgames')['passed-pawns'], { w: [1], b: [] })
+
+  const pawnStillAhead = reviewFixture('[FEN "7k/8/2p5/8/3P4/8/8/K7 w - - 0 1"]\n\n1. d5 *')
+  assert.deepEqual(themeCounts(pawnStillAhead, 'endgames')['passed-pawns'], { w: [], b: [] })
+
+  const fianchetto = reviewFixture('1. g3 d5 2. Bg2 *')
+  assert.deepEqual(themeCounts(fianchetto, 'openings').fianchettos, { w: [3], b: [] })
+
+  const bishopCapture = reviewFixture('[FEN "7k/8/8/8/8/B7/1r6/K7 w - - 0 1"]\n\n1. Bxb2 *')
+  assert.deepEqual(themeCounts(bishopCapture, 'openings').fianchettos, { w: [], b: [] })
+})

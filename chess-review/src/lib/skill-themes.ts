@@ -152,13 +152,13 @@ function doubleCheck(move: MoveReview): boolean {
 
 function isPassedPawnMove(move: MoveReview): boolean {
   if (move.piece !== 'p') return false
-  const board = createPosition(move.beforeFen, move.variant)
-  const destinationRank = Number(move.to[1])
+  const board = createPosition(move.afterFen, move.variant)
+  const pawnRank = Number(move.to[1])
   const enemy = move.color === 'w' ? 'b' : 'w'
   return !board.board().flat().some(piece => piece?.type === 'p' && piece.color === enemy
     && Math.abs(piece.square.charCodeAt(0) - move.to.charCodeAt(0)) <= 1
-    && (move.color === 'w' ? Number(piece.square[1]) > Number(move.from[1]) : Number(piece.square[1]) < Number(move.from[1])))
-    && Number.isFinite(destinationRank)
+    && (move.color === 'w' ? Number(piece.square[1]) > pawnRank : Number(piece.square[1]) < pawnRank))
+    && Number.isFinite(pawnRank)
 }
 
 function outpost(move: MoveReview): boolean {
@@ -305,6 +305,7 @@ function rookSupportsPassedPawn(move: MoveReview): boolean {
   const enemyPawns = pieces.filter(piece => piece.color === enemy && piece.type === 'p')
   return rooks.some(rook => pawns.some(pawn => pawn.square[0] === rook.square[0]
     && (move.color === 'w' ? Number(pawn.square[1]) > Number(rook.square[1]) : Number(pawn.square[1]) < Number(rook.square[1]))
+    && pathBetween(rook.square, pawn.square).every(square => !board.get(square))
     && !enemyPawns.some(enemyPawn => Math.abs(enemyPawn.square.charCodeAt(0) - pawn.square.charCodeAt(0)) <= 1
       && (move.color === 'w' ? Number(enemyPawn.square[1]) > Number(pawn.square[1]) : Number(enemyPawn.square[1]) < Number(pawn.square[1])))))
 }
@@ -320,7 +321,7 @@ function blocksPassedPawn(move: MoveReview): boolean {
     const rookRank = Number(move.to[1])
     const aheadOfPawn = enemy === 'w' ? rookRank > pawnRank : rookRank < pawnRank
     const promotionRanksBetween = enemy === 'w' ? rookRank < 8 && pawnRank < rookRank : rookRank > 1 && pawnRank > rookRank
-    return aheadOfPawn && promotionRanksBetween
+    return aheadOfPawn && promotionRanksBetween && pathBetween(pawn.square, move.to as Square).every(square => !board.get(square))
   })
 }
 
@@ -401,7 +402,7 @@ const detections: Record<SkillTab, Detection[]> = {
     { key: 'two-book-moves', label: '2 book moves', description: 'The player recorded at least two moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 2) },
     { key: 'three-book-moves', label: '3 book moves', description: 'The player recorded at least three moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 3) },
     { key: 'four-book-moves', label: '4 book moves', description: 'The player recorded at least four moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 4) },
-    { key: 'fianchettos', label: 'Fianchettos', description: 'A bishop develops to a standard fianchetto square.', matches: move => move.piece === 'b' && ['b2', 'g2', 'b7', 'g7'].includes(move.to) },
+    { key: 'fianchettos', label: 'Fianchettos', description: 'A bishop develops from the c- or f-file home square to a standard fianchetto square.', matches: move => move.piece === 'b' && [['c1', 'b2'], ['f1', 'g2'], ['c8', 'b7'], ['f8', 'g7']].some(([from, to]) => move.from === from && move.to === to) },
     { key: 'develops-with-tempo', label: 'Develops with tempo', description: 'An opening minor-piece development creates a new attack on a valuable piece.', matches: move => developsWithTempo(move) },
   ],
   tactics: [
