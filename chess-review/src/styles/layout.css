@@ -229,7 +229,7 @@
   grid-template-columns: minmax(0, 1fr) clamp(340px, calc(100vw - 170px - 100svh + 32px), 500px);
   gap: 32px;
   width: calc(100% - 170px);
-  height: calc(100svh - 35px);
+  height: 100svh;
   margin-left: 170px;
   padding: 16px;
   min-height: 0;

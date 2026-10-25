@@ -1,5 +1,5 @@
 .board-workspace {
-  padding: 24px 30px 25px;
+  padding: 0 0 16px;
   overflow-y: auto;
   min-width: 0;
   scrollbar-width: thin;
@@ -54,6 +54,12 @@
 .board-layout {
   max-width: 840px;
   margin: 0 auto;
+}
+.board-player-top {
+  margin-bottom: 10px;
+}
+.board-player-bottom {
+  margin-top: 10px;
 }
 .player-bar {
   height: 40px;

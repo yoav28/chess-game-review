@@ -1,4 +1,4 @@
-import { ArrowRight, Bell, ChevronDown, ChevronUp, FolderOpen, Mail, Search, Settings as SettingsIcon, Users } from "lucide-react";
+import { Bell, ChevronDown, ChevronUp, FolderOpen, Mail, Search, Settings as SettingsIcon, Users } from "lucide-react";
 import { useState } from "react";
 
 type AppHeaderProps = { onImport: () => void; onLibrary: () => void; onSettings: () => void; username: string };
@@ -74,19 +74,5 @@ export function AppHeader({ onImport, onLibrary, onSettings, username }: AppHead
         </div>
       </div>
     </aside>
-  );
-}
-
-export function AppFooter({ onSample }: { onSample: () => void }) {
-  return (
-      <footer className="app-footer">
-        <span>Independent of Chess.com. Games from public archives.</span>
-        <button
-          className="text-button"
-          onClick={onSample}
-        >
-          Explore the sample game <ArrowRight size={12} />
-        </button>
-      </footer>
   );
 }

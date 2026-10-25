@@ -1,5 +1,5 @@
 import { Check, SlidersHorizontal } from "lucide-react";
-import { AppHeader, AppFooter } from "./components/AppChrome";
+import { AppHeader } from "./components/AppChrome";
 import { BoardWorkspace } from "./components/BoardWorkspace";
 import { GameLibrary } from "./components/GameLibrary";
 import { ReviewPanel } from "./components/ReviewPanel";
@@ -67,6 +67,7 @@ function App() {
             reviewedGameId={review?.pgn === game.pgn ? game.id : undefined}
             onSelect={selected => { selectGame(selected); setLibraryOpen(false); }}
             onClose={() => setLibraryOpen(false)}
+            onSample={() => { selectGame(demoGame); setPly(18); setLibraryOpen(false); }}
           />
         </div>
         {libraryOpen && (
@@ -238,7 +239,6 @@ function App() {
           </div>
         </aside>
       </div>
-      <AppFooter onSample={() => { selectGame(demoGame); setPly(18); }} />
       <Dialogs
         dialog={dialog}
         onClose={() => setDialog(null)}

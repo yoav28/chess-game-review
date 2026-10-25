@@ -232,22 +232,6 @@
   color: var(--muted);
   margin: 15px 0;
 }
-.app-footer {
-  width: calc(100% - 170px);
-  margin-left: 170px;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  font-size: 9px;
-  color: var(--subtle);
-  border-top: 1px solid var(--border);
-  background: #262522;
-}
-.app-footer .text-button {
-  font-size: 10px;
-}
 .mobile-library {
   display: none;
 }

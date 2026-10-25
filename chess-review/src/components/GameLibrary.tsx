@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -17,11 +18,12 @@ type Props = {
   reviewedGameId?: string;
   onSelect: (game: GameRecord) => void;
   onClose: () => void;
+  onSample: () => void;
 };
 
 const rulesLabel = (rules: string) => rules === 'chess' ? 'Standard' : rules === 'chess960' ? 'Chess960' : rules === 'oddschess' ? 'Odds chess' : rules === 'threecheck' ? 'Three-check' : rules === 'kingofthehill' ? 'King of the Hill' : rules === 'atomic' ? 'Atomic' : rules === 'horde' ? 'Horde' : rules;
 
-export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onClose }: Props) {
+export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onClose, onSample }: Props) {
   const [input, setInput] = useState(library.username);
   const [search, setSearch] = useState("");
   const [timeClass, setTimeClass] = useState("all");
@@ -391,14 +393,7 @@ export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onC
           </div>
         )
       )}
-      <div className="library-footer">
-        <span className="small-rook">♜</span>
-        <span>
-          Independent chess analysis
-          <br />
-          <span>Local engine analysis</span>
-        </span>
-      </div>
+      <button className="library-sample-game" onClick={onSample}><BookOpen size={15} /> Explore the sample game</button>
     </aside>
   );
 }
