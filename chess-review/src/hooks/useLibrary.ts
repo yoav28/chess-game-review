@@ -66,14 +66,16 @@ export function createLibraryImporter(callbacks: LibraryCallbacks, dependencies:
   const mergeGames = (...groups: GameRecord[][]) => {
     const byId = new Map<string, GameRecord>()
     const byUrl = new Set<string>()
-    const byIdentity = new Map<string, number[]>()
+    const byIdentity = new Map<string, { endTime: number; url: string }[]>()
     for (const game of groups.flat()) {
       const identity = gameIdentity(game)
       const dates = byIdentity.get(identity) ?? []
-      if (byId.has(game.id) || game.url && byUrl.has(game.url) || dates.some(date => Math.abs(date - game.endTime) <= 36 * 60 * 60 || date === 0 && game.endTime === 0)) continue
+      const sameGame = dates.find(date => Math.abs(date.endTime - game.endTime) <= 36 * 60 * 60 || date.endTime === 0 && game.endTime === 0)
+      const distinctArchiveGame = Boolean(game.url && sameGame?.url && game.url !== sameGame.url)
+      if (byId.has(game.id) || game.url && byUrl.has(game.url) || sameGame && !distinctArchiveGame) continue
       byId.set(game.id, game)
       if (game.url) byUrl.add(game.url)
-      byIdentity.set(identity, [...dates, game.endTime])
+      byIdentity.set(identity, [...dates, { endTime: game.endTime, url: game.url }])
     }
     return [...byId.values()].sort((a, b) => b.endTime - a.endTime)
   }
