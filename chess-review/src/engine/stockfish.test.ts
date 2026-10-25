@@ -310,6 +310,25 @@ test('Fairy-Stockfish reviews Crazyhouse pocket drops and preserves them in expo
   assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
 })
 
+test('Fairy-Stockfish reviews Giveaway captures and preserves the variant in exports', { timeout: 30000 }, async () => {
+  const { readFileSync } = await import('node:fs')
+  const { parsePgn } = await import('../lib/game')
+  const { reviewedPgn } = await import('../lib/report')
+  const { parseReviewTransfer, serializeReviewTransfer } = await import('../lib/review-transfer')
+  const pgn = readFileSync(new URL('../test/fixtures/giveaway-capture.pgn', import.meta.url), 'utf8')
+  const original = parsePgn(pgn)
+  const review = await reviewGame(pgn, { depth: 8, timeMs: 60 })
+  assert.equal(review.variant, 'giveaway')
+  assert.match(review.engine, /Fairy-Stockfish wasm 1\.1\.12.*Giveaway/)
+  assert.match(review.accuracyModel, /uncalibrated move-quality heuristic/)
+  const exported = parsePgn(reviewedPgn(review))
+  assert.equal(exported.headers.Variant, 'Giveaway')
+  assert.deepEqual(exported.positions, original.positions)
+  const imported = parseReviewTransfer(serializeReviewTransfer(review))
+  assert.equal(imported.variant, 'giveaway')
+  assert.deepEqual(imported.moves, JSON.parse(JSON.stringify(review.moves)))
+})
+
 test('both actual three-check games review and export every counter, position, clock and result', { timeout: 90000 }, async () => {
   const { readFileSync } = await import('node:fs')
   const { parsePgn } = await import('../lib/game')

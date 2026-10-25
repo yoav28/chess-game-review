@@ -13,7 +13,7 @@ export type ExplanationStep = {
 }
 
 function applyMove(board: ChessPosition, uci: string): PositionMove {
-  if (!/^(?:[a-h][1-8][a-h][1-8][qrbn]?|[PNBRQ]@[a-h][1-8])$/.test(uci)) throw new Error('The explanation contains an invalid move.')
+  if (!/^(?:[a-h][1-8][a-h][1-8][qrbnk]?|[PNBRQ]@[a-h][1-8])$/.test(uci)) throw new Error('The explanation contains an invalid move.')
   return moveFromUci(board, uci)
 }
 

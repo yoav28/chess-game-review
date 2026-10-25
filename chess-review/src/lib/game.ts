@@ -93,6 +93,7 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
   if (variant === 'atomic' || identified === 'atomic') return parseVariantPgn(pgn, 'atomic')
   if (variant === 'horde' || identified === 'horde') return parseVariantPgn(pgn, 'horde')
   if (variant === 'crazyhouse' || identified === 'crazyhouse') return parseVariantPgn(pgn, 'crazyhouse')
+  if (variant === 'giveaway' || identified === 'giveaway') return parseVariantPgn(pgn, 'giveaway')
   if (variant === 'chess960' || identified === 'chess960') return parseChess960Pgn(pgn)
   const chess = new Chess()
   try {
@@ -123,12 +124,12 @@ export function parsePgn(pgn: string, variant?: ChessVariant): ParsedGame {
 }
 
 export function engineRules(rules: string): ChessVariant | null {
-  return rules === 'threecheck' ? 'threecheck' : rules === 'kingofthehill' ? 'kingofthehill' : rules === 'atomic' ? 'atomic' : rules === 'horde' ? 'horde' : rules === 'crazyhouse' ? 'crazyhouse' : rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
+  return rules === 'threecheck' ? 'threecheck' : rules === 'kingofthehill' ? 'kingofthehill' : rules === 'atomic' ? 'atomic' : rules === 'horde' ? 'horde' : rules === 'crazyhouse' ? 'crazyhouse' : rules === 'giveaway' ? 'giveaway' : rules === 'chess960' ? 'chess960' : rules === 'chess' || rules === 'oddschess' ? 'chess' : null
 }
 
 export function parseGame(game: GameRecord): ParsedGame {
   const variant = engineRules(game.rules)
-  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, Chess960, three-check, King of the Hill, Atomic, Horde, and Crazyhouse.`)
+  if (!variant) throw new Error(`This game uses ${game.rules}. Engine review supports standard chess, material odds, Chess960, three-check, King of the Hill, Atomic, Horde, Crazyhouse, and Giveaway.`)
   return parsePgn(game.pgn, variant)
 }
 

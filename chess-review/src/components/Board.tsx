@@ -49,6 +49,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
   }), [orientation])
   const pockets = chess.pockets?.()
   const crazyhouse = variant === 'crazyhouse'
+  const giveaway = variant === 'giveaway'
   const legalMoves = selectedDrop ? chess.moves({ verbose: true }).filter(move => move.drop === selectedDrop) : selected ? chess.moves({ square: selected, verbose: true }) : []
   const outcome = chess.variantOutcome?.()
   const turnDescription = outcome ? outcome.winner ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins under ${variantLabel(variant)} rules.` : 'Drawn position.' : chess.isCheckmate() ? `${chess.turn() === 'w' ? 'Black' : 'White'} wins by checkmate.` : chess.isDraw() ? 'Drawn position.' : `${chess.turn() === 'w' ? 'White' : 'Black'} to move.`
@@ -135,7 +136,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
   }
 
   const visibleArrows: (Annotation & { kind: 'annotation' | 'best' | 'coach' | 'threat' })[] = annotations.filter(item => item.from !== item.to).map(item => ({ ...item, kind: 'annotation' }))
-  if (showBestMove && bestMove && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(bestMove)) visibleArrows.push({ from: bestMove.slice(0, 2), to: bestMove.slice(2, 4), kind: 'best' })
+  if (showBestMove && bestMove && /^[a-h][1-8][a-h][1-8][qrbnk]?$/.test(bestMove)) visibleArrows.push({ from: bestMove.slice(0, 2), to: bestMove.slice(2, 4), kind: 'best' })
   visibleArrows.push(...coachArrows.filter(item => /^[a-h][1-8]$/.test(item.from) && /^[a-h][1-8]$/.test(item.to) && item.from !== item.to).map(item => ({ ...item, kind: 'coach' as const })))
   if (threatArrow && /^[a-h][1-8]$/.test(threatArrow.from) && /^[a-h][1-8]$/.test(threatArrow.to) && threatArrow.from !== threatArrow.to) visibleArrows.push({ ...threatArrow, kind: 'threat' })
 
@@ -205,7 +206,7 @@ export default function Board({ fen, variant, orientation, lastMove, bestMove, s
           <div className="board-promotion" role="dialog" aria-modal="true" aria-label="Choose a promotion piece">
             <span>Promote pawn</span>
             <div className="board-promotion-options">
-              {(['q', 'r', 'b', 'n'] as const).map((type, index) => <button type="button" key={type} autoFocus={index === 0} aria-label={`Promote to ${pieceNames[type]}`} onClick={() => { onMove?.(`${promotion.from}${promotion.to}${type}`); setSelected(null); setPromotion(null) }}><Piece type={type} color={chess.turn()} set={appearance.pieceSet} /></button>)}
+              {(giveaway ? ['q', 'r', 'b', 'n', 'k'] as const : ['q', 'r', 'b', 'n'] as const).map((type, index) => <button type="button" key={type} autoFocus={index === 0} aria-label={`Promote to ${pieceNames[type]}`} onClick={() => { onMove?.(`${promotion.from}${promotion.to}${type}`); setSelected(null); setPromotion(null) }}><Piece type={type} color={chess.turn()} set={appearance.pieceSet} /></button>)}
             </div>
             <button type="button" className="board-promotion-cancel" onClick={() => setPromotion(null)}>Cancel</button>
           </div>

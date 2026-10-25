@@ -12,7 +12,7 @@ export function parseInfo(line: string, fen: string, variant?: ChessVariant): En
   const evaluation: Evaluation = score[1] === 'cp'
     ? { cp: value, mate: null }
     : { cp: rawValue === 0 ? -100000 * direction : (value > 0 ? 1 : -1) * (100000 - Math.min(Math.abs(value), 999)), mate: value }
-  const moves = pv[1].trim().split(/\s+/).filter(move => /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(move) || /^[PNBRQ]@[a-h][1-8]$/.test(move))
+  const moves = pv[1].trim().split(/\s+/).filter(move => /^[a-h][1-8][a-h][1-8][qrbnk]?$/.test(move) || /^[PNBRQ]@[a-h][1-8]$/.test(move))
   if (!moves.length) return null
   return {
     rank: Number(line.match(/\bmultipv (\d+)/)?.[1] ?? 1),

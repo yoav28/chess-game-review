@@ -32,7 +32,7 @@ type Dependencies = {
 
 export function positionOutcome(board: ChessPosition): string | null {
   const outcome = board.variantOutcome?.()
-  if (outcome) return outcome.winner ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins ${outcome.reason === 'third-check' ? 'by delivering the third check.' : outcome.reason === 'king-of-the-hill' ? 'by reaching the hill.' : outcome.reason === 'atomic-win' ? 'by exploding the opposing king.' : 'by eliminating the opposing army.'}` : 'Draw.'
+  if (outcome) return outcome.winner ? `${outcome.winner === 'w' ? 'White' : 'Black'} wins ${outcome.reason === 'third-check' ? 'by delivering the third check.' : outcome.reason === 'king-of-the-hill' ? 'by reaching the hill.' : outcome.reason === 'atomic-win' ? 'by exploding the opposing king.' : outcome.reason === 'giveaway-win' ? 'by reaching Giveaway’s no-move or no-piece win condition.' : 'by eliminating the opposing army.'}` : 'Draw.'
   if (board.isCheckmate()) return (board.turn() === 'w' ? 'Black' : 'White') + ' wins by checkmate.'
   if (board.isStalemate()) return 'Draw by stalemate.'
   if (board.isInsufficientMaterial()) return 'Draw by insufficient material.'
@@ -88,7 +88,7 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
         history: { initialFen: base!.history.initialFen, moves: history },
       })
       if (!owns()) return
-      if (!result.bestMove || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(result.bestMove)) throw new Error('The engine did not return a legal reply. Try again.')
+      if (!result.bestMove || !/^[a-h][1-8][a-h][1-8][qrbnk]?$/.test(result.bestMove)) throw new Error('The engine did not return a legal reply. Try again.')
       const uci = result.bestMove
       moveFromUci(currentBoard, uci)
     } catch (error) {
@@ -133,7 +133,7 @@ export function createPlayPosition(onChange: (state: PlayPositionState) => void,
     move: (uci: string): boolean => {
       if (!live || !state.active || !board || state.thinking || positionOutcome(board) || board.turn() !== state.playerColor) return false
       try {
-        if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) throw new Error('Choose a legal move and a promotion piece when needed.')
+        if (!/^[a-h][1-8][a-h][1-8][qrbnk]?$/.test(uci)) throw new Error('Choose a legal move and a promotion piece when needed.')
         moveFromUci(board, uci)
         userMoves.push(board.history().length)
         state = { ...state, error: '' }

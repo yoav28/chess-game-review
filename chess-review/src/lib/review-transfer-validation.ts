@@ -5,7 +5,7 @@ import { classificationLabels, type Classification, type GameReview, type MoveRe
 
 const labels = Object.keys(classificationLabels) as Classification[]
 const phases = ['opening', 'middlegame', 'endgame']
-const uci = /^(?:[a-h][1-8][a-h][1-8][qrbn]?|[PNBRQ]@[a-h][1-8])$/
+const uci = /^(?:[a-h][1-8][a-h][1-8][qrbnk]?|[PNBRQ]@[a-h][1-8])$/
 const square = /^[a-h][1-8]$/
 
 function requireValue(condition: unknown, field: string): asserts condition {

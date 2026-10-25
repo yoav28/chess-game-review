@@ -9,14 +9,14 @@ const safeComment = (value: string) => value.replace(/[{}]/g, character => chara
 export function reviewedVariantPgn(review: GameReview, result: string, method: string, evaluationTag: (evaluation: Evaluation) => string, clockTag: (seconds: number) => string): string {
   const variant = review.variant ?? pgnVariant(review.pgn)
   const source = parsePgn(review.pgn, variant)
-  const trees = parseTree(review.pgn)
+  const trees = parseTree(variant === 'giveaway' ? review.pgn.replace(/(\[Variant\s+")Giveaway("\])/i, '$1Antichess$2') : review.pgn)
   if (trees.length !== 1 || source.moves.length !== review.moves.length) throw new Error('The source variant PGN does not match this review.')
   const tree = trees[0]
   for (const [key, value] of Object.entries(review.headers)) {
     if (!/^\w+$/.test(key)) throw new Error('The review contains an invalid PGN header.')
     tree.headers.set(key, value.replace(/[\r\n]/g, ' '))
   }
-  tree.headers.set('Variant', variant === 'threecheck' ? '3-check' : variant === 'kingofthehill' ? 'King of the Hill' : variant === 'atomic' ? 'Atomic' : variant === 'horde' ? 'Horde' : variant === 'crazyhouse' ? 'Crazyhouse' : 'Chess960')
+  tree.headers.set('Variant', variant === 'threecheck' ? '3-check' : variant === 'kingofthehill' ? 'King of the Hill' : variant === 'atomic' ? 'Atomic' : variant === 'horde' ? 'Horde' : variant === 'crazyhouse' ? 'Crazyhouse' : variant === 'giveaway' ? 'Giveaway' : 'Chess960')
   tree.headers.set('SetUp', '1')
   tree.headers.set('FEN', review.initialFen)
   tree.headers.set('White', review.white.replace(/[\r\n]/g, ' '))

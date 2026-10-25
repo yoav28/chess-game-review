@@ -11,7 +11,7 @@ export function continuationArrows(fen: string, moves: readonly string[], varian
   try {
     const board = createPosition(fen, variant)
     for (const uci of moves.slice(0, limit)) {
-      if (!/^(?:[a-h][1-8][a-h][1-8][qrbn]?|[PNBRQ]@[a-h][1-8])$/.test(uci)) break
+      if (!/^(?:[a-h][1-8][a-h][1-8][qrbnk]?|[PNBRQ]@[a-h][1-8])$/.test(uci)) break
       const move = moveFromUci(board, uci)
       const arrow = physicalMove(move)
       if (arrow.from !== arrow.to) arrows.push(arrow)

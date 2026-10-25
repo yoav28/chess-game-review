@@ -288,3 +288,17 @@ test('Crazyhouse reports use their own uncalibrated history pool', async () => {
   assert.equal(summary.games, 1)
   assert.match(summary.modelLabel, /Crazyhouse quality heuristic/)
 })
+
+test('Giveaway reports use their own uncalibrated history pool', async () => {
+  const { reviewFixture } = await import('../test/review-fixture')
+  const { variantsForPlayer } = await import('./history')
+  const giveaway = reviewFixture('[White "Ada"]\n[Black "Grace"]\n[Variant "Giveaway"]\n\n1. e3 *')
+  giveaway.variant = 'giveaway'
+  giveaway.moves.forEach(move => { move.accuracy = 25 })
+  const entries = [{ id: 'giveaway', review: giveaway }]
+  assert.deepEqual(variantsForPlayer(entries, 'Ada'), ['giveaway'])
+  const summary = playerHistory(entries, 'Ada', 'giveaway')
+  assert.equal(summary.overall.accuracy, 25)
+  assert.equal(summary.games, 1)
+  assert.match(summary.modelLabel, /Giveaway quality heuristic/)
+})

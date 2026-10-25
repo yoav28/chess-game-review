@@ -48,7 +48,7 @@ export function Dialogs({
       ) {
         const variant = resolveVariant(source);
         const board = createPosition(source, variant);
-        source = `[Event "Position analysis"]\n[White "White"]\n[Black "Black"]\n[Result "*"]\n[SetUp "1"]\n[FEN "${board.fen()}"]${variant === 'threecheck' ? '\n[Variant "3-check"]' : variant === 'chess960' ? '\n[Variant "Chess960"]' : variant === 'kingofthehill' ? '\n[Variant "King of the Hill"]' : variant === 'atomic' ? '\n[Variant "Atomic"]' : variant === 'horde' ? '\n[Variant "Horde"]' : variant === 'crazyhouse' ? '\n[Variant "Crazyhouse"]' : ''}\n\n*`;
+        source = `[Event "Position analysis"]\n[White "White"]\n[Black "Black"]\n[Result "*"]\n[SetUp "1"]\n[FEN "${board.fen()}"]${variant === 'threecheck' ? '\n[Variant "3-check"]' : variant === 'chess960' ? '\n[Variant "Chess960"]' : variant === 'kingofthehill' ? '\n[Variant "King of the Hill"]' : variant === 'atomic' ? '\n[Variant "Atomic"]' : variant === 'horde' ? '\n[Variant "Horde"]' : variant === 'crazyhouse' ? '\n[Variant "Crazyhouse"]' : variant === 'giveaway' ? '\n[Variant "Giveaway"]' : ''}\n\n*`;
       }
       onImport(gameFromPgn(source));
       setPgn("");

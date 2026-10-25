@@ -21,7 +21,7 @@ export type PracticeState = {
 type Dependencies = { analyze?: typeof analyzePosition; review?: GameReview | null; depth?: number; timeMs?: number }
 type AttemptResult = { accepted: boolean; fen: string; san: string; feedback: string }
 const errors = new Set(['inaccuracy', 'mistake', 'blunder', 'missed'])
-const uciPattern = /^(?:[a-h][1-8][a-h][1-8][qrbn]?|[PNBRQ]@[a-h][1-8])$/
+const uciPattern = /^(?:[a-h][1-8][a-h][1-8][qrbnk]?|[PNBRQ]@[a-h][1-8])$/
 
 export const initialPracticeState: PracticeState = {
   practiceIndex: 0, practiceColor: 'all', practiceStatus: 'thinking', hint: false,

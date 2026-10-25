@@ -6,7 +6,7 @@ import { charToRole, kingCastlesTo, makeSquare, makeUci, parseSquare, parseUci, 
 import { isDrop, isNormal, type Move, type NormalMove } from 'chessops/types'
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import type { GameMove } from './game'
-import { Atomic, Crazyhouse, Horde, KingOfTheHill, ThreeCheck } from 'chessops/variant'
+import { Antichess, Atomic, Crazyhouse, Horde, KingOfTheHill, ThreeCheck } from 'chessops/variant'
 
 type MoveInput = string | { from: string; to: string; promotion?: string }
 type Piece = { square: Square; type: PieceSymbol; color: Color }
@@ -18,7 +18,7 @@ export class ChessopsBoard {
   private played: GameMove[] = []
   private positions: string[]
 
-  constructor(fen: string, private readonly rules: 'chess960' | 'threecheck' | 'kingofthehill' | 'atomic' | 'horde' | 'crazyhouse') {
+  constructor(fen: string, private readonly rules: 'chess960' | 'threecheck' | 'kingofthehill' | 'atomic' | 'horde' | 'crazyhouse' | 'giveaway') {
     try {
       const setup = parseFen(fen).unwrap()
       if (setup.pockets && rules !== 'crazyhouse') throw new Error('Pocket pieces require Crazyhouse rules.')
@@ -31,10 +31,10 @@ export class ChessopsBoard {
           if (![0, 7, 56, 63].includes(rook) || king?.role !== 'king' || king.color !== (rook < 8 ? 'white' : 'black')) throw new Error('Combined Chess960 and three-check castling is unsupported.')
         }
       }
-      this.position = (rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : rules === 'atomic' ? Atomic.fromSetup(setup) : rules === 'horde' ? Horde.fromSetup(setup) : rules === 'crazyhouse' ? Crazyhouse.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
+      this.position = (rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : rules === 'atomic' ? Atomic.fromSetup(setup) : rules === 'horde' ? Horde.fromSetup(setup) : rules === 'crazyhouse' ? Crazyhouse.fromSetup(setup) : rules === 'giveaway' ? Antichess.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
       if (!setup.castlingRights.equals(this.position.castles.castlingRights)) throw new Error('Invalid castling rights.')
     }
-    catch { throw new Error(rules === 'chess960' ? 'Invalid Chess960 FEN. A legal position with both kings is required.' : rules === 'threecheck' ? 'Invalid three-check FEN. Legal kings, check counters, and standard castling are required.' : rules === 'kingofthehill' ? 'Invalid King of the Hill FEN. A legal position with both kings is required.' : rules === 'atomic' ? 'Invalid Atomic FEN. A legal position with both kings is required.' : rules === 'horde' ? 'Invalid Horde FEN. One legal king and the Horde setup are required.' : 'Invalid Crazyhouse FEN. A legal position and pocket pieces are required.') }
+    catch { throw new Error(rules === 'chess960' ? 'Invalid Chess960 FEN. A legal position with both kings is required.' : rules === 'threecheck' ? 'Invalid three-check FEN. Legal kings, check counters, and standard castling are required.' : rules === 'kingofthehill' ? 'Invalid King of the Hill FEN. A legal position with both kings is required.' : rules === 'atomic' ? 'Invalid Atomic FEN. A legal position with both kings is required.' : rules === 'horde' ? 'Invalid Horde FEN. One legal king and the Horde setup are required.' : rules === 'crazyhouse' ? 'Invalid Crazyhouse FEN. A legal position and pocket pieces are required.' : 'Invalid Giveaway FEN.') }
     this.positions = [this.fen()]
   }
 
@@ -75,8 +75,8 @@ export class ChessopsBoard {
   }
   isDraw(): boolean { return !this.variantOutcome() && (this.isStalemate() || this.isInsufficientMaterial() || this.isDrawByFiftyMoves() || this.isThreefoldRepetition()) }
   isGameOver(): boolean { return !!this.variantOutcome() || this.isCheckmate() || this.isDraw() }
-  variantOutcome(): { winner?: Color; reason: 'third-check' | 'king-of-the-hill' | 'atomic-win' | 'horde-win' } | null {
-    const outcome = this.rules === 'threecheck' || this.rules === 'kingofthehill' || this.rules === 'atomic' || this.rules === 'horde' ? this.position.variantOutcome() : undefined
+  variantOutcome(): { winner?: Color; reason: 'third-check' | 'king-of-the-hill' | 'atomic-win' | 'horde-win' | 'giveaway-win' } | null {
+    const outcome = this.rules === 'threecheck' || this.rules === 'kingofthehill' || this.rules === 'atomic' || this.rules === 'horde' || this.rules === 'giveaway' ? this.position.variantOutcome() : undefined
     if (!outcome) return null
     return this.rules === 'threecheck'
       ? { winner: outcome.winner ? color(outcome.winner) : undefined, reason: 'third-check' }
@@ -84,7 +84,9 @@ export class ChessopsBoard {
         ? { winner: outcome.winner ? color(outcome.winner) : undefined, reason: 'king-of-the-hill' }
         : this.rules === 'atomic'
           ? { winner: outcome.winner ? color(outcome.winner) : undefined, reason: 'atomic-win' }
-          : { winner: outcome.winner ? color(outcome.winner) : undefined, reason: 'horde-win' }
+          : this.rules === 'horde'
+            ? { winner: outcome.winner ? color(outcome.winner) : undefined, reason: 'horde-win' }
+            : { winner: outcome.winner ? color(outcome.winner) : undefined, reason: 'giveaway-win' }
   }
   checksRemaining(): { w: number; b: number } | null {
     const checks = this.position.remainingChecks
@@ -112,7 +114,7 @@ export class ChessopsBoard {
     for (const [from, destinations] of this.position.allDests()) {
       if (squareName && makeSquare(from) !== squareName) continue
       for (const to of destinations) {
-        const promotions = this.position.board.pawn.has(from) && (to < 8 || to >= 56) ? ['q', 'r', 'b', 'n'] : [undefined]
+        const promotions = this.position.board.pawn.has(from) && (to < 8 || to >= 56) ? this.rules === 'giveaway' ? ['q', 'r', 'b', 'n', 'k'] : ['q', 'r', 'b', 'n'] : [undefined]
         for (const promotion of promotions) {
           const move: NormalMove = { from, to, promotion: promotion ? charToRole(promotion) : undefined }
           if (this.position.isLegal(move)) result.push(move)
@@ -149,7 +151,7 @@ export class ChessopsBoard {
     const san = drop ? `${roleToChar(role).toUpperCase()}@${makeSquare(move.to)}` : makeSan(this.position, move)
     const uci = drop || this.rules === 'chess960' ? makeUci(move) : `${makeSquare(normal!.from)}${makeSquare(destination)}${normal!.promotion ? roleToChar(normal!.promotion) : ''}`
     return {
-      ply: this.played.length + 1, san, uci,
+      ply: this.played.length + 1, san: this.rules === 'giveaway' ? san.replace(/[+#]+$/, '') : san, uci,
       color: color(this.position.turn), piece: roleToChar(role), from: square(from), to: square(destination), drop: drop ? roleToChar(role) : undefined,
       captured: captured === 'p' ? 'p' : captured ? roleToChar(captured) : undefined,
       promotion: normal?.promotion ? roleToChar(normal.promotion) : undefined, flags, before: this.fen(), after: next.fen(),
@@ -161,14 +163,17 @@ export class ChessopsBoard {
   moves(options?: { square?: Square; verbose?: false }): string[]
   moves(options: { square?: Square; verbose?: boolean } = {}): GameMove[] | string[] {
     const legal = this.legal(options.square)
-    return options.verbose ? legal.map(move => this.describe(move)) : legal.map(move => makeSan(this.position, move))
+    return options.verbose ? legal.map(move => this.describe(move)) : legal.map(move => {
+      const san = makeSan(this.position, move)
+      return this.rules === 'giveaway' ? san.replace(/[+#]+$/, '') : san
+    })
   }
 
   move(input: MoveInput): GameMove {
     const move = typeof input === 'string'
-      ? (/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(input) ? parseUci(input) : /^[PNBRQ]@[a-h][1-8]$/i.test(input) ? parseUci(`${input[0].toUpperCase()}@${input.slice(2).toLowerCase()}`) : parseSan(this.position, input.replace(/0/g, 'O').replace(/[!?]+$/, '')))
+      ? (/^[a-h][1-8][a-h][1-8][qrbnk]?$/.test(input) ? parseUci(input) : /^[PNBRQ]@[a-h][1-8]$/i.test(input) ? parseUci(`${input[0].toUpperCase()}@${input.slice(2).toLowerCase()}`) : parseSan(this.position, input.replace(/0/g, 'O').replace(/[!?]+$/, '')))
       : parseUci(`${input.from}${input.to}${input.promotion ?? ''}`)
-    const illegal = this.rules === 'chess960' ? 'Illegal Chess960 move.' : this.rules === 'threecheck' ? 'Illegal three-check move.' : this.rules === 'kingofthehill' ? 'Illegal King of the Hill move.' : this.rules === 'atomic' ? 'Illegal Atomic move.' : this.rules === 'horde' ? 'Illegal Horde move.' : 'Illegal Crazyhouse move.'
+    const illegal = this.rules === 'chess960' ? 'Illegal Chess960 move.' : this.rules === 'threecheck' ? 'Illegal three-check move.' : this.rules === 'kingofthehill' ? 'Illegal King of the Hill move.' : this.rules === 'atomic' ? 'Illegal Atomic move.' : this.rules === 'horde' ? 'Illegal Horde move.' : this.rules === 'crazyhouse' ? 'Illegal Crazyhouse move.' : 'Illegal Giveaway move.'
     if (!move || !this.position.isLegal(move)) throw new Error(illegal)
     const record = this.describe(move)
     this.position.play(move)
@@ -184,7 +189,7 @@ export class ChessopsBoard {
     const move = this.played.pop()
     if (!move) return null
     const setup = parseFen(move.before).unwrap()
-    this.position = (this.rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : this.rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : this.rules === 'atomic' ? Atomic.fromSetup(setup) : this.rules === 'horde' ? Horde.fromSetup(setup) : this.rules === 'crazyhouse' ? Crazyhouse.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
+    this.position = (this.rules === 'threecheck' ? ThreeCheck.fromSetup(setup) : this.rules === 'kingofthehill' ? KingOfTheHill.fromSetup(setup) : this.rules === 'atomic' ? Atomic.fromSetup(setup) : this.rules === 'horde' ? Horde.fromSetup(setup) : this.rules === 'crazyhouse' ? Crazyhouse.fromSetup(setup) : this.rules === 'giveaway' ? Antichess.fromSetup(setup) : Chess.fromSetup(setup)).unwrap()
     this.positions.pop()
     return { ...move }
   }

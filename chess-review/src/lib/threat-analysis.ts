@@ -55,7 +55,7 @@ export function verifiedThreat(position: Extract<ThreatPosition, { eligible: tru
   if (analysis.pv.length && analysis.bestMove !== analysis.pv[0]) throw new Error('The engine returned an inconsistent threat continuation. Try again.')
   for (const uci of analysis.pv.slice(0, 8)) {
     try {
-      if (typeof uci !== 'string' || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) throw new Error('Invalid move')
+      if (typeof uci !== 'string' || !/^[a-h][1-8][a-h][1-8][qrbnk]?$/.test(uci)) throw new Error('Invalid move')
       const move = board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
       if (!pv.length) {
         const physical = physicalMove(move)

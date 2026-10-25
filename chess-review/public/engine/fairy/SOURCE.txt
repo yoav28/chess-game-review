@@ -1,5 +1,5 @@
-Three-check, King of the Hill, Atomic, Horde, and Crazyhouse analysis use the unmodified fairy-stockfish-nnue.wasm 1.1.12 distribution.
-The application selects UCI_Variant=3check, kingofthehill, atomic, horde, or crazyhouse, follows the selected thread count, sets Hash=32, and disables NNUE. Evaluation is classical; no separate NNUE weights are supplied or fetched.
+Three-check, King of the Hill, Atomic, Horde, Crazyhouse, and Giveaway analysis use the unmodified fairy-stockfish-nnue.wasm 1.1.12 distribution.
+The application selects UCI_Variant=3check, kingofthehill, atomic, horde, crazyhouse, or antichess (Giveaway), follows the selected thread count, sets Hash=32, and disables NNUE. Evaluation is classical; no separate NNUE weights are supplied or fetched.
 License: GPL-3.0. COPYING.txt and AUTHORS are included with these engine files.
 Primary project: https://github.com/fairy-stockfish/fairy-stockfish.wasm
 Matching release tag: https://github.com/fairy-stockfish/fairy-stockfish.wasm/tree/1.1.12

@@ -21,7 +21,7 @@ type Props = {
   onSample: () => void;
 };
 
-const rulesLabel = (rules: string) => rules === 'chess' ? 'Standard' : rules === 'chess960' ? 'Chess960' : rules === 'oddschess' ? 'Odds chess' : rules === 'threecheck' ? 'Three-check' : rules === 'kingofthehill' ? 'King of the Hill' : rules === 'atomic' ? 'Atomic' : rules === 'horde' ? 'Horde' : rules === 'crazyhouse' ? 'Crazyhouse' : rules;
+const rulesLabel = (rules: string) => rules === 'chess' ? 'Standard' : rules === 'chess960' ? 'Chess960' : rules === 'oddschess' ? 'Odds chess' : rules === 'threecheck' ? 'Three-check' : rules === 'kingofthehill' ? 'King of the Hill' : rules === 'atomic' ? 'Atomic' : rules === 'horde' ? 'Horde' : rules === 'crazyhouse' ? 'Crazyhouse' : rules === 'giveaway' ? 'Giveaway' : rules;
 
 export function GameLibrary({ library, selectedId, reviewedGameId, onSelect, onClose, onSample }: Props) {
   const [input, setInput] = useState(library.username);
