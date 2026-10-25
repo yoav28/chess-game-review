@@ -41,6 +41,7 @@ function App() {
   const [reviewMode, setReviewMode] = useState<'overview' | 'moves'>('overview');
   const reviewReportActive = tab === 'review' && Boolean(review);
   const guidedReviewActive = reviewReportActive && reviewMode === 'moves';
+  const boardNavigationActive = guidedReviewActive || (tab === 'analysis' && !play.active);
   const favoriteKey = `review-favorite:${game.id}`;
   const [reviewFavorite, setReviewFavorite] = useState(() => readReviewFavorite(favoriteKey));
 
@@ -117,7 +118,7 @@ function App() {
           showTimeSpent={settings.showTimeSpent}
           showMoves={tab !== "review"}
           showTimeline={tab !== "review"}
-          showBoardToolbar={!(tab === 'review' && reviewMode === 'moves')}
+          showBoardToolbar={!boardNavigationActive}
           disabled={
             explanation.active || (tab === "practice" && (practiceBusy || ["solved", "revealed"].includes(practiceStatus))) ||
             (play.active && (play.thinking || Boolean(play.outcome) || play.turn !== play.playerColor))
@@ -197,6 +198,13 @@ function App() {
               <PlayPositionPanel play={play} onExit={stopPlay} />
             ) : tab === "analysis" ? (
               <AnalysisPanel
+                game={game}
+                parsed={parsed}
+                review={review}
+                ply={safePly}
+                opening={opening}
+                showTimeSpent={settings.showTimeSpent}
+                onSelect={navigate}
                 analysis={positionAnalysis}
                 busy={engineBusy}
                 error={engineError}
@@ -263,7 +271,7 @@ function App() {
               Start Review <ChevronRight size={22} />
             </button>
           </div>}
-          {guidedReviewActive ? (
+          {boardNavigationActive ? (
             <div className="review-navigation">
               <div className="review-navigation-moves">
                 <button aria-label="First move" disabled={safePly === 0} onClick={() => navigate(0)}><ChevronFirst size={22} /></button>

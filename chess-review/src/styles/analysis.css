@@ -242,3 +242,16 @@
   z-index: 25;
   background: #0008;
 }
+.analysis-content .review-opening,
+.analysis-content .review-game-heading,
+.analysis-content .analysis-game-moves {
+  margin-right: -24px;
+  margin-left: -24px;
+}
+.analysis-content .analysis-game-moves {
+  margin-top: 0;
+  border: 0;
+}
+.analysis-content .analysis-game-moves > summary {
+  display: none;
+}

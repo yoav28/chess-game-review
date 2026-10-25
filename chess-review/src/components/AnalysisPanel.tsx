@@ -1,4 +1,4 @@
-import { ChevronRight, LoaderCircle } from "lucide-react";
+import { BookOpen, ChevronRight, LoaderCircle } from "lucide-react";
 import { OpeningExplorer } from "./OpeningExplorer";
 import { TablebasePanel } from "./TablebasePanel";
 import { MasterExplorer } from "./MasterExplorer";
@@ -11,7 +11,10 @@ import type { ChessVariant } from "../lib/position";
 import type { PositionAnalysis } from "../engine/types";
 import { evaluationLabel } from "./EvaluationGraph";
 import { AnalysisSearchControls } from './AnalysisSearchControls';
+import { MoveList } from './MoveList';
 import type { Settings } from '../lib/settings';
+import type { ParsedGame } from '../lib/game';
+import type { GameReview } from '../lib/review';
 
 type Props = {
   settings: Settings;
@@ -22,6 +25,13 @@ type Props = {
   onRun: () => void;
   variant: ChessVariant;
   games: GameRecord[];
+  game: GameRecord;
+  parsed: ParsedGame;
+  review: GameReview | null;
+  ply: number;
+  opening: string;
+  showTimeSpent: boolean;
+  onSelect: (ply: number) => void;
   onExploreMove: (uci: string) => void;
   onPlay: () => void;
   analysis: PositionAnalysis | null;
@@ -39,6 +49,13 @@ type Props = {
 export function AnalysisPanel({
   variant,
   games,
+  game,
+  parsed,
+  review,
+  ply,
+  opening,
+  showTimeSpent,
+  onSelect,
   onExploreMove,
   onPlay,
   analysis,
@@ -120,6 +137,12 @@ export function AnalysisPanel({
           Turn on the engine to explore candidate lines.
         </p>
       )}
+      <div className="review-opening"><span>{opening || 'Starting Position'}</span><BookOpen size={18} /></div>
+      <div className="review-game-heading"><strong>{game.white.username}<span>–</span>{game.black.username}</strong><span>{review?.result ?? parsed.result}</span></div>
+      <details className="review-move-section analysis-game-moves" open>
+        <summary><span>Game moves</span><span>{parsed.moves.length} half-moves</span></summary>
+        <MoveList parsed={parsed} timeControl={game.timeControl} timeClass={game.timeClass} showTimeSpent={showTimeSpent} moves={parsed.moves} review={review} ply={ply} onSelect={onSelect} />
+      </details>
       <ThreatPanel threat={threat} />
       <div className="analysis-tip">
         <button className="secondary full-width" disabled={!!outcome} onClick={onPlay}>Play this position against {variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' || variant === 'crazyhouse' || variant === 'giveaway' || variant === 'racingkings' ? 'Fairy-Stockfish' : 'Stockfish'}</button>
