@@ -26,7 +26,17 @@ The user subsequently signed in voluntarily. The same Opera Game PGN was reviewe
 - The report displayed White accuracy 96.1 and Black accuracy 63.3. Its move counts included three White Brilliant moves, one White Great move, and four Black Mistakes. These are observations for this game and engine run, not expected outputs for the independent application.
 - The move-quality counts could be expanded and collapsed.
 - Start Review opened the move-by-move presentation; Highlights returned to the overview.
-- On the 8.a3 blunder view, the Skills button opened Fundamentals, Openings, Tactics, Strategy, and Endgames tabs. Fundamentals listed Captures, Checks, Castles, Checkmates, Free Pieces, Defends Pieces, and Retreats as mastery items; the other tabs listed detailed opening, tactical, strategic, and endgame themes. The overview’s View All Stats opened a “Get Advanced Stats” membership prompt; no upgrade was attempted. Open File now has five corresponding tabs and reports transparent counts for locally detected themes; it does not copy Chess.com mastery points.
+- On the 8.a3 blunder view, the Skills button opened five tabs with the following visible inventories. Open File now exposes these same visible theme sets, with independent move-based heuristics rather than Chess.com mastery points.
+
+| Tab | Visible themes |
+| --- | --- |
+| Fundamentals | Captures; Checks; Castles; Checkmates; Free Pieces; Defends Pieces; Retreats |
+| Openings | Develops Pieces; Pawns in Center; Strikes at Center; Connects Rooks; Completes Development; 1 Book Move; 2 Book Moves; 3 Book Moves; 4 Book Moves; Fianchettos |
+| Tactics | Recaptures; Winning Captures; Blocks Attacks; Forks; Pins; Defends Checkmates; Absolute Pins; Discovered Attacks; Knight Forks; Skewers; Attacks Pinned Pieces; Traps Pieces; Removes Defenders; Royal Forks; Discovered Checks; Counter Threats; Defends Tactics; Exploits Pins; Double Checks; Brilliant Sacrifices; Queen Sacrifices |
+| Strategy | Equal Trades; Powerful Bishops; Rooks to Open Files; Kicks; Outposts; Trading to Simplify; Doubles Rooks; Creates Batteries; Prevents Castling; Wins Tempo; Avoids Trades; Develops with Tempo; Damages Pawn Structures; En Passant; Improves Pawn Structure; Pawn Storms |
+| Endgames | Promotions; Ladder Mates; Backrank Mates; Pushes Passed Pawns; Queen Checkmates; Rook Checkmates; Makes Passed Pawns; Activates King; Rooks on Seventh Rank; Rook Supports Passed Pawn; Opposition; Connects Rooks on Seventh; Rook Blocks Passed Pawn; Makes Protected Passed Pawn; King-Pawn Endgames; Queen Endgames; Rook Endgames; Knight-Bishop Endgames |
+
+The overview’s View All Stats opened a “Get Advanced Stats” membership prompt; no upgrade was attempted.
 - Explain played an animated continuation, and Got it returned to the review. An explanation of Black's `...e5` described occupying the center and freeing development routes.
 - A coach audio toggle was present. Actual speech output was not established by observing that control.
 - The final report for this unrated imported PGN did not visibly display Game Rating. Static REA extraction found the review client reading gated `gameRatingV2`, falling back to `effectiveElo`, handling a zero v2 value as insufficient moves, and marking legacy values. The exact [captured review script](https://www.chess.com/r2/client-packages/analysis/2026.10.3-hotfix.20ef972/tab-review.88a71be6.BWieoMcwwK.chunk.js) has SHA-256 `c414443c71229a54c231c38f68cacc0e547a56a28f926c1ca0f197e0f5acfd33`. This establishes UI field branches only: the formula and payload producer remain unresolved. A rated-report attempt on 24 October hit the account’s Daily limit; a later eligible report is recorded below.

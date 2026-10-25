@@ -97,6 +97,55 @@ function attacksPinnedPiece(move: MoveReview): boolean {
   return false
 }
 
+function pinnedToKing(board: ReturnType<typeof createPosition>, square: Square, pinningColor: Color): boolean {
+  const enemy: Color = pinningColor === 'w' ? 'b' : 'w'
+  const king = board.board().flat().find(piece => piece?.color === enemy && piece.type === 'k')
+  if (!king) return false
+  return board.attackers(square, pinningColor).some(attacker => {
+    const piece = board.get(attacker)
+    if (!piece || !['b', 'r', 'q'].includes(piece.type)) return false
+    const path = pathBetween(attacker, king.square)
+    return path.includes(square) && path.filter(item => board.get(item)).every(item => item === square)
+  })
+}
+
+function createsAbsolutePin(move: MoveReview): boolean {
+  const before = createPosition(move.beforeFen, move.variant)
+  const after = createPosition(move.afterFen, move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  return after.board().flat().some(piece => piece?.color === enemy && piece.type !== 'k'
+    && pinnedToKing(after, piece.square, move.color)
+    && !pinnedToKing(before, piece.square, move.color))
+}
+
+function exploitsPin(move: MoveReview): boolean {
+  if (!move.captured) return false
+  return pinnedToKing(createPosition(move.beforeFen, move.variant), move.to as Square, move.color)
+}
+
+function counterThreat(move: MoveReview): boolean {
+  if (!winsTempo(move)) return false
+  const before = createPosition(move.beforeFen, move.variant)
+  const after = createPosition(move.afterFen, move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  return before.isAttacked(move.from as Square, enemy) && !after.isAttacked(move.to as Square, enemy)
+}
+
+function defendsTactics(move: MoveReview): boolean {
+  const before = createPosition(move.beforeFen, move.variant)
+  const after = createPosition(move.afterFen, move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  const escapedAttack = before.isAttacked(move.from as Square, enemy) && !after.isAttacked(move.to as Square, enemy)
+  if (escapedAttack) return true
+  if (!move.captured) return false
+  return before.board().flat().some(piece => piece?.color === move.color && piece.type !== 'k'
+    && before.attackers(piece.square, enemy).includes(move.to as Square))
+}
+
+function makesPassedPawn(move: MoveReview): boolean {
+  return isPassedPawnMove(move) && !isPassedPawnPosition(createPosition(move.beforeFen, move.variant), move.color, move.from as Square)
+}
+
 function trapsPiece(move: MoveReview): boolean {
   const board = createPosition(move.afterFen, move.variant)
   const enemy: Color = move.color === 'w' ? 'b' : 'w'
@@ -150,15 +199,17 @@ function doubleCheck(move: MoveReview): boolean {
   return Boolean(king && board.isCheck() && board.attackers(king.square, move.color).length > 1)
 }
 
-function isPassedPawnMove(move: MoveReview): boolean {
-  if (move.piece !== 'p') return false
-  const board = createPosition(move.afterFen, move.variant)
-  const pawnRank = Number(move.to[1])
-  const enemy = move.color === 'w' ? 'b' : 'w'
+function isPassedPawnPosition(board: ReturnType<typeof createPosition>, color: Color, square: Square): boolean {
+  const pawnRank = Number(square[1])
+  const enemy = color === 'w' ? 'b' : 'w'
   return !board.board().flat().some(piece => piece?.type === 'p' && piece.color === enemy
-    && Math.abs(piece.square.charCodeAt(0) - move.to.charCodeAt(0)) <= 1
-    && (move.color === 'w' ? Number(piece.square[1]) > pawnRank : Number(piece.square[1]) < pawnRank))
+    && Math.abs(piece.square.charCodeAt(0) - square.charCodeAt(0)) <= 1
+    && (color === 'w' ? Number(piece.square[1]) > pawnRank : Number(piece.square[1]) < pawnRank))
     && Number.isFinite(pawnRank)
+}
+
+function isPassedPawnMove(move: MoveReview): boolean {
+  return move.piece === 'p' && isPassedPawnPosition(createPosition(move.afterFen, move.variant), move.color, move.to as Square)
 }
 
 function outpost(move: MoveReview): boolean {
@@ -295,6 +346,25 @@ function backrankMate(move: MoveReview): boolean {
   return Boolean(king && (king.square[1] === '1' || king.square[1] === '8'))
 }
 
+function ladderMate(move: MoveReview): boolean {
+  if (!['r', 'q'].includes(move.piece) || !checkmateMove(move)) return false
+  const board = createPosition(move.afterFen, move.variant)
+  const enemy: Color = move.color === 'w' ? 'b' : 'w'
+  const king = board.board().flat().find(piece => piece?.color === enemy && piece.type === 'k')
+  if (!king || !['1', '8'].includes(king.square[1]) && !['a', 'h'].includes(king.square[0])) return false
+  const escapes = new Set<Square>()
+  const file = king.square.charCodeAt(0)
+  const rank = Number(king.square[1])
+  for (let fileStep = -1; fileStep <= 1; fileStep++) for (let rankStep = -1; rankStep <= 1; rankStep++) {
+    if (!fileStep && !rankStep) continue
+    const nextFile = file + fileStep
+    const nextRank = rank + rankStep
+    if (nextFile >= 97 && nextFile <= 104 && nextRank >= 1 && nextRank <= 8) escapes.add(`${String.fromCharCode(nextFile)}${nextRank}` as Square)
+  }
+  return board.board().flat().some(piece => piece?.color === move.color && piece.square !== move.to && ['r', 'q'].includes(piece.type)
+    && [...escapes].some(square => board.attackers(square, move.color).includes(piece.square)))
+}
+
 function rookSupportsPassedPawn(move: MoveReview): boolean {
   if (move.piece !== 'r') return false
   const board = createPosition(move.afterFen, move.variant)
@@ -344,13 +414,14 @@ function blocksAttack(move: MoveReview): boolean {
   return before.isCheck() && !after.isCheck()
 }
 
-function newlyAttackedValuablePiece(move: MoveReview): boolean {
+function strikesAtCenter(move: MoveReview): boolean {
   const before = createPosition(move.beforeFen, move.variant)
   const after = createPosition(move.afterFen, move.variant)
-  const enemy: Color = move.color === 'w' ? 'b' : 'w'
-  return after.board().flat().some(target => target?.color === enemy && target.type !== 'k'
-    && after.attackers(target.square, move.color).includes(move.to as Square)
-    && !before.attackers(target.square, move.color).includes(move.from as Square))
+  return [...centerFiles].some(file => ['4', '5'].some(rank => {
+    const square = `${file}${rank}` as Square
+    return square === move.to || after.attackers(square, move.color).includes(move.to as Square)
+      && !before.attackers(square, move.color).includes(move.from as Square)
+  }))
 }
 
 function discoversCheck(move: MoveReview): boolean {
@@ -384,12 +455,11 @@ const detections: Record<SkillTab, Detection[]> = {
     { key: 'free-pieces', label: 'Free pieces', description: 'Moves after which the moved piece has no direct defender against a legal capture.', matches: (_, __, ___, insights) => insights.some(text => /can be captured and has no direct defender/.test(text)) },
     { key: 'defends-pieces', label: 'Defends pieces', description: 'A moved piece defends a friendly piece that was under attack.', matches: move => defendsAttackedPiece(move) },
     { key: 'retreats', label: 'Retreats', description: 'Non-pawn moves back toward the mover’s home rank.', matches: move => move.piece !== 'p' && (move.color === 'w' ? Number(move.to[1]) < Number(move.from[1]) : Number(move.to[1]) > Number(move.from[1])) },
-    { key: 'blocks-attacks', label: 'Blocks attacks', description: 'The move legally answers check and removes the attack on the king.', matches: move => blocksAttack(move) },
   ],
   openings: [
     { key: 'develops-pieces', label: 'Develops pieces', description: 'A knight or bishop leaves its home rank in the opening.', matches: move => move.phase === 'opening' && ['n', 'b'].includes(move.piece) && (move.color === 'w' ? move.from[1] === '1' && move.to[1] !== '1' : move.from[1] === '8' && move.to[1] !== '8') },
     { key: 'pawns-in-center', label: 'Pawns in center', description: 'An opening pawn move reaches the central d- or e-file.', matches: move => move.phase === 'opening' && move.piece === 'p' && ['d', 'e'].includes(move.to[0]) },
-    { key: 'strikes-at-center', label: 'Strikes at center', description: 'The move adds control of a central square.', matches: (_, __, ___, insights) => insights.some(text => /control of .* in the center/.test(text)) },
+    { key: 'strikes-at-center', label: 'Strikes at center', description: 'The move newly occupies or attacks one of the four central squares.', matches: move => strikesAtCenter(move) },
     { key: 'connects-rooks', label: 'Connects rooks', description: 'The move leaves both rooks on an open shared rank or file.', matches: move => move.phase === 'opening' && connectedRooks(move) },
     { key: 'completes-development', label: 'Completes development', description: 'The move develops the last knight or bishop from the home rank.', matches: move => {
       if (move.phase !== 'opening' || !['n', 'b'].includes(move.piece)) return false
@@ -397,75 +467,78 @@ const detections: Record<SkillTab, Detection[]> = {
       const home = move.color === 'w' ? '1' : '8'
       return !board.board().flat().some(piece => piece?.color === move.color && ['n', 'b'].includes(piece.type) && piece.square[1] === home)
     } },
-    { key: 'book-moves', label: 'Book moves', description: 'The move matches a registered opening-book prefix.', matches: move => move.classification === 'book' },
     { key: 'one-book-move', label: '1 book move', description: 'The player’s first move matched the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 1) },
     { key: 'two-book-moves', label: '2 book moves', description: 'The player recorded at least two moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 2) },
     { key: 'three-book-moves', label: '3 book moves', description: 'The player recorded at least three moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 3) },
     { key: 'four-book-moves', label: '4 book moves', description: 'The player recorded at least four moves that match the local opening reference.', matches: (move, index, moves) => bookMilestone(move, index, moves, 4) },
     { key: 'fianchettos', label: 'Fianchettos', description: 'A bishop develops from the c- or f-file home square to a standard fianchetto square.', matches: move => move.piece === 'b' && [['c1', 'b2'], ['f1', 'g2'], ['c8', 'b7'], ['f8', 'g7']].some(([from, to]) => move.from === from && move.to === to) },
-    { key: 'develops-with-tempo', label: 'Develops with tempo', description: 'An opening minor-piece development creates a new attack on a valuable piece.', matches: move => developsWithTempo(move) },
   ],
   tactics: [
     { key: 'recaptures', label: 'Recaptures', description: 'A capture immediately returns to the square of the previous capture.', matches: (move, index, moves) => Boolean(move.captured && index > 0 && moves[index - 1].captured && moves[index - 1].to === move.to) },
     { key: 'winning-captures', label: 'Winning captures', description: 'A capture improves the mover-relative engine winning chance.', matches: move => Boolean(move.captured && winningChance(move.evaluation, move.color) > winningChance(move.beforeEvaluation, move.color)) },
+    { key: 'blocks-attacks', label: 'Blocks attacks', description: 'The move legally answers check and removes the attack on the king.', matches: move => blocksAttack(move) },
     { key: 'forks', label: 'Forks', description: 'The coach found pressure against at least two valuable targets.', matches: (_, __, ___, insights) => insights.some(text => /creating fork pressure/.test(text)) },
-    { key: 'knight-forks', label: 'Knight forks', description: 'A knight move creates fork pressure.', matches: (move, _, __, insights) => move.piece === 'n' && insights.some(text => /creating fork pressure/.test(text)) },
     { key: 'pins', label: 'Pins', description: 'The coach identified a new pin in the position.', matches: (_, __, ___, insights) => insights.some(text => / pins the /.test(text)) },
+    { key: 'defends-checkmates', label: 'Defends checkmates', description: 'The engine’s forced-mate loss is no longer present after the move.', matches: move => defeatsMatingThreat(move) },
+    { key: 'absolute-pins', label: 'Absolute pins', description: 'The move creates a new pin against the opposing king.', matches: move => createsAbsolutePin(move) },
     { key: 'discovered-attacks', label: 'Discovered attacks', description: 'A line piece gains an attack because another piece moved away from its line.', matches: move => discoveredAttack(move) },
+    { key: 'knight-forks', label: 'Knight forks', description: 'A knight move creates fork pressure.', matches: (move, _, __, insights) => move.piece === 'n' && insights.some(text => /creating fork pressure/.test(text)) },
+    { key: 'skewers', label: 'Skewers', description: 'A line piece attacks a higher-value enemy piece with a lower-value piece behind it.', matches: move => skewer(move) },
     { key: 'attacks-pinned-pieces', label: 'Attacks pinned pieces', description: 'The moved piece attacks an enemy piece pinned to its king.', matches: move => attacksPinnedPiece(move) },
     { key: 'traps-pieces', label: 'Traps pieces', description: 'An attacked enemy piece has no legal move in the resulting position.', matches: move => trapsPiece(move) },
     { key: 'removes-defenders', label: 'Removes defenders', description: 'A capture reduces the number of defenders around another valuable enemy piece.', matches: move => removesDefender(move) },
-    { key: 'kicks', label: 'Kicks', description: 'The moved piece attacks a target it can legally capture on the next turn.', matches: move => kicks(move) },
-    { key: 'skewers', label: 'Skewers', description: 'A line piece attacks a higher-value enemy piece with a lower-value piece behind it.', matches: move => skewer(move) },
-    { key: 'en-passant', label: 'En passant', description: 'A pawn captures diagonally onto an empty square.', matches: move => move.piece === 'p' && move.captured === 'p' && move.from[0] !== move.to[0] && !createPosition(move.beforeFen, move.variant).get(move.to as Square) },
-    { key: 'double-checks', label: 'Double checks', description: 'The move attacks the opposing king with at least two pieces.', matches: (move, _, __, ___) => doubleCheck(move) },
-    { key: 'discovered-checks', label: 'Discovered checks', description: 'A non-moving piece delivers check after the move opens its line.', matches: move => discoversCheck(move) },
-    { key: 'defends-checkmates', label: 'Defends checkmates', description: 'The engine’s forced-mate loss is no longer present after the move.', matches: move => defeatsMatingThreat(move) },
     { key: 'royal-forks', label: 'Royal forks', description: 'The coach identifies fork pressure against a king and another major piece.', matches: (move, _, __, insights) => royalFork(move, insights) },
+    { key: 'discovered-checks', label: 'Discovered Checks', description: 'A non-moving piece delivers check after the move opens its line.', matches: move => discoversCheck(move) },
+    { key: 'counter-threats', label: 'Counter Threats', description: 'The moved piece escapes an attack while creating a new threat against a more valuable piece.', matches: move => counterThreat(move) },
+    { key: 'defends-tactics', label: 'Defends Tactics', description: 'The move escapes an attacked square or captures a piece that was attacking a friendly piece.', matches: move => defendsTactics(move) },
+    { key: 'exploits-pins', label: 'Exploits Pins', description: 'The move captures an opposing piece that was pinned to its king.', matches: move => exploitsPin(move) },
+    { key: 'double-checks', label: 'Double Checks', description: 'The move attacks the opposing king with at least two pieces.', matches: move => doubleCheck(move) },
     { key: 'brilliant-sacrifices', label: 'Brilliant sacrifices', description: 'The independent review classified the move as Brilliant.', matches: move => move.classification === 'brilliant' },
     { key: 'queen-sacrifices', label: 'Queen sacrifices', description: 'The queen is captured on the opponent’s next move.', matches: (move, index, moves) => move.piece === 'q' && moves[index + 1]?.captured === 'q' },
-    { key: 'backrank-mates', label: 'Back-rank mates', description: 'A checkmate leaves the opposing king on its home rank.', matches: move => backrankMate(move) },
   ],
   strategy: [
-    { key: 'rooks-to-open-files', label: 'Rooks to open files', description: 'The coach identified a rook on an open or semi-open file.', matches: (_, __, ___, insights) => insights.some(text => /rook occupies the .*file/.test(text)) },
-    { key: 'outposts', label: 'Outposts', description: 'A knight or bishop reaches an advanced square protected by a pawn and not challengeable by an enemy pawn.', matches: move => outpost(move) },
-    { key: 'doubles-rooks', label: 'Doubles rooks', description: 'The move connects the mover’s rooks on a clear rank or file.', matches: move => connectedRooks(move) },
-    { key: 'equal-trades', label: 'Equal trades', description: 'A capture is immediately recaptured with equal-value pieces.', matches: (move, index, moves) => equalTrade(move, index, moves) },
-    { key: 'wins-tempo', label: 'Wins tempo', description: 'The moved piece creates a new attack on a more valuable enemy piece.', matches: move => winsTempo(move) },
-    { key: 'powerful-bishops', label: 'Powerful bishops', description: 'A bishop move leaves it attacking at least five squares.', matches: move => {
+    { key: 'equal-trades', label: 'Equal Trades', description: 'A capture is immediately recaptured with equal-value pieces.', matches: (move, index, moves) => equalTrade(move, index, moves) },
+    { key: 'powerful-bishops', label: 'Powerful Bishops', description: 'A bishop move leaves it attacking at least five squares.', matches: move => {
       if (move.piece !== 'b') return false
       const board = createPosition(move.afterFen, move.variant)
       let attacked = 0
       for (const file of 'abcdefgh') for (const rank of '12345678') if (board.attackers((file + rank) as Square, move.color).includes(move.to as Square)) attacked++
       return attacked >= 5
     } },
-    { key: 'damages-pawn-structure', label: 'Damages pawn structure', description: 'The move increases the opponent’s isolated or doubled pawns.', matches: move => damagesPawnStructure(move) },
-    { key: 'improves-pawn-structure', label: 'Improves pawn structure', description: 'The move reduces the mover’s isolated or doubled pawns.', matches: move => improvesPawnStructure(move) },
-    { key: 'prevents-castling', label: 'Prevents castling', description: 'The move removes at least one opponent castling right.', matches: move => preventsCastling(move) },
-    { key: 'avoids-trades', label: 'Avoids trades', description: 'The mover declines a legal capture while preserving a clear advantage.', matches: move => avoidsTrade(move) },
-    { key: 'trading-to-simplify', label: 'Trading to simplify', description: 'An equal-valued recapture sequence reduces material while the mover is ahead.', matches: (move, index, moves) => equalTrade(move, index, moves) && (move.beforeEvaluation.cp * (move.color === 'w' ? 1 : -1)) > 100 },
-    { key: 'pawn-storms', label: 'Pawn storms', description: 'A flank pawn advances into the opponent’s half of the board.', matches: move => move.piece === 'p' && wingFiles.has(move.to[0]) && (move.color === 'w' ? Number(move.to[1]) >= 5 : Number(move.to[1]) <= 4) },
-    { key: 'center-control', label: 'Center control', description: 'The coach identifies occupation or new control of a central square.', matches: (_, __, ___, insights) => insights.some(text => /in the center/.test(text)) },
-    { key: 'creates-batteries', label: 'Creates batteries', description: 'A moved line piece aligns with another friendly bishop, rook, or queen.', matches: move => createsBattery(move) },
+    { key: 'rooks-to-open-files', label: 'Rooks to Open Files', description: 'The coach identified a rook on an open or semi-open file.', matches: (_, __, ___, insights) => insights.some(text => /rook occupies the .*file/.test(text)) },
+    { key: 'kicks', label: 'Kicks', description: 'The moved piece attacks a target it can legally capture on the next turn.', matches: move => kicks(move) },
+    { key: 'outposts', label: 'Outposts', description: 'A knight or bishop reaches an advanced square protected by a pawn and not challengeable by an enemy pawn.', matches: move => outpost(move) },
+    { key: 'trading-to-simplify', label: 'Trading to Simplify', description: 'An equal-valued recapture sequence reduces material while the mover is ahead.', matches: (move, index, moves) => equalTrade(move, index, moves) && (move.beforeEvaluation.cp * (move.color === 'w' ? 1 : -1)) > 100 },
+    { key: 'doubles-rooks', label: 'Doubles Rooks', description: 'The move connects the mover’s rooks on a clear rank or file.', matches: move => connectedRooks(move) },
+    { key: 'creates-batteries', label: 'Creates Batteries', description: 'A moved line piece aligns with another friendly bishop, rook, or queen.', matches: move => createsBattery(move) },
+    { key: 'prevents-castling', label: 'Prevents Castling', description: 'The move removes at least one opponent castling right.', matches: move => preventsCastling(move) },
+    { key: 'wins-tempo', label: 'Wins Tempo', description: 'The moved piece creates a new attack on a more valuable enemy piece.', matches: move => winsTempo(move) },
+    { key: 'avoids-trades', label: 'Avoids Trades', description: 'The mover declines a legal capture while preserving a clear advantage.', matches: move => avoidsTrade(move) },
+    { key: 'develops-with-tempo', label: 'Develops with Tempo', description: 'An opening minor-piece development creates a new attack on a valuable piece.', matches: move => developsWithTempo(move) },
+    { key: 'damages-pawn-structure', label: 'Damages Pawn Structures', description: 'The move increases the opponent’s isolated or doubled pawns.', matches: move => damagesPawnStructure(move) },
+    { key: 'en-passant', label: 'En Passant', description: 'A pawn captures diagonally onto an empty square.', matches: move => move.piece === 'p' && move.captured === 'p' && move.from[0] !== move.to[0] && !createPosition(move.beforeFen, move.variant).get(move.to as Square) },
+    { key: 'improves-pawn-structure', label: 'Improves Pawn Structure', description: 'The move reduces the mover’s isolated or doubled pawns.', matches: move => improvesPawnStructure(move) },
+    { key: 'pawn-storms', label: 'Pawn Storms', description: 'A flank pawn advances into the opponent’s half of the board.', matches: move => move.piece === 'p' && wingFiles.has(move.to[0]) && (move.color === 'w' ? Number(move.to[1]) >= 5 : Number(move.to[1]) <= 4) },
   ],
   endgames: [
     { key: 'promotions', label: 'Promotions', description: 'A pawn promotes to a new piece.', matches: move => Boolean(move.promotion) },
-    { key: 'passed-pawns', label: 'Passed pawns', description: 'A pawn advances without an opposing pawn ahead on its file or an adjacent file.', matches: move => isPassedPawnMove(move) },
-    { key: 'protected-passed-pawns', label: 'Protected passed pawns', description: 'An advanced passed pawn is defended by another friendly piece.', matches: move => passedPawnProtected(move) },
-    { key: 'rook-supports-passed-pawn', label: 'Rook supports passed pawn', description: 'A rook stands behind a friendly passed pawn on the same file.', matches: move => rookSupportsPassedPawn(move) },
-    { key: 'rook-blocks-passed-pawn', label: 'Rook blocks passed pawn', description: 'A rook occupies the promotion path in front of an opposing pawn.', matches: move => blocksPassedPawn(move) },
-    { key: 'active-king', label: 'Active king', description: 'The king moves during the engine-classified endgame phase.', matches: move => move.phase === 'endgame' && move.piece === 'k' },
-    { key: 'seventh-rank-rook', label: 'Rook on seventh rank', description: 'The rook reaches the opponent’s second or seventh rank.', matches: move => move.piece === 'r' && (move.color === 'w' ? move.to[1] === '7' : move.to[1] === '2') },
+    { key: 'ladder-mates', label: 'Ladder Mates', description: 'A rook or queen checkmates a king on the edge while another major piece controls an escape square.', matches: move => ladderMate(move) },
+    { key: 'backrank-mates', label: 'Backrank Mates', description: 'A checkmate leaves the opposing king on its home rank.', matches: move => backrankMate(move) },
+    { key: 'passed-pawns', label: 'Pushes Passed Pawns', description: 'A pawn advances as a passed pawn without opposing pawns ahead on its file or adjacent files.', matches: move => isPassedPawnMove(move) },
+    { key: 'queen-checkmates', label: 'Queen Checkmates', description: 'A queen delivers checkmate.', matches: move => move.piece === 'q' && checkmateMove(move) },
+    { key: 'rook-checkmates', label: 'Rook Checkmates', description: 'A rook delivers checkmate.', matches: move => move.piece === 'r' && checkmateMove(move) },
+    { key: 'makes-passed-pawns', label: 'Makes Passed Pawns', description: 'A move changes a friendly pawn from blocked by an opposing pawn to passed.', matches: move => makesPassedPawn(move) },
+    { key: 'active-king', label: 'Activates King', description: 'The king moves during the engine-classified endgame phase.', matches: move => move.phase === 'endgame' && move.piece === 'k' },
+    { key: 'seventh-rank-rook', label: 'Rooks on Seventh Rank', description: 'The rook reaches the opponent’s second or seventh rank.', matches: move => move.piece === 'r' && (move.color === 'w' ? move.to[1] === '7' : move.to[1] === '2') },
+    { key: 'rook-supports-passed-pawn', label: 'Rook Supports Passed Pawn', description: 'A rook stands behind a friendly passed pawn on the same file.', matches: move => rookSupportsPassedPawn(move) },
     { key: 'opposition', label: 'Opposition', description: 'The kings face each other with one square between them.', matches: move => move.phase === 'endgame' && opposition(move) },
-    { key: 'king-pawn-endgames', label: 'King-pawn endgames', description: 'The resulting position contains only kings and pawns.', matches: move => move.phase === 'endgame' && materialTheme(move, 'king-pawn') },
-    { key: 'queen-endgames', label: 'Queen endgames', description: 'Queens and pawns are the only remaining non-king pieces.', matches: move => move.phase === 'endgame' && materialTheme(move, 'queen') },
-    { key: 'rook-endgames', label: 'Rook endgames', description: 'Rooks and pawns are the only remaining non-king pieces.', matches: move => move.phase === 'endgame' && materialTheme(move, 'rook') },
-    { key: 'knight-bishop-endgames', label: 'Knight-bishop endgames', description: 'Knights, bishops, and pawns are the only remaining non-king pieces.', matches: move => move.phase === 'endgame' && materialTheme(move, 'knight-bishop') },
-    { key: 'queen-checkmates', label: 'Queen checkmates', description: 'A queen delivers checkmate.', matches: move => move.piece === 'q' && checkmateMove(move) },
-    { key: 'rook-checkmates', label: 'Rook checkmates', description: 'A rook delivers checkmate.', matches: move => move.piece === 'r' && checkmateMove(move) },
-    { key: 'connects-rooks-seventh', label: 'Connects rooks on seventh', description: 'The move connects rooks while one stands on the opponent’s second or seventh rank.', matches: move => connectedRooks(move) && move.piece === 'r' && (move.color === 'w' ? move.to[1] === '7' : move.to[1] === '2') },
-    { key: 'ladder-mates', label: 'Ladder mates', description: 'A rook or queen delivers checkmate.', matches: move => ['r', 'q'].includes(move.piece) && checkmateMove(move) },
-    { key: 'checkmates', label: 'Checkmates', description: 'A recorded move ends in checkmate.', matches: move => checkmateMove(move) },
+    { key: 'connects-rooks-seventh', label: 'Connects Rooks on Seventh', description: 'The move connects rooks while one stands on the opponent’s second or seventh rank.', matches: move => connectedRooks(move) && move.piece === 'r' && (move.color === 'w' ? move.to[1] === '7' : move.to[1] === '2') },
+    { key: 'rook-blocks-passed-pawn', label: 'Rook Blocks Passed Pawn', description: 'A rook occupies the promotion path in front of an opposing pawn.', matches: move => blocksPassedPawn(move) },
+    { key: 'protected-passed-pawns', label: 'Makes Protected Passed Pawn', description: 'An advanced passed pawn is defended by another friendly piece.', matches: move => passedPawnProtected(move) },
+    { key: 'king-pawn-endgames', label: 'King-Pawn Endgames', description: 'The resulting position contains only kings and pawns.', matches: move => move.phase === 'endgame' && materialTheme(move, 'king-pawn') },
+    { key: 'queen-endgames', label: 'Queen Endgames', description: 'Queens and pawns are the only remaining non-king pieces.', matches: move => move.phase === 'endgame' && materialTheme(move, 'queen') },
+    { key: 'rook-endgames', label: 'Rook Endgames', description: 'Rooks and pawns are the only remaining non-king pieces.', matches: move => move.phase === 'endgame' && materialTheme(move, 'rook') },
+    { key: 'knight-bishop-endgames', label: 'Knight-Bishop Endgames', description: 'Knights, bishops, and pawns are the only remaining non-king pieces.', matches: move => move.phase === 'endgame' && materialTheme(move, 'knight-bishop') },
   ],
 }
 
