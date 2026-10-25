@@ -235,7 +235,7 @@ export function ReviewPanel({
             </section>
           )}
           <ReviewStats review={review} ply={move?.ply} onSelect={onSelect} />
-          {settings.showSkills && <SkillBreakdown review={review} />}
+          {settings.showSkills && <SkillBreakdown review={review} onSelect={onSelect} />}
           <section className="moments">
             <div className="report-caption">
               <h3>Key moments</h3>
