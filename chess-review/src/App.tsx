@@ -1,8 +1,9 @@
 import { ArrowLeftRight, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Pause, Play, Search, Settings, SlidersHorizontal, SquarePlus, Star } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "./components/AppChrome";
 import { BoardWorkspace } from "./components/BoardWorkspace";
 import { GameLibrary } from "./components/GameLibrary";
+import { ImportHomePanel } from "./components/ImportHomePanel";
 import { ReviewPanel } from "./components/ReviewPanel";
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { PlayPositionPanel } from "./components/PlayPositionPanel";
@@ -13,7 +14,7 @@ import { WorkspaceTabs, type WorkspaceTab } from "./components/WorkspaceTabs";
 import { PracticePanel } from "./components/PracticePanel";
 import { Dialogs } from "./components/Dialogs";
 import { demoGame } from "./lib/demo";
-import { parseGame } from "./lib/game";
+import { gameFromPgn, parseGame } from "./lib/game";
 import { useWorkspace } from "./hooks/useWorkspace";
 import { BoardAppearanceContext } from "./components/BoardAppearanceContext";
 import { normalizeSettings } from "./lib/settings";
@@ -38,10 +39,13 @@ function App() {
     openSaved, importReport,
     practice, variant, boardBestMove, showBestArrow, boardCoachArrows, classificationMark, threat,
   } = useWorkspace();
+  const [showImportHome, setShowImportHome] = useState(true);
+  const isImportHome = showImportHome && tab === 'review';
   const [reviewMode, setReviewMode] = useState<'overview' | 'moves'>('overview');
-  const reviewReportActive = tab === 'review' && Boolean(review);
+  const reviewReportActive = tab === 'review' && Boolean(review) && !isImportHome;
   const guidedReviewActive = reviewReportActive && reviewMode === 'moves';
   const boardNavigationActive = guidedReviewActive || (tab === 'analysis' && !play.active);
+  const importHomeParsed = useMemo(() => ({ ...parseGame(demoGame), error: '' }), []);
   const favoriteKey = `review-favorite:${game.id}`;
   const [reviewFavorite, setReviewFavorite] = useState(() => readReviewFavorite(favoriteKey));
 
@@ -81,6 +85,17 @@ function App() {
         onImport={() => setDialog("import")}
         onLibrary={() => setLibraryOpen(value => !value)}
         onSettings={() => setDialog("settings")}
+        onHome={() => {
+          selectGame(demoGame);
+          setPly(0);
+          setOrientation('w');
+          setReviewMode('overview');
+          setTab('review');
+          setPlaying(false);
+          setVariation([]);
+          setLibraryOpen(false);
+          setShowImportHome(true);
+        }}
       />
       <div className="workspace">
         <div className={`library-wrapper ${libraryOpen ? "open" : ""}`}>
@@ -88,9 +103,9 @@ function App() {
             library={library}
             selectedId={game.id}
             reviewedGameId={review?.pgn === game.pgn ? game.id : undefined}
-            onSelect={selected => { selectGame(selected); setLibraryOpen(false); }}
+            onSelect={selected => { selectGame(selected); setShowImportHome(false); setLibraryOpen(false); }}
             onClose={() => setLibraryOpen(false)}
-            onSample={() => { selectGame(demoGame); setPly(0); setLibraryOpen(false); }}
+            onSample={() => { selectGame(demoGame); setPly(0); setShowImportHome(false); setLibraryOpen(false); }}
           />
         </div>
         {libraryOpen && (
@@ -101,32 +116,33 @@ function App() {
           />
         )}
         <BoardWorkspace
-          game={game}
-          parsed={parsed}
-          review={review}
-          ply={safePly}
-          orientation={orientation}
-          practice={tab === "practice" || play.active || explanation.active}
-          opening={opening}
-          fen={fen}
-          lastMove={tab !== "practice" ? lastMove : undefined}
-          bestMove={boardBestMove}
-          showBestMove={showBestArrow}
-          coachArrows={boardCoachArrows}
-          threatArrow={threat.result?.arrow ?? undefined}
-          classification={classificationMark}
+          game={isImportHome ? demoGame : game}
+          parsed={isImportHome ? importHomeParsed : parsed}
+          review={isImportHome ? null : review}
+          ply={isImportHome ? 0 : safePly}
+          orientation={isImportHome ? 'w' : orientation}
+          homeMode={isImportHome}
+          practice={!isImportHome && (tab === "practice" || play.active || explanation.active)}
+          opening={isImportHome ? 'Starting Position' : opening}
+          fen={isImportHome ? importHomeParsed.initialFen : fen}
+          lastMove={!isImportHome && tab !== "practice" ? lastMove : undefined}
+          bestMove={isImportHome ? undefined : boardBestMove}
+          showBestMove={!isImportHome && showBestArrow}
+          coachArrows={isImportHome ? [] : boardCoachArrows}
+          threatArrow={isImportHome ? undefined : threat.result?.arrow ?? undefined}
+          classification={isImportHome ? undefined : classificationMark}
           showTimeSpent={settings.showTimeSpent}
-          showMoves={tab !== "review"}
-          showTimeline={tab !== "review"}
-          showBoardToolbar={!boardNavigationActive}
+          showMoves={!isImportHome && tab !== "review"}
+          showTimeline={!isImportHome && tab !== "review"}
+          showBoardToolbar={!isImportHome && !boardNavigationActive}
           disabled={
-            explanation.active || (tab === "practice" && (practiceBusy || ["solved", "revealed"].includes(practiceStatus))) ||
+            isImportHome || explanation.active || (tab === "practice" && (practiceBusy || ["solved", "revealed"].includes(practiceStatus))) ||
             (play.active && (play.thinking || Boolean(play.outcome) || play.turn !== play.playerColor))
           }
-          evaluation={displayEvaluation}
-          playing={playing}
-          isVariation={isVariation && !explanation.active}
-          variationSans={variationState.sans}
+          evaluation={isImportHome ? { cp: 0, mate: null } : displayEvaluation}
+          playing={!isImportHome && playing}
+          isVariation={!isImportHome && isVariation && !explanation.active}
+          variationSans={isImportHome ? [] : variationState.sans}
           onOpenLibrary={() => setLibraryOpen(true)}
           onMove={boardMove}
           onFlip={() => setOrientation((value) => (value === "w" ? "b" : "w"))}
@@ -143,7 +159,7 @@ function App() {
         <button className="board-settings" onClick={() => setDialog("settings")} aria-label="Board settings">
           <Settings size={18} />
         </button>
-        <aside className={`inspector ${reviewReportActive ? 'review-report-active' : ''} ${guidedReviewActive ? 'review-step-active' : ''}`}>
+        <aside className={`inspector ${isImportHome ? 'import-home-active' : ''} ${reviewReportActive ? 'review-report-active' : ''} ${guidedReviewActive ? 'review-step-active' : ''}`}>
           <div className="inspector-header">
             {reviewReportActive && <>
               <button className="inspector-back" aria-label={guidedReviewActive ? 'Back to highlights' : 'Open game library'} onClick={() => guidedReviewActive ? setReviewMode('overview') : setLibraryOpen(true)}><ChevronLeft size={23} /></button>
@@ -153,12 +169,28 @@ function App() {
                 try { localStorage.setItem(favoriteKey, String(value)); } catch { }
               }}><Star size={20} fill={reviewFavorite ? 'currentColor' : 'none'} /></button>
             </>}
-            <h1 id={reviewReportActive ? 'review-panel-title' : undefined}>{tab === "review" ? "Game Review" : tab === "history" ? "Saved Games" : tab === "analysis" ? "Analysis" : "Practice"}</h1>
+            <h1 id={reviewReportActive || isImportHome ? 'review-panel-title' : undefined}>{tab === "review" ? "Game Review" : tab === "history" ? "Saved Games" : tab === "analysis" ? "Analysis" : "Practice"}</h1>
             {reviewReportActive && <button className="inspector-analysis" aria-label="Analysis" onClick={() => changeWorkspaceTab('analysis')}><Search size={19} /></button>}
           </div>
-          {!reviewReportActive && <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} analysisPresentation={tab === 'analysis'} />}
-          <div className="inspector-body" role={reviewReportActive ? 'region' : 'tabpanel'} id={reviewReportActive ? 'review-panel-body' : 'workspace-panel'} aria-labelledby={reviewReportActive ? 'review-panel-title' : `workspace-tab-${tab}`}>
-            {explanation.active ? (
+          {!reviewReportActive && !isImportHome && <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} analysisPresentation={tab === 'analysis'} />}
+          <div className="inspector-body" role={reviewReportActive || isImportHome ? 'region' : 'tabpanel'} id={reviewReportActive ? 'review-panel-body' : isImportHome ? 'import-home-body' : 'workspace-panel'} aria-labelledby={reviewReportActive || isImportHome ? 'review-panel-title' : `workspace-tab-${tab}`}>
+            {isImportHome ? (
+              <ImportHomePanel
+                library={library}
+                onOpenReview={entry => { openSaved(entry); setShowImportHome(false); }}
+                onSelectGame={selected => { selectGame(selected); setShowImportHome(false); }}
+                onLoadPgn={source => {
+                  try {
+                    selectGame(gameFromPgn(source));
+                    setPly(0);
+                    setShowImportHome(false);
+                    return '';
+                  } catch (cause) {
+                    return (cause as Error).message;
+                  }
+                }}
+              />
+            ) : explanation.active ? (
               <ExplanationPanel explanation={explanation} onExit={explanation.stop} />
             ) : tab === "review" ? (
               <ReviewPanel
@@ -286,7 +318,7 @@ function App() {
                 <button aria-label="Review settings" onClick={() => setDialog('settings')}><Settings size={18} /></button>
               </div>
             </div>
-          ) : !reviewReportActive ? <div className="inspector-bottom">
+          ) : !reviewReportActive && !isImportHome ? <div className="inspector-bottom">
             <button
               className="text-button"
               onClick={() => setDialog("settings")}
@@ -309,6 +341,7 @@ function App() {
         accuracyVersion={review?.accuracyVersion}
         onImport={(selected) => {
           selectGame(selected);
+          setShowImportHome(false);
           if (!parseGame(selected).moves.length) setTab("analysis");
         }}
       />

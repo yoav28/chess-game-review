@@ -15,11 +15,13 @@ type PlayerBarProps = {
   ply: number
   board: ChessPosition
   hideClock?: boolean
+  homeMode?: boolean
 }
 
-export function PlayerBar({ color, game, parsed, ply, board, hideClock }: PlayerBarProps) {
+export function PlayerBar({ color, game, parsed, ply, board, hideClock, homeMode = false }: PlayerBarProps) {
   const player = color === 'w' ? game.white : game.black
-  const profile = usePlayerProfile(player.username)
+  const name = homeMode ? color === 'w' ? 'White' : 'Black' : player.username
+  const profile = usePlayerProfile(homeMode ? '' : player.username)
   const { appearance } = useBoardAppearance()
   const lastClock = parsed.moves
     .slice(0, ply)
@@ -27,8 +29,8 @@ export function PlayerBar({ color, game, parsed, ply, board, hideClock }: Player
     .at(-1)?.clockSeconds
   const initialClock = Number(game.timeControl.split('+')[0])
   const headerSide = color === 'w' ? 'White' : 'Black'
-  const title = profile?.title ?? parsed.headers[`${headerSide}Title`]
-  const country = profile?.country ?? parsed.headers[`${headerSide}Country`]
+  const title = homeMode ? null : profile?.title ?? parsed.headers[`${headerSide}Title`]
+  const country = homeMode ? null : profile?.country ?? parsed.headers[`${headerSide}Country`]
   const captured = parsed.moves.slice(0, ply).reduce<Partial<Record<'p' | 'n' | 'b' | 'r' | 'q', number>>>((pieces, move) => {
     if (move.color === color && move.captured && move.captured !== 'k') {
       pieces[move.captured] = (pieces[move.captured] ?? 0) + 1
@@ -42,11 +44,11 @@ export function PlayerBar({ color, game, parsed, ply, board, hideClock }: Player
 
   return (
     <div className="player-bar">
-      <PlayerAvatar className="player-avatar" color={color} name={player.username} size={40} />
+      <PlayerAvatar className="player-avatar" color={color} name={homeMode ? '' : player.username} size={40} />
       <div className="player-info">
         <strong>
           {title && <span className="player-title">{title}</span>}
-          {player.username} <span className="player-rating">{player.rating ? `(${player.rating})` : ''}</span>
+          {name} {!homeMode && <span className="player-rating">{player.rating ? `(${player.rating})` : ''}</span>}
           <CountryFlag country={country} />
         </strong>
         <div className="player-captures" aria-label={`${color === 'w' ? 'White' : 'Black'} captured material`}>
@@ -58,7 +60,7 @@ export function PlayerBar({ color, game, parsed, ply, board, hideClock }: Player
       </div>
       <div className={`player-clock player-clock-${color} ${!board.isGameOver() && board.turn() === color ? 'turn' : ''}`}>
         <Clock3 size={20} />
-        <span>{hideClock ? '—' : formatClock(lastClock ?? (Number.isFinite(initialClock) && initialClock > 0 ? initialClock : undefined))}</span>
+        <span>{hideClock || homeMode ? '—' : formatClock(lastClock ?? (Number.isFinite(initialClock) && initialClock > 0 ? initialClock : undefined))}</span>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import { Bell, ChevronDown, ChevronUp, FolderOpen, Mail, Search, Settings as SettingsIcon, Users } from "lucide-react";
 import { useState } from "react";
 
-type AppHeaderProps = { onImport: () => void; onLibrary: () => void; onSettings: () => void; username: string };
+type AppHeaderProps = { onImport: () => void; onLibrary: () => void; onSettings: () => void; onHome: () => void; username: string };
 
 const navigation = [
   { label: "Play", path: "play", icon: "play-white" },
@@ -13,7 +13,7 @@ const navigation = [
   { label: "Other", path: "other", icon: "ellipsis" },
 ];
 
-export function AppHeader({ onImport, onLibrary, onSettings, username }: AppHeaderProps) {
+export function AppHeader({ onImport, onLibrary, onSettings, onHome, username }: AppHeaderProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const profileUrl = username
     ? `https://www.chess.com/member/${encodeURIComponent(username)}`
@@ -21,7 +21,7 @@ export function AppHeader({ onImport, onLibrary, onSettings, username }: AppHead
 
   return (
     <aside className="app-header site-sidebar">
-      <a aria-label="Game Review home" className="site-logo" href="/">
+      <a aria-label="Game Review home" className="site-logo" href="/" onClick={event => { event.preventDefault(); onHome(); }}>
         <img alt="Chess.com" src="/navigation/logo.svg" />
       </a>
       <nav aria-label="Main navigation" className="app-navigation site-navigation">

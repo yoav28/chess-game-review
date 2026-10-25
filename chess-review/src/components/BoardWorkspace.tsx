@@ -34,6 +34,7 @@ type BoardWorkspaceProps = {
   ply: number;
   orientation: "w" | "b";
   practice: boolean;
+  homeMode?: boolean;
   opening: string;
   fen: string;
   lastMove?: { from: string; to: string };
@@ -69,6 +70,7 @@ export function BoardWorkspace({
   ply,
   orientation,
   practice,
+  homeMode = false,
   opening,
   fen,
   lastMove,
@@ -158,12 +160,13 @@ export function BoardWorkspace({
           <div className="board-layout">
             <div className="board-player-top">
               <PlayerBar
-                hideClock={practice || isVariation}
+                hideClock={practice || isVariation || homeMode}
                 color={orientation === "w" ? "b" : "w"}
                 game={game}
                 parsed={parsed}
                 ply={ply}
                 board={board}
+                homeMode={homeMode}
               />
             </div>
             <div className="board-with-eval">
@@ -199,12 +202,13 @@ export function BoardWorkspace({
             </div>
             <div className="board-player-bottom">
               <PlayerBar
-                hideClock={practice || isVariation}
+                hideClock={practice || isVariation || homeMode}
                 color={orientation}
                 game={game}
                 parsed={parsed}
                 ply={ply}
                 board={board}
+                homeMode={homeMode}
               />
             </div>
           </div>

@@ -1,0 +1,150 @@
+.import-home {
+  color: #fff;
+}
+.import-home-tabs {
+  display: flex;
+  height: 52px;
+  margin: 20px 15px 0 27px;
+  border-bottom: 2px solid #3d3b38;
+}
+.import-home-tabs button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: -2px;
+  padding: 10px 8px;
+  border-bottom: 3px solid transparent;
+  color: #aaa9a6;
+  font-size: 14px;
+  font-weight: 700;
+}
+.import-home-tabs button:hover {
+  background: #2c2b27;
+  color: #fff;
+}
+.import-home-tabs button[aria-selected="true"] {
+  border-color: #81b64c;
+  color: #fff;
+}
+.import-home-panel {
+  padding: 26px 34px 13px 47px;
+}
+.import-home-panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.import-home-panel label {
+  color: #e7e6e5;
+  font-size: 14px;
+  font-weight: 700;
+}
+.import-home-panel input:not([type="file"]),
+.import-home-panel textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 12px;
+  border: 1px solid #4b4945;
+  border-radius: 5px;
+  background: #3a3935;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+}
+.import-home-panel textarea {
+  min-height: 166px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.import-home-panel input::placeholder,
+.import-home-panel textarea::placeholder {
+  color: #aaa9a6;
+  opacity: 1;
+}
+.import-home-panel input:focus,
+.import-home-panel textarea:focus {
+  border-color: #989795;
+  outline: none;
+}
+.import-home-find {
+  height: 48px;
+  min-height: 48px;
+  border-bottom: 4px solid #537f30;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.import-home-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.import-home-actions .primary {
+  min-width: 140px;
+  min-height: 42px;
+}
+.import-home-actions .secondary {
+  min-height: 42px;
+}
+.import-home-panel .fine-print {
+  margin: 0;
+}
+.import-home-progress {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+  color: #b3b2b1;
+  font-size: 11px;
+}
+.import-home-progress progress {
+  width: 100%;
+  accent-color: #81b64c;
+}
+.recent-reviews {
+  margin: 18px 15px 0 27px;
+  border-top: 1px solid #3d3b38;
+}
+.recent-reviews h2 {
+  padding: 24px 20px 10px;
+  color: #b3b2b1;
+  font-size: 14px;
+  font-weight: 700;
+}
+.recent-review-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #3d3b38;
+}
+.recent-review-row:hover {
+  background: #343330;
+}
+.recent-review-link {
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+}
+.recent-review-link > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-review-link > span:first-child {
+  font-weight: 700;
+}
+.recent-review-link > span:last-child {
+  margin-top: 4px;
+  color: #b3b2b1;
+  font-size: 12px;
+}
+.recent-review-note {
+  padding: 12px 20px;
+  color: #aaa9a6;
+  font-size: 11px;
+  line-height: 1.5;
+}
