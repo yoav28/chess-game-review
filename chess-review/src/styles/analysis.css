@@ -1,3 +1,38 @@
+.inspector:has(.analysis-content) .analysis-content {
+  padding: 12px 12px 20px;
+}
+.analysis-engine-summary {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.analysis-engine-indicator {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: #74726f;
+}
+.analysis-engine-indicator.on {
+  background: var(--accent);
+}
+.analysis-engine-summary > strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.analysis-engine-name {
+  overflow: hidden;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.analysis-engine-summary > .toggle {
+  flex: none;
+}
 .toggle {
   border: 1px solid #56534e;
   background: #403f3c;
@@ -41,14 +76,14 @@
   }
 }
 .engine-lines {
-  margin-top: 23px;
+  margin-top: 0;
 }
 .engine-line {
-  padding: 17px 0;
+  padding: 7px 0;
   border-top: 1px solid var(--border);
   display: flex;
-  gap: 11px;
-  align-items: flex-start;
+  gap: 7px;
+  align-items: center;
 }
 .engine-line > strong {
   font-size: 12px;
@@ -59,19 +94,20 @@
 .engine-line > svg {
   color: var(--subtle);
   margin-top: 1px;
+  flex: none;
 }
 .pv-moves {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 0;
   flex: 1;
 }
 .pv-moves > button {
-  font-size: 12px;
-  padding: 2px 3px;
+  font-size: 11px;
+  padding: 1px 2px;
   border-radius: 2px;
   color: var(--muted);
-  line-height: 1.6;
+  line-height: 1.3;
 }
 .pv-moves > button:first-child {
   color: var(--text);
@@ -253,5 +289,8 @@
   border: 0;
 }
 .analysis-content .analysis-game-moves > summary {
+  display: none;
+}
+.analysis-content .analysis-game-moves .starting-position {
   display: none;
 }

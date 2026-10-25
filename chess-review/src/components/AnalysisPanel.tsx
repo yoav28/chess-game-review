@@ -1,4 +1,4 @@
-import { BookOpen, ChevronRight, LoaderCircle } from "lucide-react";
+import { BookOpen, ChevronRight } from "lucide-react";
 import { OpeningExplorer } from "./OpeningExplorer";
 import { TablebasePanel } from "./TablebasePanel";
 import { MasterExplorer } from "./MasterExplorer";
@@ -71,10 +71,13 @@ export function AnalysisPanel({
   settings, onSettings, stopped, threads, onStop, onRun,
 }: Props) {
   const outcome = positionOutcome(createPosition(fen, variant));
+  const engineName = variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' || variant === 'crazyhouse' || variant === 'giveaway' || variant === 'racingkings' ? 'Fairy-Stockfish' : 'Stockfish 19 Lite';
   return (
     <div className="analysis-content">
-      <div className="report-caption">
-        <h2>Engine analysis</h2>
+      <div className="analysis-engine-summary">
+        <span className={`analysis-engine-indicator ${enabled ? 'on' : ''}`} />
+        <strong>Analysis</strong>
+        <span className="analysis-engine-name">{engineName}{analysis ? ` · depth ${analysis.depth}` : busy ? ' · Searching' : ''}</span>
         <button
           className={`toggle ${enabled ? "on" : ""}`}
           role="switch"
@@ -85,11 +88,6 @@ export function AnalysisPanel({
           <span />
         </button>
       </div>
-      <p className="muted">
-        {variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' || variant === 'crazyhouse' || variant === 'giveaway' || variant === 'racingkings' ? 'Fairy-Stockfish · classical evaluation · W = forced win' : 'Stockfish 19 Lite'} {analysis ? `· depth ${analysis.depth}` : ""}
-        {busy && <LoaderCircle className="spin inline-icon" size={13} />}
-      </p>
-      <AnalysisSearchControls settings={settings} onChange={onSettings} busy={busy} stopped={stopped} threads={threads} onStop={onStop} onRun={onRun} />
       {error && (
         <p role="alert" className="error-message">
           {error}
@@ -110,7 +108,7 @@ export function AnalysisPanel({
             <div className="engine-line" key={line.rank}>
               <strong>{evaluationLabel(line.evaluation, variant)}</strong>
               <div className="pv-moves">
-                {line.pvSan.slice(0, 12).map((san, index) => (
+                {line.pvSan.slice(0, 8).map((san, index) => (
                   <button
                     key={index}
                     onClick={() => onLine(line.pv.slice(0, index + 1))}
@@ -137,12 +135,13 @@ export function AnalysisPanel({
           Turn on the engine to explore candidate lines.
         </p>
       )}
-      <div className="review-opening"><span>{opening || 'Starting Position'}</span><BookOpen size={18} /></div>
+      <div className="review-opening"><span>{ply === 0 ? 'Starting Position' : opening || 'Starting Position'}</span><BookOpen size={18} /></div>
       <div className="review-game-heading"><strong>{game.white.username}<span>–</span>{game.black.username}</strong><span>{review?.result ?? parsed.result}</span></div>
       <details className="review-move-section analysis-game-moves" open>
         <summary><span>Game moves</span><span>{parsed.moves.length} half-moves</span></summary>
         <MoveList parsed={parsed} timeControl={game.timeControl} timeClass={game.timeClass} showTimeSpent={showTimeSpent} moves={parsed.moves} review={review} ply={ply} onSelect={onSelect} />
       </details>
+      <AnalysisSearchControls settings={settings} onChange={onSettings} busy={busy} stopped={stopped} threads={threads} onStop={onStop} onRun={onRun} />
       <ThreatPanel threat={threat} />
       <div className="analysis-tip">
         <button className="secondary full-width" disabled={!!outcome} onClick={onPlay}>Play this position against {variant === 'threecheck' || variant === 'kingofthehill' || variant === 'atomic' || variant === 'horde' || variant === 'crazyhouse' || variant === 'giveaway' || variant === 'racingkings' ? 'Fairy-Stockfish' : 'Stockfish'}</button>

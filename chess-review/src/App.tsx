@@ -156,7 +156,7 @@ function App() {
             <h1 id={reviewReportActive ? 'review-panel-title' : undefined}>{tab === "review" ? "Game Review" : tab === "history" ? "Saved Games" : tab === "analysis" ? "Analysis" : "Practice"}</h1>
             {reviewReportActive && <button className="inspector-analysis" aria-label="Analysis" onClick={() => changeWorkspaceTab('analysis')}><Search size={19} /></button>}
           </div>
-          {!reviewReportActive && <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} />}
+          {!reviewReportActive && <WorkspaceTabs tab={tab} onChange={changeWorkspaceTab} analysisPresentation={tab === 'analysis'} />}
           <div className="inspector-body" role={reviewReportActive ? 'region' : 'tabpanel'} id={reviewReportActive ? 'review-panel-body' : 'workspace-panel'} aria-labelledby={reviewReportActive ? 'review-panel-title' : `workspace-tab-${tab}`}>
             {explanation.active ? (
               <ExplanationPanel explanation={explanation} onExit={explanation.stop} />
