@@ -9,7 +9,7 @@ export function Piece({ type, color, set = 'classic' }: { type: PieceSymbol; col
   return (
     <svg className={`chess-piece chess-piece-${color}`} data-piece-set={set} viewBox="0 0 80 80" aria-hidden="true">
       <g strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round">
-        {String(set) === 'classic' && <>
+        {set === 'neo' && <>
         {type === 'p' && <><circle cx="40" cy="24" r="9" /><path d="M32 34h16l-3 9 6 15H29l6-15z" /><path d="M26 59h28l3 9H23z" /></>}
         {type === 'r' && <><path d="M23 15h9v9h8v-9h8v9h8v-9h6v20l-8 7 2 16H28l2-16-7-7z" /><path d="M25 58h32l3 10H22z" /><path d="M30 36h24M30 52h24" /></>}
         {type === 'n' && <><path d="m24 57 5-14 13-11-10 1-9 7-7-7 12-18 13 1 4-7 5 12c12 9 13 24 8 36z" /><path d="m25 57-4 11h41l-4-11z" /><path d="m31 24 3-3m15 9c7 7 7 15 5 21" fill="none" /><circle cx="38" cy="22" r="1.6" className="chess-piece-detail" stroke="none" /></>}
